@@ -1,0 +1,76 @@
+[ {
+  "id" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+  "name" : "数据库服务器",
+  "ipAddress" : "192.168.1.100",
+  "description" : "MySQL主数据库服务器",
+  "monitorItems" : [ {
+    "type" : "CPU",
+    "name" : "CPU使用率",
+    "threshold" : 80.0,
+    "unit" : "%",
+    "enabled" : true
+  }, {
+    "type" : "MEMORY",
+    "name" : "内存使用率",
+    "threshold" : 85.0,
+    "unit" : "%",
+    "enabled" : true
+  }, {
+    "type" : "DISK",
+    "name" : "硬盘剩余空间",
+    "threshold" : 10.0,
+    "unit" : "%",
+    "enabled" : true
+  } ],
+  "enabled" : true,
+  "createTime" : "2026-05-01T21:52:24.331",
+  "updateTime" : "2026-05-01T21:52:24.331"
+}, {
+  "id" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+  "name" : "应用服务器",
+  "ipAddress" : "192.168.1.101",
+  "description" : "Web应用服务器",
+  "monitorItems" : [ {
+    "type" : "CPU",
+    "name" : "CPU使用率",
+    "threshold" : 80.0,
+    "unit" : "%",
+    "enabled" : true
+  }, {
+    "type" : "MEMORY",
+    "name" : "内存使用率",
+    "threshold" : 85.0,
+    "unit" : "%",
+    "enabled" : true
+  }, {
+    "type" : "DISK",
+    "name" : "硬盘剩余空间",
+    "threshold" : 10.0,
+    "unit" : "%",
+    "enabled" : true
+  } ],
+  "enabled" : true,
+  "createTime" : "2026-05-01T21:52:24.331",
+  "updateTime" : "2026-05-01T22:02:30.84"
+}, {
+  "id" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+  "name" : "缓存服务器",
+  "ipAddress" : "192.168.1.102",
+  "description" : "Redis缓存服务器",
+  "monitorItems" : [ {
+    "type" : "CPU",
+    "name" : "CPU使用率",
+    "threshold" : 80.0,
+    "unit" : "%",
+    "enabled" : true
+  }, {
+    "type" : "MEMORY",
+    "name" : "内存使用率",
+    "threshold" : 85.0,
+    "unit" : "%",
+    "enabled" : true
+  } ],
+  "enabled" : true,
+  "createTime" : "2026-05-01T21:52:24.331",
+  "updateTime" : "2026-05-01T21:52:24.331"
+} ]

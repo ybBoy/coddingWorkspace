@@ -340,6 +340,12 @@
             color: #4a5568;
         }
 
+        .status-maintenance {
+            background: #bee3f8;
+            color: #2a4365;
+            animation: pulse 2s infinite;
+        }
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -1215,6 +1221,7 @@
             let warning = 0;
             let critical = 0;
             let offline = 0;
+            let maintenance = 0;
             let newHasCritical = false;
 
             for (const server of servers) {
@@ -1223,7 +1230,9 @@
                 
                 if (status) {
                     const statusType = status.status || 'NORMAL';
-                    if (statusType === 'OFFLINE') {
+                    if (statusType === 'MAINTENANCE') {
+                        maintenance++;
+                    } else if (statusType === 'OFFLINE') {
                         offline++;
                     } else if (level === 'CRITICAL') {
                         critical++;
@@ -1304,8 +1313,15 @@
                 
                 let cardClass = 'server-card-normal';
                 let statusBadge = '<span class="status-badge status-normal">正常</span>';
+                let isMaintenance = false;
+                let maintenanceEndTime = null;
                 
-                if (level === 'CRITICAL') {
+                if (status && status.status === 'MAINTENANCE') {
+                    isMaintenance = true;
+                    maintenanceEndTime = status.maintenanceEndTime;
+                    cardClass = 'server-card-normal';
+                    statusBadge = '<span class="status-badge status-maintenance">🔧 维护中</span>';
+                } else if (level === 'CRITICAL') {
                     cardClass = 'server-card-critical';
                     statusBadge = '<span class="status-badge status-critical">严重</span>';
                 } else if (level === 'WARNING') {
@@ -1314,7 +1330,7 @@
                 }
 
                 html += `
-                    <div class="server-card ${cardClass}" onclick="showServerHistory('${server.id}', '${escapeHtml(server.name)}')">
+                    <div class="server-card ${cardClass}">
                         <div class="server-header">
                             <div>
                                 <div class="server-name">${escapeHtml(server.name)}</div>
@@ -1324,7 +1340,17 @@
                         </div>
                 `;
 
-                if (status && status.monitorStatuses && status.monitorStatuses.length > 0) {
+                if (isMaintenance) {
+                    html += `
+                        <div style="margin-top: 12px; padding: 12px; background: #f0f9ff; border-radius: 6px;">
+                            <div style="color: #2b6cb0; font-weight: 500;">🔧 维护模式已开启</div>
+                            ${maintenanceEndTime ? `<div style="color: #4a5568; font-size: 13px; margin-top: 4px;">维护结束时间: ${maintenanceEndTime}</div>` : ''}
+                            <button class="btn btn-default btn-small" style="margin-top: 8px;" onclick="event.stopPropagation(); endMaintenance('${server.id}')">
+                                结束维护
+                            </button>
+                        </div>
+                    `;
+                } else if (status && status.monitorStatuses && status.monitorStatuses.length > 0) {
                     html += '<div class="server-monitors">';
                     for (const monitor of status.monitorStatuses) {
                         const monitorLevel = monitor.alertLevel || 'NORMAL';
@@ -1339,7 +1365,7 @@
                         const threshold = monitor.criticalThreshold || monitor.threshold;
                         
                         html += `
-                            <div class="monitor-item-display">
+                            <div class="monitor-item-display" onclick="event.stopPropagation(); showServerHistory('${server.id}', '${escapeHtml(server.name)}')">
                                 <div class="monitor-name">${escapeHtml(monitor.name)} ${monitorLevel !== 'NORMAL' ? '<span class="level-badge ' + monitorLevel.toLowerCase() + '">' + (monitorLevel === 'CRITICAL' ? '严重' : '警告') + '</span>' : ''}</div>
                                 <div class="monitor-value ${valueClass}">
                                     ${monitor.value}${monitor.unit}
@@ -1355,6 +1381,13 @@
                         `;
                     }
                     html += '</div>';
+                    html += `
+                        <div style="margin-top: 12px; text-align: right;">
+                            <button class="btn btn-default btn-small" onclick="event.stopPropagation(); startMaintenance('${server.id}', '${escapeHtml(server.name)}')">
+                                🔧 开启维护模式
+                            </button>
+                        </div>
+                    `;
                 } else {
                     html += '<div style="color: #718096; font-size: 13px;">等待状态数据...</div>';
                 }
@@ -2148,6 +2181,61 @@
                 btn.classList.add('muted');
                 showToast('提示音已关闭', 'info');
             }
+        }
+
+        function startMaintenance(serverId, serverName) {
+            const hours = prompt(`请输入维护时长（小时，默认1小时）：`, '1');
+            if (hours === null) return;
+            
+            let hoursNum = parseInt(hours);
+            if (isNaN(hoursNum) || hoursNum < 1 || hoursNum > 24) {
+                hoursNum = 1;
+            }
+
+            if (!confirm(`确定要为服务器 [${serverName}] 开启维护模式 ${hoursNum} 小时吗？\n\n维护期间该服务器将暂停监控和告警通知。`)) {
+                return;
+            }
+
+            fetch(`/api/servers/${serverId}/maintenance/start?hours=${hoursNum}`, {
+                method: 'POST'
+            })
+            .then(response => {
+                if (response.ok) {
+                    showToast(`服务器 [${serverName}] 已进入维护模式`, 'success');
+                    loadAllData();
+                } else {
+                    showToast('开启维护模式失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('开启维护模式失败:', error);
+                showToast('开启维护模式失败', 'error');
+            });
+        }
+
+        function endMaintenance(serverId) {
+            const server = servers.find(s => s.id === serverId);
+            const serverName = server ? server.name : serverId;
+
+            if (!confirm(`确定要结束服务器 [${serverName}] 的维护模式吗？`)) {
+                return;
+            }
+
+            fetch(`/api/servers/${serverId}/maintenance/end`, {
+                method: 'POST'
+            })
+            .then(response => {
+                if (response.ok) {
+                    showToast(`服务器 [${serverName}] 已结束维护模式`, 'success');
+                    loadAllData();
+                } else {
+                    showToast('结束维护模式失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('结束维护模式失败:', error);
+                showToast('结束维护模式失败', 'error');
+            });
         }
     </script>
 </body>

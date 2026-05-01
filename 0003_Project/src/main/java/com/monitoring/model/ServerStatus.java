@@ -12,9 +12,12 @@ public class ServerStatus {
     private boolean online;
     private List<MonitorStatus> monitorStatuses;
     private LocalDateTime checkTime;
+    private boolean inMaintenance;
+    private LocalDateTime maintenanceEndTime;
 
     public ServerStatus() {
         this.monitorStatuses = new ArrayList<>();
+        this.inMaintenance = false;
     }
 
     public static class MonitorStatus {
@@ -122,6 +125,9 @@ public class ServerStatus {
     }
 
     public String getStatus() {
+        if (inMaintenance) {
+            return "MAINTENANCE";
+        }
         if (!online) {
             return "OFFLINE";
         }
@@ -177,5 +183,21 @@ public class ServerStatus {
 
     public void setCheckTime(LocalDateTime checkTime) {
         this.checkTime = checkTime;
+    }
+
+    public boolean isInMaintenance() {
+        return inMaintenance;
+    }
+
+    public void setInMaintenance(boolean inMaintenance) {
+        this.inMaintenance = inMaintenance;
+    }
+
+    public LocalDateTime getMaintenanceEndTime() {
+        return maintenanceEndTime;
+    }
+
+    public void setMaintenanceEndTime(LocalDateTime maintenanceEndTime) {
+        this.maintenanceEndTime = maintenanceEndTime;
     }
 }

@@ -51,4 +51,30 @@ public class ServerController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @PostMapping("/{id}/maintenance/start")
+    public ResponseEntity<ServerConfig> startMaintenance(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "1") int hours) {
+        Optional<ServerConfig> server = serverConfigService.getServerById(id);
+        if (!server.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        ServerConfig config = server.get();
+        config.startMaintenance(hours);
+        serverConfigService.updateServer(id, config);
+        return ResponseEntity.ok(config);
+    }
+
+    @PostMapping("/{id}/maintenance/end")
+    public ResponseEntity<ServerConfig> endMaintenance(@PathVariable String id) {
+        Optional<ServerConfig> server = serverConfigService.getServerById(id);
+        if (!server.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        ServerConfig config = server.get();
+        config.endMaintenance();
+        serverConfigService.updateServer(id, config);
+        return ResponseEntity.ok(config);
+    }
 }

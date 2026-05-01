@@ -14,10 +14,16 @@ public class ServerConfig {
     private boolean enabled;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    
+    private boolean maintenanceMode;
+    private LocalDateTime maintenanceEndTime;
+    private List<AlertCondition> alertConditions;
 
     public ServerConfig() {
         this.monitorItems = new ArrayList<>();
         this.enabled = true;
+        this.maintenanceMode = false;
+        this.alertConditions = new ArrayList<>();
     }
 
     public String getId() {
@@ -82,5 +88,53 @@ public class ServerConfig {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public boolean isMaintenanceMode() {
+        return maintenanceMode;
+    }
+
+    public void setMaintenanceMode(boolean maintenanceMode) {
+        this.maintenanceMode = maintenanceMode;
+    }
+
+    public LocalDateTime getMaintenanceEndTime() {
+        return maintenanceEndTime;
+    }
+
+    public void setMaintenanceEndTime(LocalDateTime maintenanceEndTime) {
+        this.maintenanceEndTime = maintenanceEndTime;
+    }
+
+    public boolean isInMaintenance() {
+        if (!maintenanceMode) {
+            return false;
+        }
+        if (maintenanceEndTime == null) {
+            return true;
+        }
+        return LocalDateTime.now().isBefore(maintenanceEndTime);
+    }
+
+    public void startMaintenance(int hours) {
+        this.maintenanceMode = true;
+        this.maintenanceEndTime = LocalDateTime.now().plusHours(hours);
+    }
+
+    public void endMaintenance() {
+        this.maintenanceMode = false;
+        this.maintenanceEndTime = null;
+    }
+
+    public List<AlertCondition> getAlertConditions() {
+        return alertConditions;
+    }
+
+    public void setAlertConditions(List<AlertCondition> alertConditions) {
+        this.alertConditions = alertConditions;
+    }
+
+    public boolean hasCustomAlertConditions() {
+        return alertConditions != null && !alertConditions.isEmpty();
     }
 }

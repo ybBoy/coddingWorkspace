@@ -28,6 +28,9 @@ public class AlertService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private WebhookNotificationService webhookNotificationService;
+
     private List<AlertRecord> alertRecords;
 
     @PostConstruct
@@ -56,6 +59,7 @@ public class AlertService {
                     saveAlerts();
 
                     emailService.sendAlertEmail(record);
+                    webhookNotificationService.sendAlertNotification(record);
                 }
             }
         }

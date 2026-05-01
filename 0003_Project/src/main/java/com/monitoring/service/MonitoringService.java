@@ -42,6 +42,13 @@ public class MonitoringService {
         List<ServerConfig> enabledServers = serverConfigService.getEnabledServers();
 
         for (ServerConfig config : enabledServers) {
+            if (config.isInMaintenance()) {
+                logger.info("服务器[{}]处于维护模式，跳过监控", config.getName());
+                ServerStatus maintenanceStatus = createMaintenanceStatus(config);
+                statusCache.put(config.getId(), maintenanceStatus);
+                continue;
+            }
+            
             ServerStatus status = checkServer(config);
             statusCache.put(config.getId(), status);
 
@@ -52,6 +59,18 @@ public class MonitoringService {
         logger.debug("监控任务执行完成，共检查 {} 台服务器", enabledServers.size());
     }
 
+    private ServerStatus createMaintenanceStatus(ServerConfig config) {
+        ServerStatus status = new ServerStatus();
+        status.setServerId(config.getId());
+        status.setServerName(config.getName());
+        status.setIpAddress(config.getIpAddress());
+        status.setCheckTime(LocalDateTime.now());
+        status.setOnline(true);
+        status.setInMaintenance(true);
+        status.setMaintenanceEndTime(config.getMaintenanceEndTime());
+        return status;
+    }
+
     private ServerStatus checkServer(ServerConfig config) {
         ServerStatus status = new ServerStatus();
         status.setServerId(config.getId());
@@ -60,18 +79,121 @@ public class MonitoringService {
         status.setCheckTime(LocalDateTime.now());
         status.setOnline(true);
 
+        Map<String, ServerStatus.MonitorStatus> monitorStatusMap = new ConcurrentHashMap<>();
+        
         for (MonitorItem item : config.getMonitorItems()) {
             if (!item.isEnabled()) {
                 continue;
             }
 
             ServerStatus.MonitorStatus monitorStatus = generateMonitorStatus(item, config);
+            monitorStatusMap.put(item.getType(), monitorStatus);
             status.getMonitorStatuses().add(monitorStatus);
 
             historyDataService.saveDataPoint(config.getId(), item.getType(), monitorStatus.getValue());
         }
 
+        if (config.hasCustomAlertConditions()) {
+            applyCustomAlertConditions(status, config, monitorStatusMap);
+        }
+
         return status;
+    }
+
+    private void applyCustomAlertConditions(ServerStatus status, ServerConfig config, 
+            Map<String, ServerStatus.MonitorStatus> monitorStatusMap) {
+        
+        for (AlertCondition condition : config.getAlertConditions()) {
+            if (!condition.isEnabled()) {
+                continue;
+            }
+
+            AlertLevel resultLevel = evaluateAlertCondition(condition, monitorStatusMap);
+            
+            if (resultLevel != AlertLevel.NORMAL) {
+                String message = buildConditionMessage(condition, resultLevel, config, monitorStatusMap);
+                
+                for (ServerStatus.MonitorStatus monitorStatus : status.getMonitorStatuses()) {
+                    for (AlertCondition.ConditionRule rule : condition.getRules()) {
+                        if (monitorStatus.getType().equals(rule.getMonitorType())) {
+                            if (resultLevel == AlertLevel.CRITICAL || 
+                                (resultLevel == AlertLevel.WARNING && 
+                                 monitorStatus.getAlertLevel() == AlertLevel.NORMAL)) {
+                                monitorStatus.setAlertLevel(resultLevel);
+                                monitorStatus.setAlarming(true);
+                                monitorStatus.setMessage(message);
+                            }
+                        }
+                    }
+                }
+                
+                logger.warn("组合条件触发告警: {}", message);
+            }
+        }
+    }
+
+    private AlertLevel evaluateAlertCondition(AlertCondition condition, 
+            Map<String, ServerStatus.MonitorStatus> monitorStatusMap) {
+        
+        List<AlertCondition.ConditionRule> rules = condition.getRules();
+        if (rules == null || rules.isEmpty()) {
+            return AlertLevel.NORMAL;
+        }
+
+        AlertCondition.ConditionOperator operator = condition.getOperator();
+        AlertLevel highestLevel = AlertLevel.NORMAL;
+        int matchedCount = 0;
+
+        for (AlertCondition.ConditionRule rule : rules) {
+            ServerStatus.MonitorStatus monitorStatus = monitorStatusMap.get(rule.getMonitorType());
+            if (monitorStatus == null) {
+                continue;
+            }
+
+            boolean matched = rule.evaluate(monitorStatus.getValue());
+            
+            if (matched) {
+                matchedCount++;
+                if (rule.getLevel() == AlertLevel.CRITICAL) {
+                    highestLevel = AlertLevel.CRITICAL;
+                } else if (rule.getLevel() == AlertLevel.WARNING && highestLevel == AlertLevel.NORMAL) {
+                    highestLevel = AlertLevel.WARNING;
+                }
+            }
+        }
+
+        if (operator == AlertCondition.ConditionOperator.AND) {
+            return matchedCount == rules.size() ? highestLevel : AlertLevel.NORMAL;
+        } else {
+            return matchedCount > 0 ? highestLevel : AlertLevel.NORMAL;
+        }
+    }
+
+    private String buildConditionMessage(AlertCondition condition, AlertLevel level,
+            ServerConfig config, Map<String, ServerStatus.MonitorStatus> monitorStatusMap) {
+        
+        String levelText = level == AlertLevel.CRITICAL ? "【严重】" : "【警告】";
+        String operatorText = condition.getOperator() == AlertCondition.ConditionOperator.AND ? " 且 " : " 或 ";
+        
+        StringBuilder ruleDesc = new StringBuilder();
+        for (int i = 0; i < condition.getRules().size(); i++) {
+            AlertCondition.ConditionRule rule = condition.getRules().get(i);
+            ServerStatus.MonitorStatus monitorStatus = monitorStatusMap.get(rule.getMonitorType());
+            String currentValue = monitorStatus != null ? 
+                String.format("%.1f%s", monitorStatus.getValue(), monitorStatus.getUnit()) : "N/A";
+            
+            ruleDesc.append(rule.getMonitorType())
+                    .append(rule.getComparison().getSymbol())
+                    .append(rule.getThreshold())
+                    .append("(当前:").append(currentValue).append(")");
+            
+            if (i < condition.getRules().size() - 1) {
+                ruleDesc.append(operatorText);
+            }
+        }
+        
+        return String.format("%s服务器[%s] IP[%s] 组合条件告警: %s",
+                levelText, config.getName(), config.getIpAddress(), ruleDesc.toString());
     }
 
     private ServerStatus.MonitorStatus generateMonitorStatus(MonitorItem item, ServerConfig config) {

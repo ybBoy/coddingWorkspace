@@ -810,34 +810,53 @@
         }
 
         async function loadAllData() {
-            await Promise.all([
-                loadServers(),
-                loadStatuses()
-            ]);
-            updateLastRefresh();
-        }
-
-        async function loadServers() {
             try {
-                const response = await fetch('/api/servers');
-                servers = await response.json();
+                const [serversData, statusesData] = await Promise.all([
+                    fetchServers(),
+                    fetchStatuses()
+                ]);
+
+                if (serversData !== null) {
+                    servers = serversData;
+                }
+                if (statusesData !== null) {
+                    serverStatuses = statusesData;
+                }
+
                 renderServersTable();
+                renderStatusList();
+                updateStats();
+                updateLastRefresh();
+
+                renderAlerts();
+
             } catch (error) {
-                console.error('加载服务器列表失败:', error);
-                showToast('加载服务器列表失败', 'error');
+                console.error('加载数据失败:', error);
             }
         }
 
-        async function loadStatuses() {
+        async function fetchServers() {
+            try {
+                const response = await fetch('/api/servers');
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (error) {
+                console.error('加载服务器列表失败:', error);
+            }
+            return null;
+        }
+
+        async function fetchStatuses() {
             try {
                 const response = await fetch('/api/monitoring/status');
-                serverStatuses = await response.json();
-                renderStatusList();
-                renderAlerts();
-                updateStats();
+                if (response.ok) {
+                    return await response.json();
+                }
             } catch (error) {
                 console.error('加载状态失败:', error);
             }
+            return null;
         }
 
         function updateLastRefresh() {

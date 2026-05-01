@@ -74,18 +74,8 @@ public class AlertService {
     }
 
     private AlertRecord createAlertRecord(ServerStatus.MonitorStatus monitorStatus, ServerConfig config) {
-        AlertRecord record = new AlertRecord();
+        AlertRecord record = AlertRecord.create(monitorStatus, config);
         record.setId(UUID.randomUUID().toString());
-        record.setServerId(config.getId());
-        record.setServerName(config.getName());
-        record.setIpAddress(config.getIpAddress());
-        record.setMonitorType(monitorStatus.getType());
-        record.setMonitorName(monitorStatus.getName());
-        record.setValue(monitorStatus.getValue());
-        record.setThreshold(monitorStatus.getThreshold());
-        record.setUnit(monitorStatus.getUnit());
-        record.setMessage(monitorStatus.getMessage());
-        record.setAlertTime(LocalDateTime.now());
         record.setAcknowledged(false);
         return record;
     }

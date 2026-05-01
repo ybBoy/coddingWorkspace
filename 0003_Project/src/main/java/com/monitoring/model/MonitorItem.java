@@ -4,7 +4,8 @@ public class MonitorItem {
 
     private String type;
     private String name;
-    private double threshold;
+    private double warningThreshold;
+    private double criticalThreshold;
     private String unit;
     private boolean enabled;
 
@@ -15,24 +16,25 @@ public class MonitorItem {
     public MonitorItem() {
     }
 
-    public MonitorItem(String type, String name, double threshold, String unit) {
+    public MonitorItem(String type, String name, double warningThreshold, double criticalThreshold, String unit) {
         this.type = type;
         this.name = name;
-        this.threshold = threshold;
+        this.warningThreshold = warningThreshold;
+        this.criticalThreshold = criticalThreshold;
         this.unit = unit;
         this.enabled = true;
     }
 
     public static MonitorItem createCpuItem() {
-        return new MonitorItem(CPU, "CPU使用率", 80.0, "%");
+        return new MonitorItem(CPU, "CPU使用率", 70.0, 85.0, "%");
     }
 
     public static MonitorItem createMemoryItem() {
-        return new MonitorItem(MEMORY, "内存使用率", 85.0, "%");
+        return new MonitorItem(MEMORY, "内存使用率", 75.0, 90.0, "%");
     }
 
     public static MonitorItem createDiskItem() {
-        return new MonitorItem(DISK, "硬盘剩余空间", 10.0, "%");
+        return new MonitorItem(DISK, "硬盘剩余空间", 20.0, 10.0, "%");
     }
 
     public String getType() {
@@ -51,12 +53,30 @@ public class MonitorItem {
         this.name = name;
     }
 
-    public double getThreshold() {
-        return threshold;
+    public double getWarningThreshold() {
+        return warningThreshold;
     }
 
+    public void setWarningThreshold(double warningThreshold) {
+        this.warningThreshold = warningThreshold;
+    }
+
+    public double getCriticalThreshold() {
+        return criticalThreshold;
+    }
+
+    public void setCriticalThreshold(double criticalThreshold) {
+        this.criticalThreshold = criticalThreshold;
+    }
+
+    @Deprecated
+    public double getThreshold() {
+        return criticalThreshold;
+    }
+
+    @Deprecated
     public void setThreshold(double threshold) {
-        this.threshold = threshold;
+        this.criticalThreshold = threshold;
     }
 
     public String getUnit() {

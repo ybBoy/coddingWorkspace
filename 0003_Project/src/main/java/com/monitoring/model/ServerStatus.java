@@ -22,12 +22,15 @@ public class ServerStatus {
         private String type;
         private String name;
         private double value;
-        private double threshold;
+        private double warningThreshold;
+        private double criticalThreshold;
         private String unit;
         private boolean alarming;
+        private AlertLevel alertLevel;
         private String message;
 
         public MonitorStatus() {
+            this.alertLevel = AlertLevel.NORMAL;
         }
 
         public String getType() {
@@ -54,12 +57,30 @@ public class ServerStatus {
             this.value = value;
         }
 
-        public double getThreshold() {
-            return threshold;
+        public double getWarningThreshold() {
+            return warningThreshold;
         }
 
+        public void setWarningThreshold(double warningThreshold) {
+            this.warningThreshold = warningThreshold;
+        }
+
+        public double getCriticalThreshold() {
+            return criticalThreshold;
+        }
+
+        public void setCriticalThreshold(double criticalThreshold) {
+            this.criticalThreshold = criticalThreshold;
+        }
+
+        @Deprecated
+        public double getThreshold() {
+            return criticalThreshold;
+        }
+
+        @Deprecated
         public void setThreshold(double threshold) {
-            this.threshold = threshold;
+            this.criticalThreshold = threshold;
         }
 
         public String getUnit() {
@@ -76,6 +97,14 @@ public class ServerStatus {
 
         public void setAlarming(boolean alarming) {
             this.alarming = alarming;
+        }
+
+        public AlertLevel getAlertLevel() {
+            return alertLevel;
+        }
+
+        public void setAlertLevel(AlertLevel alertLevel) {
+            this.alertLevel = alertLevel;
         }
 
         public String getMessage() {

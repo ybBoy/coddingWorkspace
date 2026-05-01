@@ -11,8 +11,10 @@ public class AlertRecord {
     private String monitorType;
     private String monitorName;
     private double value;
-    private double threshold;
+    private double warningThreshold;
+    private double criticalThreshold;
     private String unit;
+    private AlertLevel alertLevel;
     private String message;
     private LocalDateTime alertTime;
     private boolean acknowledged;
@@ -21,6 +23,7 @@ public class AlertRecord {
 
     public AlertRecord() {
         this.acknowledged = false;
+        this.alertLevel = AlertLevel.NORMAL;
     }
 
     public static AlertRecord create(ServerStatus.MonitorStatus status, ServerConfig config) {
@@ -31,8 +34,11 @@ public class AlertRecord {
         record.setMonitorType(status.getType());
         record.setMonitorName(status.getName());
         record.setValue(status.getValue());
-        record.setThreshold(status.getThreshold());
+        record.setWarningThreshold(status.getWarningThreshold());
+        record.setCriticalThreshold(status.getCriticalThreshold());
+        record.setThreshold(status.getCriticalThreshold());
         record.setUnit(status.getUnit());
+        record.setAlertLevel(status.getAlertLevel());
         record.setMessage(status.getMessage());
         record.setAlertTime(LocalDateTime.now());
         return record;
@@ -94,12 +100,30 @@ public class AlertRecord {
         this.value = value;
     }
 
-    public double getThreshold() {
-        return threshold;
+    public double getWarningThreshold() {
+        return warningThreshold;
     }
 
+    public void setWarningThreshold(double warningThreshold) {
+        this.warningThreshold = warningThreshold;
+    }
+
+    public double getCriticalThreshold() {
+        return criticalThreshold;
+    }
+
+    public void setCriticalThreshold(double criticalThreshold) {
+        this.criticalThreshold = criticalThreshold;
+    }
+
+    @Deprecated
+    public double getThreshold() {
+        return criticalThreshold;
+    }
+
+    @Deprecated
     public void setThreshold(double threshold) {
-        this.threshold = threshold;
+        this.criticalThreshold = threshold;
     }
 
     public String getUnit() {
@@ -108,6 +132,14 @@ public class AlertRecord {
 
     public void setUnit(String unit) {
         this.unit = unit;
+    }
+
+    public AlertLevel getAlertLevel() {
+        return alertLevel;
+    }
+
+    public void setAlertLevel(AlertLevel alertLevel) {
+        this.alertLevel = alertLevel;
     }
 
     public String getMessage() {

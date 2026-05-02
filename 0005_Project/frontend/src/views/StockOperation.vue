@@ -25,7 +25,7 @@
               <el-option
                 v-for="part in parts"
                 :key="part.id"
-                :label="`${part.name} (${part.id}) - 库存: ${part.quantity} ${part.unit}"
+                :label="part.name + ' (' + part.id + ') - 库存: ' + part.quantity + ' ' + part.unit"
                 :value="part.id"
               >
                 <span style="float: left">{{ part.name }}</span>
@@ -54,7 +54,7 @@
             </el-form-item>
             <el-form-item label="入库数量" prop="quantity">
               <el-input-number v-model="stockInForm.quantity" :min="1" style="width: 200px"></el-input-number>
-              <span style="margin-left: 10px;">{{ selectedStockInPart?.unit || '单位' }}</span>
+              <span style="margin-left: 10px;">{{ selectedStockInPart ? selectedStockInPart.unit : '单位' }}</span>
             </el-form-item>
             <el-form-item>
               <el-button type="success" @click="handleStockIn" :loading="operating">
@@ -85,7 +85,7 @@
               <el-option
                 v-for="part in parts"
                 :key="part.id"
-                :label="`${part.name} (${part.id}) - 库存: ${part.quantity} ${part.unit}"
+                :label="part.name + ' (' + part.id + ') - 库存: ' + part.quantity + ' ' + part.unit"
                 :value="part.id"
               >
                 <span style="float: left">{{ part.name }}</span>
@@ -116,10 +116,10 @@
               <el-input-number
                 v-model="stockOutForm.quantity"
                 :min="1"
-                :max="selectedStockOutPart?.quantity || 99999"
+                :max="selectedStockOutPart ? selectedStockOutPart.quantity : 99999"
                 style="width: 200px"
               ></el-input-number>
-              <span style="margin-left: 10px;">{{ selectedStockOutPart?.unit || '单位' }}</span>
+              <span style="margin-left: 10px;">{{ selectedStockOutPart ? selectedStockOutPart.unit : '单位' }}</span>
               <span v-if="selectedStockOutPart" style="margin-left: 10px; color: #909399; font-size: 12px;">
                 (最大可出库: {{ selectedStockOutPart.quantity }})
               </span>
@@ -225,7 +225,7 @@ export default {
           try {
             const res = await partApi.stockIn(this.stockInForm.partId, this.stockInForm.quantity)
             if (res.success) {
-              this.$message.success(`入库成功，新增 ${this.stockInForm.quantity} ${this.selectedStockInPart.unit}`)
+              this.$message.success('入库成功，新增 ' + this.stockInForm.quantity + ' ' + this.selectedStockInPart.unit)
               this.addOperation('入库', this.selectedStockInPart, this.stockInForm.quantity)
               this.loadParts()
               this.resetForm('in')
@@ -253,7 +253,7 @@ export default {
           try {
             const res = await partApi.stockOut(this.stockOutForm.partId, this.stockOutForm.quantity)
             if (res.success) {
-              this.$message.success(`出库成功，减少 ${this.stockOutForm.quantity} ${this.selectedStockOutPart.unit}`)
+              this.$message.success('出库成功，减少 ' + this.stockOutForm.quantity + ' ' + this.selectedStockOutPart.unit)
               this.addOperation('出库', this.selectedStockOutPart, this.stockOutForm.quantity)
               this.loadParts()
               this.resetForm('out')

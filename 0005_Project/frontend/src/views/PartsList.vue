@@ -189,7 +189,7 @@ export default {
 
     async handleDelete(row) {
       try {
-        await this.$confirm(`确定要删除零件「${row.name}」吗？`, '提示', {
+        await this.$confirm('确定要删除零件「' + row.name + '」吗？', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
@@ -244,7 +244,7 @@ export default {
       try {
         const res = await partApi.stockIn(this.currentPart.id, this.stockQuantity)
         if (res.success) {
-          this.$message.success(`入库成功，新增 ${this.stockQuantity} ${this.currentPart.unit}`)
+          this.$message.success('入库成功，新增 ' + this.stockQuantity + ' ' + this.currentPart.unit)
           this.stockInDialogVisible = false
           this.loadParts()
         } else {
@@ -265,7 +265,7 @@ export default {
       try {
         const res = await partApi.stockOut(this.currentPart.id, this.stockQuantity)
         if (res.success) {
-          this.$message.success(`出库成功，减少 ${this.stockQuantity} ${this.currentPart.unit}`)
+          this.$message.success('出库成功，减少 ' + this.stockQuantity + ' ' + this.currentPart.unit)
           this.stockOutDialogVisible = false
           this.loadParts()
         } else {

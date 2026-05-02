@@ -3,7 +3,7 @@
   "name" : "磷酸铁锂电池",
   "category" : "电池",
   "specification" : "100kWh",
-  "quantity" : 50,
+  "quantity" : 105,
   "minStock" : 10,
   "unit" : "块",
   "status" : "正常"
@@ -102,7 +102,7 @@
   "name" : "防冻液",
   "category" : "机油",
   "specification" : "-40℃",
-  "quantity" : 80,
+  "quantity" : 30,
   "minStock" : 15,
   "unit" : "升",
   "status" : "正常"
@@ -111,7 +111,7 @@
   "name" : "防爆轮胎",
   "category" : "轮胎",
   "specification" : "245/45 R20",
-  "quantity" : 80,
+  "quantity" : 170,
   "minStock" : 20,
   "unit" : "条",
   "status" : "正常"

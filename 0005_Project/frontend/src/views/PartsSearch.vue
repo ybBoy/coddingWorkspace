@@ -155,7 +155,7 @@ export default {
       try {
         const res = await partApi.stockIn(this.currentPart.id, this.stockQuantity)
         if (res.success) {
-          this.$message.success(`入库成功，新增 ${this.stockQuantity} ${this.currentPart.unit}`)
+          this.$message.success('入库成功，新增 ' + this.stockQuantity + ' ' + this.currentPart.unit)
           this.stockInDialogVisible = false
           this.handleSearch()
         } else {
@@ -176,7 +176,7 @@ export default {
       try {
         const res = await partApi.stockOut(this.currentPart.id, this.stockQuantity)
         if (res.success) {
-          this.$message.success(`出库成功，减少 ${this.stockQuantity} ${this.currentPart.unit}`)
+          this.$message.success('出库成功，减少 ' + this.stockQuantity + ' ' + this.currentPart.unit)
           this.stockOutDialogVisible = false
           this.handleSearch()
         } else {

@@ -9,7 +9,10 @@ api.interceptors.response.use(
   response => response.data,
   error => {
     console.error('API请求错误:', error)
-    const message = error.response?.data?.message || '网络错误，请稍后重试'
+    let message = '网络错误，请稍后重试'
+    if (error.response && error.response.data && error.response.data.message) {
+      message = error.response.data.message
+    }
     return Promise.reject(new Error(message))
   }
 )
@@ -20,7 +23,7 @@ const partApi = {
   },
 
   getPartById(id) {
-    return api.get(`/parts/${id}`)
+    return api.get('/parts/' + id)
   },
 
   addPart(part) {
@@ -28,11 +31,11 @@ const partApi = {
   },
 
   updatePart(id, part) {
-    return api.put(`/parts/${id}`, part)
+    return api.put('/parts/' + id, part)
   },
 
   deletePart(id) {
-    return api.delete(`/parts/${id}`)
+    return api.delete('/parts/' + id)
   },
 
   stockIn(partId, quantity) {

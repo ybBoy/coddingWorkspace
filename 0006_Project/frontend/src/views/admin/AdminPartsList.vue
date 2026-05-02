@@ -30,13 +30,11 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="可见性" width="90">
+      <el-table-column label="可见性" width="70" align="center">
         <template slot-scope="scope">
           <el-switch
             v-model="scope.row.visible"
             @change="handleVisibilityChange(scope.row)"
-            active-text="是"
-            inactive-text="否"
             :active-value="true"
             :inactive-value="false"
           >

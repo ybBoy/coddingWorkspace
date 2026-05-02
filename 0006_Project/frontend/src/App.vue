@@ -37,26 +37,13 @@
             router
           >
             <template v-if="currentRole === 'user'">
-              <el-menu-item index="/user">
-                <i class="el-icon-s-home"></i>
-                <span slot="title">首页</span>
-              </el-menu-item>
               <el-menu-item index="/user/search">
                 <i class="el-icon-search"></i>
                 <span slot="title">零件搜索</span>
               </el-menu-item>
-              <el-menu-item index="/user/stock">
-                <i class="el-icon-upload2"></i>
-                <span slot="title">入库/出库</span>
-              </el-menu-item>
               <el-menu-item index="/user/records">
                 <i class="el-icon-document"></i>
                 <span slot="title">出入库记录</span>
-              </el-menu-item>
-              <el-menu-item index="/user/restock">
-                <i class="el-icon-warning"></i>
-                <span slot="title">需补货列表</span>
-                <el-badge :value="userRestockCount" :max="99" class="badge" v-if="userRestockCount > 0"></el-badge>
               </el-menu-item>
             </template>
             
@@ -72,6 +59,10 @@
               <el-menu-item index="/admin/search">
                 <i class="el-icon-search"></i>
                 <span slot="title">零件搜索</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/stock">
+                <i class="el-icon-upload2"></i>
+                <span slot="title">入库/出库</span>
               </el-menu-item>
               <el-menu-item index="/admin/records">
                 <i class="el-icon-document"></i>
@@ -130,7 +121,6 @@ export default {
   data() {
     return {
       restockCount: 0,
-      userRestockCount: 0,
       adminRestockCount: 0
     }
   },
@@ -164,14 +154,7 @@ export default {
   methods: {
     async loadRestockCounts() {
       try {
-        const [userRes, adminRes] = await Promise.all([
-          partApi.user.getVisiblePartsNeedRestock(),
-          partApi.admin.getPartsNeedRestock()
-        ])
-        
-        if (userRes.success) {
-          this.userRestockCount = userRes.data ? userRes.data.length : 0
-        }
+        const adminRes = await partApi.admin.getPartsNeedRestock()
         if (adminRes.success) {
           this.adminRestockCount = adminRes.data ? adminRes.data.length : 0
           this.restockCount = this.adminRestockCount
@@ -181,7 +164,7 @@ export default {
       }
     },
     switchToUser() {
-      this.$router.push('/user')
+      this.$router.push('/user/search')
     },
     switchToAdmin() {
       this.$router.push('/admin')

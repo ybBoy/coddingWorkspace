@@ -7,11 +7,8 @@ import StockOperation from '../views/StockOperation.vue'
 import RestockList from '../views/RestockList.vue'
 import RecordsList from '../views/RecordsList.vue'
 
-import UserHome from '../views/user/UserHome.vue'
 import UserPartsSearch from '../views/user/UserPartsSearch.vue'
-import UserStockOperation from '../views/user/UserStockOperation.vue'
 import UserRecordsList from '../views/user/UserRecordsList.vue'
-import UserRestockList from '../views/user/UserRestockList.vue'
 
 import AdminHome from '../views/admin/AdminHome.vue'
 import AdminPartsList from '../views/admin/AdminPartsList.vue'
@@ -25,13 +22,11 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    redirect: '/user'
+    redirect: '/user/search'
   },
   {
     path: '/user',
-    name: 'UserHome',
-    component: UserHome,
-    meta: { role: 'user' }
+    redirect: '/user/search'
   },
   {
     path: '/user/search',
@@ -40,21 +35,9 @@ const routes = [
     meta: { role: 'user' }
   },
   {
-    path: '/user/stock',
-    name: 'UserStockOperation',
-    component: UserStockOperation,
-    meta: { role: 'user' }
-  },
-  {
     path: '/user/records',
     name: 'UserRecordsList',
     component: UserRecordsList,
-    meta: { role: 'user' }
-  },
-  {
-    path: '/user/restock',
-    name: 'UserRestockList',
-    component: UserRestockList,
     meta: { role: 'user' }
   },
   {
@@ -73,6 +56,12 @@ const routes = [
     path: '/admin/search',
     name: 'AdminPartsSearch',
     component: AdminPartsSearch,
+    meta: { role: 'admin' }
+  },
+  {
+    path: '/admin/stock',
+    name: 'AdminStockOperation',
+    component: StockOperation,
     meta: { role: 'admin' }
   },
   {

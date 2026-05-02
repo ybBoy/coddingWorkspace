@@ -67,55 +67,16 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right">
-        <template slot-scope="scope">
-          <el-button type="text" size="small" @click="handleStockIn(scope.row)">入库</el-button>
-          <el-button type="text" size="small" @click="handleStockOut(scope.row)" :disabled="scope.row.quantity <= 0">出库</el-button>
-        </template>
-      </el-table-column>
     </el-table>
 
     <el-empty v-if="!loading && parts.length === 0 && hasSearched" description="未找到相关零件">
       <el-button type="primary" @click="handleReset">查看全部</el-button>
     </el-empty>
-
-    <el-dialog title="入库操作" :visible.sync="stockInDialogVisible" width="400px">
-      <div style="margin-bottom: 15px;">
-        <p><strong>零件：</strong>{{ currentPart.name }} ({{ currentPart.id }})</p>
-        <p><strong>当前库存：</strong>{{ currentPart.quantity }} {{ currentPart.unit }}</p>
-      </div>
-      <el-form label-width="100px">
-        <el-form-item label="入库数量">
-          <el-input-number v-model="stockQuantity" :min="1" style="width: 200px"></el-input-number>
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="stockInDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmStockIn">确认入库</el-button>
-      </span>
-    </el-dialog>
-
-    <el-dialog title="出库操作" :visible.sync="stockOutDialogVisible" width="400px">
-      <div style="margin-bottom: 15px;">
-        <p><strong>零件：</strong>{{ currentPart.name }} ({{ currentPart.id }})</p>
-        <p><strong>当前库存：</strong>{{ currentPart.quantity }} {{ currentPart.unit }}</p>
-      </div>
-      <el-form label-width="100px">
-        <el-form-item label="出库数量">
-          <el-input-number v-model="stockQuantity" :min="1" :max="currentPart.quantity" style="width: 200px"></el-input-number>
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="stockOutDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmStockOut">确认出库</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
 <script>
 import partApi from '../../api/partApi'
-import { eventBus } from '../../utils/eventBus'
 
 export default {
   name: 'UserPartsSearch',
@@ -129,11 +90,7 @@ export default {
       searchForm: {
         keyword: '',
         category: ''
-      },
-      stockInDialogVisible: false,
-      stockOutDialogVisible: false,
-      currentPart: {},
-      stockQuantity: 1
+      }
     }
   },
   created() {
@@ -191,50 +148,6 @@ export default {
       this.parts = []
       this.hasSearched = false
       this.handleSearch()
-    },
-
-    handleStockIn(row) {
-      this.currentPart = { ...row }
-      this.stockQuantity = 1
-      this.stockInDialogVisible = true
-    },
-
-    async confirmStockIn() {
-      try {
-        const res = await partApi.user.stockIn(this.currentPart.id, this.stockQuantity)
-        if (res.success) {
-          this.$message.success('入库成功，新增 ' + this.stockQuantity + ' ' + this.currentPart.unit)
-          eventBus.$emit('stock-changed')
-          this.stockInDialogVisible = false
-          this.handleSearch()
-        } else {
-          this.$message.error(res.message)
-        }
-      } catch (error) {
-        this.$message.error('入库失败: ' + error.message)
-      }
-    },
-
-    handleStockOut(row) {
-      this.currentPart = { ...row }
-      this.stockQuantity = 1
-      this.stockOutDialogVisible = true
-    },
-
-    async confirmStockOut() {
-      try {
-        const res = await partApi.user.stockOut(this.currentPart.id, this.stockQuantity)
-        if (res.success) {
-          this.$message.success('出库成功，减少 ' + this.stockQuantity + ' ' + this.currentPart.unit)
-          eventBus.$emit('stock-changed')
-          this.stockOutDialogVisible = false
-          this.handleSearch()
-        } else {
-          this.$message.error(res.message)
-        }
-      } catch (error) {
-        this.$message.error('出库失败: ' + error.message)
-      }
     }
   }
 }
@@ -261,9 +174,5 @@ export default {
 .danger-text {
   color: #f56c6c;
   font-weight: bold;
-}
-
-.dialog-footer {
-  text-align: right;
 }
 </style>

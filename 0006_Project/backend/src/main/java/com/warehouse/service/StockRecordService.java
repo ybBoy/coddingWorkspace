@@ -35,6 +35,10 @@ public class StockRecordService {
         return stockRecordDataStore.getRecordsByPartId(partId);
     }
 
+    public List<StockRecord> getRecordsByIpAddress(String ipAddress) {
+        return stockRecordDataStore.getRecordsByIpAddress(ipAddress);
+    }
+
     public void addRecord(StockRecord record) {
         record.setId(generateRecordId());
         stockRecordDataStore.saveRecord(record);

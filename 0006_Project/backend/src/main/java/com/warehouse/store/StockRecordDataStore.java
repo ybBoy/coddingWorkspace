@@ -45,6 +45,13 @@ public class StockRecordDataStore {
                 .collect(Collectors.toList());
     }
 
+    public List<StockRecord> getRecordsByIpAddress(String ipAddress) {
+        return recordsMap.values().stream()
+                .filter(r -> ipAddress.equals(r.getIpAddress()))
+                .sorted((r1, r2) -> r2.getCreateTime().compareTo(r1.getCreateTime()))
+                .collect(Collectors.toList());
+    }
+
     public void setRecordsMap(Map<String, StockRecord> recordsMap) {
         this.recordsMap = recordsMap;
     }

@@ -26,6 +26,12 @@ public class PartDataStore {
         return new ArrayList<>(partsMap.values());
     }
 
+    public List<Part> getVisibleParts() {
+        return partsMap.values().stream()
+                .filter(Part::isVisible)
+                .collect(Collectors.toList());
+    }
+
     public void deletePart(String id) {
         partsMap.remove(id);
     }
@@ -75,10 +81,68 @@ public class PartDataStore {
                 .collect(Collectors.toList());
     }
 
+    public List<Part> searchVisibleParts(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getVisibleParts();
+        }
+        String lowerKeyword = keyword.toLowerCase().trim();
+        return partsMap.values().stream()
+                .filter(Part::isVisible)
+                .filter(part -> 
+                    part.getId().toLowerCase().contains(lowerKeyword) ||
+                    part.getName().toLowerCase().contains(lowerKeyword))
+                .collect(Collectors.toList());
+    }
+
+    public List<Part> searchVisiblePartsByKeywordAndCategory(String keyword, String category) {
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+        boolean hasCategory = category != null && !category.trim().isEmpty();
+        
+        if (!hasKeyword && !hasCategory) {
+            return getVisibleParts();
+        }
+        
+        String lowerKeyword = hasKeyword ? keyword.toLowerCase().trim() : null;
+        
+        return partsMap.values().stream()
+                .filter(Part::isVisible)
+                .filter(part -> {
+                    boolean matchKeyword = true;
+                    boolean matchCategory = true;
+                    
+                    if (hasKeyword) {
+                        matchKeyword = part.getId().toLowerCase().contains(lowerKeyword) ||
+                                       part.getName().toLowerCase().contains(lowerKeyword);
+                    }
+                    
+                    if (hasCategory) {
+                        matchCategory = category.equals(part.getCategory());
+                    }
+                    
+                    return matchKeyword && matchCategory;
+                })
+                .collect(Collectors.toList());
+    }
+
     public List<Part> getPartsNeedRestock() {
         return partsMap.values().stream()
                 .filter(Part::needsRestock)
                 .collect(Collectors.toList());
+    }
+
+    public List<Part> getVisiblePartsNeedRestock() {
+        return partsMap.values().stream()
+                .filter(Part::isVisible)
+                .filter(Part::needsRestock)
+                .collect(Collectors.toList());
+    }
+
+    public Part getVisiblePartById(String id) {
+        Part part = partsMap.get(id);
+        if (part != null && part.isVisible()) {
+            return part;
+        }
+        return null;
     }
 
     public void setPartsMap(Map<String, Part> partsMap) {

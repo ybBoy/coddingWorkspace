@@ -24,8 +24,16 @@ public class PartService {
         return partDataStore.getAllParts();
     }
 
+    public List<Part> getVisibleParts() {
+        return partDataStore.getVisibleParts();
+    }
+
     public Part getPartById(String id) {
         return partDataStore.getPartById(id);
+    }
+
+    public Part getVisiblePartById(String id) {
+        return partDataStore.getVisiblePartById(id);
     }
 
     public Part addPart(Part part) {
@@ -125,7 +133,95 @@ public class PartService {
         return partDataStore.searchPartsByKeywordAndCategory(keyword, category);
     }
 
+    public List<Part> searchVisibleParts(String keyword) {
+        return partDataStore.searchVisibleParts(keyword);
+    }
+
+    public List<Part> searchVisiblePartsByKeywordAndCategory(String keyword, String category) {
+        return partDataStore.searchVisiblePartsByKeywordAndCategory(keyword, category);
+    }
+
     public List<Part> getPartsNeedRestock() {
         return partDataStore.getPartsNeedRestock();
+    }
+
+    public List<Part> getVisiblePartsNeedRestock() {
+        return partDataStore.getVisiblePartsNeedRestock();
+    }
+
+    public Part updateVisibility(String id, boolean visible) {
+        Part part = partDataStore.getPartById(id);
+        if (part == null) {
+            throw new IllegalArgumentException("零件不存在: " + id);
+        }
+        part.setVisible(visible);
+        partDataStore.savePart(part);
+        fileStorageService.saveData();
+        return part;
+    }
+
+    public Part stockIn(String id, int quantity, String ipAddress) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("入库数量必须大于0");
+        }
+        Part part = partDataStore.getPartById(id);
+        if (part == null) {
+            throw new IllegalArgumentException("零件不存在: " + id);
+        }
+        
+        int beforeQuantity = part.getQuantity();
+        part.setQuantity(beforeQuantity + quantity);
+        int afterQuantity = part.getQuantity();
+        
+        partDataStore.savePart(part);
+        fileStorageService.saveData();
+        
+        StockRecord record = new StockRecord();
+        record.setPartId(part.getId());
+        record.setPartName(part.getName());
+        record.setCategory(part.getCategory());
+        record.setType("入库");
+        record.setQuantity(quantity);
+        record.setUnit(part.getUnit());
+        record.setBeforeQuantity(beforeQuantity);
+        record.setAfterQuantity(afterQuantity);
+        record.setIpAddress(ipAddress);
+        stockRecordService.addRecord(record);
+        
+        return part;
+    }
+
+    public Part stockOut(String id, int quantity, String ipAddress) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("出库数量必须大于0");
+        }
+        Part part = partDataStore.getPartById(id);
+        if (part == null) {
+            throw new IllegalArgumentException("零件不存在: " + id);
+        }
+        if (part.getQuantity() < quantity) {
+            throw new IllegalArgumentException("库存不足，当前库存: " + part.getQuantity() + ", 出库数量: " + quantity);
+        }
+        
+        int beforeQuantity = part.getQuantity();
+        part.setQuantity(beforeQuantity - quantity);
+        int afterQuantity = part.getQuantity();
+        
+        partDataStore.savePart(part);
+        fileStorageService.saveData();
+        
+        StockRecord record = new StockRecord();
+        record.setPartId(part.getId());
+        record.setPartName(part.getName());
+        record.setCategory(part.getCategory());
+        record.setType("出库");
+        record.setQuantity(quantity);
+        record.setUnit(part.getUnit());
+        record.setBeforeQuantity(beforeQuantity);
+        record.setAfterQuantity(afterQuantity);
+        record.setIpAddress(ipAddress);
+        stockRecordService.addRecord(record);
+        
+        return part;
     }
 }

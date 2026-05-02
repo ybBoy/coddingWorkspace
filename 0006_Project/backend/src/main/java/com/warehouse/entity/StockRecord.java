@@ -16,6 +16,7 @@ public class StockRecord implements Serializable {
     private String unit;
     private int beforeQuantity;
     private int afterQuantity;
+    private String ipAddress;
     private Date createTime;
 
     public StockRecord() {
@@ -23,7 +24,7 @@ public class StockRecord implements Serializable {
     }
 
     public StockRecord(String id, String partId, String partName, String category, String type, 
-                       int quantity, String unit, int beforeQuantity, int afterQuantity) {
+                       int quantity, String unit, int beforeQuantity, int afterQuantity, String ipAddress) {
         this.id = id;
         this.partId = partId;
         this.partName = partName;
@@ -33,6 +34,7 @@ public class StockRecord implements Serializable {
         this.unit = unit;
         this.beforeQuantity = beforeQuantity;
         this.afterQuantity = afterQuantity;
+        this.ipAddress = ipAddress;
         this.createTime = new Date();
     }
 
@@ -106,6 +108,14 @@ public class StockRecord implements Serializable {
 
     public void setAfterQuantity(int afterQuantity) {
         this.afterQuantity = afterQuantity;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public Date getCreateTime() {

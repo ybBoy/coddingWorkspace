@@ -1,7 +1,9 @@
 package com.warehouse.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.io.Serializable;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Part implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -13,6 +15,7 @@ public class Part implements Serializable {
     private int quantity;
     private int minStock;
     private String unit;
+    private boolean visible = true;
 
     public Part() {
     }
@@ -25,6 +28,7 @@ public class Part implements Serializable {
         this.quantity = quantity;
         this.minStock = minStock;
         this.unit = unit;
+        this.visible = true;
     }
 
     public String getId() {
@@ -81,6 +85,14 @@ public class Part implements Serializable {
 
     public void setUnit(String unit) {
         this.unit = unit;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     public boolean needsRestock() {

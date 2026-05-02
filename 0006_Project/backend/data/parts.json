@@ -3,9 +3,10 @@
   "name" : "磷酸铁锂电池",
   "category" : "电池",
   "specification" : "100kWh",
-  "quantity" : 105,
+  "quantity" : 50,
   "minStock" : 10,
   "unit" : "块",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "BAT-002",
@@ -15,6 +16,7 @@
   "quantity" : 80,
   "minStock" : 15,
   "unit" : "块",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "BAT-001",
@@ -24,16 +26,18 @@
   "quantity" : 100,
   "minStock" : 20,
   "unit" : "块",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "GLS-002",
   "name" : "后挡风玻璃",
   "category" : "玻璃",
   "specification" : "福耀/160*100cm",
-  "quantity" : 0,
+  "quantity" : 12,
   "minStock" : 3,
   "unit" : "块",
-  "status" : "需补货"
+  "visible" : true,
+  "status" : "正常"
 }, {
   "id" : "GLS-001",
   "name" : "前挡风玻璃",
@@ -42,6 +46,7 @@
   "quantity" : 15,
   "minStock" : 5,
   "unit" : "块",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "GLS-003",
@@ -51,6 +56,7 @@
   "quantity" : 30,
   "minStock" : 10,
   "unit" : "块",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "MOT-002",
@@ -60,6 +66,7 @@
   "quantity" : 40,
   "minStock" : 8,
   "unit" : "台",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "TIR-001",
@@ -69,6 +76,7 @@
   "quantity" : 200,
   "minStock" : 50,
   "unit" : "条",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "CTR-001",
@@ -78,6 +86,7 @@
   "quantity" : 30,
   "minStock" : 5,
   "unit" : "个",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "OIL-001",
@@ -87,6 +96,7 @@
   "quantity" : 100,
   "minStock" : 20,
   "unit" : "升",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "MOT-001",
@@ -96,24 +106,27 @@
   "quantity" : 60,
   "minStock" : 10,
   "unit" : "台",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "OIL-002",
   "name" : "防冻液",
   "category" : "机油",
   "specification" : "-40℃",
-  "quantity" : 30,
+  "quantity" : 80,
   "minStock" : 15,
   "unit" : "升",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "TIR-003",
   "name" : "防爆轮胎",
   "category" : "轮胎",
   "specification" : "245/45 R20",
-  "quantity" : 170,
+  "quantity" : 80,
   "minStock" : 20,
   "unit" : "条",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "CTR-003",
@@ -123,6 +136,7 @@
   "quantity" : 20,
   "minStock" : 3,
   "unit" : "个",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "TIR-002",
@@ -132,6 +146,7 @@
   "quantity" : 150,
   "minStock" : 40,
   "unit" : "条",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "CTR-002",
@@ -141,6 +156,7 @@
   "quantity" : 25,
   "minStock" : 5,
   "unit" : "个",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "OIL-003",
@@ -150,6 +166,7 @@
   "quantity" : 50,
   "minStock" : 10,
   "unit" : "升",
+  "visible" : true,
   "status" : "正常"
 }, {
   "id" : "MOT-003",
@@ -159,5 +176,6 @@
   "quantity" : 30,
   "minStock" : 5,
   "unit" : "台",
+  "visible" : true,
   "status" : "正常"
 } ]

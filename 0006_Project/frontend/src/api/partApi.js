@@ -60,6 +60,90 @@ const partApi = {
 
   getRecordsSummary() {
     return api.get('/records/summary')
+  },
+
+  user: {
+    getVisibleParts() {
+      return api.get('/user/parts')
+    },
+
+    getVisiblePartById(id) {
+      return api.get('/user/parts/' + id)
+    },
+
+    searchVisibleParts(params) {
+      return api.get('/user/parts/search', { params: params })
+    },
+
+    getVisiblePartsNeedRestock() {
+      return api.get('/user/parts/need-restock')
+    },
+
+    stockIn(partId, quantity) {
+      return api.post('/user/parts/stock-in', { partId, quantity })
+    },
+
+    stockOut(partId, quantity) {
+      return api.post('/user/parts/stock-out', { partId, quantity })
+    },
+
+    getRecords(params) {
+      return api.get('/user/records', { params: params })
+    },
+
+    getRecordsSummary() {
+      return api.get('/user/records/summary')
+    }
+  },
+
+  admin: {
+    getAllParts() {
+      return api.get('/admin/parts')
+    },
+
+    getPartById(id) {
+      return api.get('/admin/parts/' + id)
+    },
+
+    addPart(part) {
+      return api.post('/admin/parts', part)
+    },
+
+    updatePart(id, part) {
+      return api.put('/admin/parts/' + id, part)
+    },
+
+    deletePart(id) {
+      return api.delete('/admin/parts/' + id)
+    },
+
+    updateVisibility(id, visible) {
+      return api.put('/admin/parts/' + id + '/visibility', { visible })
+    },
+
+    searchParts(params) {
+      return api.get('/admin/parts/search', { params: params })
+    },
+
+    getPartsNeedRestock() {
+      return api.get('/admin/parts/need-restock')
+    },
+
+    stockIn(partId, quantity) {
+      return api.post('/user/parts/stock-in', { partId, quantity })
+    },
+
+    stockOut(partId, quantity) {
+      return api.post('/user/parts/stock-out', { partId, quantity })
+    },
+
+    getRecords(params) {
+      return api.get('/records', { params: params })
+    },
+
+    getRecordsSummary() {
+      return api.get('/records/summary')
+    }
   }
 }
 

@@ -5,10 +5,29 @@
         <div class="logo">
           <i class="el-icon-office-building"></i>
           电动汽车库房管理系统
+          <el-tag :type="currentRole === 'admin' ? 'danger' : 'primary'" size="medium" class="role-tag">
+            {{ currentRole === 'admin' ? '管理员' : '普通用户' }}
+          </el-tag>
+        </div>
+        <div class="role-switcher">
+          <el-dropdown>
+            <span class="switcher-text">
+              <i class="el-icon-setting"></i> 切换视图
+              <i class="el-icon-arrow-down el-icon--right"></i>
+            </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item @click.native="switchToUser">
+                <i class="el-icon-user"></i> 普通用户视图
+              </el-dropdown-item>
+              <el-dropdown-item @click.native="switchToAdmin">
+                <i class="el-icon-s-operation"></i> 管理员视图
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
       </el-header>
       <el-container>
-        <el-aside width="200px" class="aside">
+        <el-aside width="220px" class="aside">
           <el-menu
             :default-active="activeMenu"
             class="el-menu-vertical-demo"
@@ -17,31 +36,81 @@
             active-text-color="#ffd04b"
             router
           >
-            <el-menu-item index="/">
-              <i class="el-icon-s-home"></i>
-              <span slot="title">首页</span>
-            </el-menu-item>
-            <el-menu-item index="/parts">
-              <i class="el-icon-s-grid"></i>
-              <span slot="title">库存列表</span>
-            </el-menu-item>
-            <el-menu-item index="/search">
-              <i class="el-icon-search"></i>
-              <span slot="title">零件搜索</span>
-            </el-menu-item>
-            <el-menu-item index="/stock">
-              <i class="el-icon-upload2"></i>
-              <span slot="title">入库/出库</span>
-            </el-menu-item>
-            <el-menu-item index="/records">
-              <i class="el-icon-document"></i>
-              <span slot="title">出入库记录</span>
-            </el-menu-item>
-            <el-menu-item index="/restock">
-              <i class="el-icon-warning"></i>
-              <span slot="title">需补货列表</span>
-              <el-badge :value="restockCount" :max="99" class="badge" v-if="restockCount > 0"></el-badge>
-            </el-menu-item>
+            <template v-if="currentRole === 'user'">
+              <el-menu-item index="/user">
+                <i class="el-icon-s-home"></i>
+                <span slot="title">首页</span>
+              </el-menu-item>
+              <el-menu-item index="/user/search">
+                <i class="el-icon-search"></i>
+                <span slot="title">零件搜索</span>
+              </el-menu-item>
+              <el-menu-item index="/user/stock">
+                <i class="el-icon-upload2"></i>
+                <span slot="title">入库/出库</span>
+              </el-menu-item>
+              <el-menu-item index="/user/records">
+                <i class="el-icon-document"></i>
+                <span slot="title">出入库记录</span>
+              </el-menu-item>
+              <el-menu-item index="/user/restock">
+                <i class="el-icon-warning"></i>
+                <span slot="title">需补货列表</span>
+                <el-badge :value="userRestockCount" :max="99" class="badge" v-if="userRestockCount > 0"></el-badge>
+              </el-menu-item>
+            </template>
+            
+            <template v-else-if="currentRole === 'admin'">
+              <el-menu-item index="/admin">
+                <i class="el-icon-s-home"></i>
+                <span slot="title">首页</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/parts">
+                <i class="el-icon-s-grid"></i>
+                <span slot="title">库存管理</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/search">
+                <i class="el-icon-search"></i>
+                <span slot="title">零件搜索</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/records">
+                <i class="el-icon-document"></i>
+                <span slot="title">出入库记录</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/restock">
+                <i class="el-icon-warning"></i>
+                <span slot="title">需补货列表</span>
+                <el-badge :value="adminRestockCount" :max="99" class="badge" v-if="adminRestockCount > 0"></el-badge>
+              </el-menu-item>
+            </template>
+            
+            <template v-else>
+              <el-menu-item index="/">
+                <i class="el-icon-s-home"></i>
+                <span slot="title">首页</span>
+              </el-menu-item>
+              <el-menu-item index="/parts">
+                <i class="el-icon-s-grid"></i>
+                <span slot="title">库存列表</span>
+              </el-menu-item>
+              <el-menu-item index="/search">
+                <i class="el-icon-search"></i>
+                <span slot="title">零件搜索</span>
+              </el-menu-item>
+              <el-menu-item index="/stock">
+                <i class="el-icon-upload2"></i>
+                <span slot="title">入库/出库</span>
+              </el-menu-item>
+              <el-menu-item index="/records">
+                <i class="el-icon-document"></i>
+                <span slot="title">出入库记录</span>
+              </el-menu-item>
+              <el-menu-item index="/restock">
+                <i class="el-icon-warning"></i>
+                <span slot="title">需补货列表</span>
+                <el-badge :value="restockCount" :max="99" class="badge" v-if="restockCount > 0"></el-badge>
+              </el-menu-item>
+            </template>
           </el-menu>
         </el-aside>
         <el-main class="main">
@@ -60,38 +129,67 @@ export default {
   name: 'App',
   data() {
     return {
-      restockCount: 0
+      restockCount: 0,
+      userRestockCount: 0,
+      adminRestockCount: 0
     }
   },
   computed: {
+    currentRole() {
+      const path = this.$route.path
+      if (path.startsWith('/admin')) {
+        return 'admin'
+      } else if (path.startsWith('/user')) {
+        return 'user'
+      }
+      return 'default'
+    },
     activeMenu() {
       return this.$route.path
     }
   },
   created() {
-    this.loadRestockCount()
+    this.loadRestockCounts()
     eventBus.$on('stock-changed', () => {
-      this.loadRestockCount()
+      this.loadRestockCounts()
+    })
+    eventBus.$on('visibility-changed', () => {
+      this.loadRestockCounts()
     })
   },
   beforeDestroy() {
     eventBus.$off('stock-changed')
+    eventBus.$off('visibility-changed')
   },
   methods: {
-    async loadRestockCount() {
+    async loadRestockCounts() {
       try {
-        const res = await partApi.getPartsNeedRestock()
-        if (res.success) {
-          this.restockCount = res.data ? res.data.length : 0
+        const [userRes, adminRes] = await Promise.all([
+          partApi.user.getVisiblePartsNeedRestock(),
+          partApi.admin.getPartsNeedRestock()
+        ])
+        
+        if (userRes.success) {
+          this.userRestockCount = userRes.data ? userRes.data.length : 0
+        }
+        if (adminRes.success) {
+          this.adminRestockCount = adminRes.data ? adminRes.data.length : 0
+          this.restockCount = this.adminRestockCount
         }
       } catch (error) {
         console.error('加载需补货数量失败:', error)
       }
+    },
+    switchToUser() {
+      this.$router.push('/user')
+    },
+    switchToAdmin() {
+      this.$router.push('/admin')
     }
   },
   watch: {
     $route() {
-      this.loadRestockCount()
+      this.loadRestockCounts()
     }
   }
 }
@@ -116,6 +214,7 @@ html, body, #app {
   color: #fff;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   font-size: 20px;
   font-weight: bold;
 }
@@ -128,6 +227,21 @@ html, body, #app {
 .logo i {
   margin-right: 10px;
   font-size: 28px;
+}
+
+.role-tag {
+  margin-left: 15px;
+}
+
+.role-switcher {
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.switcher-text {
+  display: flex;
+  align-items: center;
+  font-weight: normal;
 }
 
 .aside {

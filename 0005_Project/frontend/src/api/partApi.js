@@ -52,6 +52,14 @@ const partApi = {
 
   getPartsNeedRestock() {
     return api.get('/parts/need-restock')
+  },
+
+  getRecords(params) {
+    return api.get('/records', { params: params })
+  },
+
+  getRecordsSummary() {
+    return api.get('/records/summary')
   }
 }
 

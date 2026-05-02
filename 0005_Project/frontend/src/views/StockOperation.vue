@@ -162,6 +162,7 @@
 
 <script>
 import partApi from '../api/partApi'
+import { eventBus } from '../utils/eventBus'
 
 export default {
   name: 'StockOperation',
@@ -226,6 +227,7 @@ export default {
             const res = await partApi.stockIn(this.stockInForm.partId, this.stockInForm.quantity)
             if (res.success) {
               this.$message.success('入库成功，新增 ' + this.stockInForm.quantity + ' ' + this.selectedStockInPart.unit)
+              eventBus.$emit('stock-changed')
               this.addOperation('入库', this.selectedStockInPart, this.stockInForm.quantity)
               this.loadParts()
               this.resetForm('in')
@@ -254,6 +256,7 @@ export default {
             const res = await partApi.stockOut(this.stockOutForm.partId, this.stockOutForm.quantity)
             if (res.success) {
               this.$message.success('出库成功，减少 ' + this.stockOutForm.quantity + ' ' + this.selectedStockOutPart.unit)
+              eventBus.$emit('stock-changed')
               this.addOperation('出库', this.selectedStockOutPart, this.stockOutForm.quantity)
               this.loadParts()
               this.resetForm('out')

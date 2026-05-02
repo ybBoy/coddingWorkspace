@@ -5,6 +5,7 @@ import PartsList from '../views/PartsList.vue'
 import PartsSearch from '../views/PartsSearch.vue'
 import StockOperation from '../views/StockOperation.vue'
 import RestockList from '../views/RestockList.vue'
+import RecordsList from '../views/RecordsList.vue'
 
 Vue.use(VueRouter)
 
@@ -33,6 +34,11 @@ const routes = [
     path: '/restock',
     name: 'RestockList',
     component: RestockList
+  },
+  {
+    path: '/records',
+    name: 'RecordsList',
+    component: RecordsList
   }
 ]
 

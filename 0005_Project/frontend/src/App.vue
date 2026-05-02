@@ -33,6 +33,10 @@
               <i class="el-icon-upload2"></i>
               <span slot="title">入库/出库</span>
             </el-menu-item>
+            <el-menu-item index="/records">
+              <i class="el-icon-document"></i>
+              <span slot="title">出入库记录</span>
+            </el-menu-item>
             <el-menu-item index="/restock">
               <i class="el-icon-warning"></i>
               <span slot="title">需补货列表</span>
@@ -50,6 +54,7 @@
 
 <script>
 import partApi from './api/partApi'
+import { eventBus } from './utils/eventBus'
 
 export default {
   name: 'App',
@@ -65,6 +70,12 @@ export default {
   },
   created() {
     this.loadRestockCount()
+    eventBus.$on('stock-changed', () => {
+      this.loadRestockCount()
+    })
+  },
+  beforeDestroy() {
+    eventBus.$off('stock-changed')
   },
   methods: {
     async loadRestockCount() {

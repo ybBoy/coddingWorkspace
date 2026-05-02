@@ -127,6 +127,7 @@
 
 <script>
 import partApi from '../api/partApi'
+import { eventBus } from '../utils/eventBus'
 
 export default {
   name: 'RestockList',
@@ -205,6 +206,7 @@ export default {
 
       if (successCount > 0) {
         this.$message.success('批量入库成功：' + successCount + ' 种零件')
+        eventBus.$emit('stock-changed')
       }
       if (failCount > 0) {
         this.$message.error('批量入库失败：' + failCount + ' 种零件')
@@ -226,6 +228,7 @@ export default {
         const res = await partApi.stockIn(this.currentPart.id, this.singleStockInQuantity)
         if (res.success) {
           this.$message.success('入库成功，新增 ' + this.singleStockInQuantity + ' ' + this.currentPart.unit)
+          eventBus.$emit('stock-changed')
           this.singleStockInDialogVisible = false
           this.loadParts()
         } else {

@@ -46,6 +46,35 @@ public class PartDataStore {
                 .collect(Collectors.toList());
     }
 
+    public List<Part> searchPartsByKeywordAndCategory(String keyword, String category) {
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+        boolean hasCategory = category != null && !category.trim().isEmpty();
+        
+        if (!hasKeyword && !hasCategory) {
+            return getAllParts();
+        }
+        
+        String lowerKeyword = hasKeyword ? keyword.toLowerCase().trim() : null;
+        
+        return partsMap.values().stream()
+                .filter(part -> {
+                    boolean matchKeyword = true;
+                    boolean matchCategory = true;
+                    
+                    if (hasKeyword) {
+                        matchKeyword = part.getId().toLowerCase().contains(lowerKeyword) ||
+                                       part.getName().toLowerCase().contains(lowerKeyword);
+                    }
+                    
+                    if (hasCategory) {
+                        matchCategory = category.equals(part.getCategory());
+                    }
+                    
+                    return matchKeyword && matchCategory;
+                })
+                .collect(Collectors.toList());
+    }
+
     public List<Part> getPartsNeedRestock() {
         return partsMap.values().stream()
                 .filter(Part::needsRestock)

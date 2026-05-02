@@ -3,7 +3,9 @@ package com.warehouse.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.warehouse.entity.Part;
+import com.warehouse.entity.StockRecord;
 import com.warehouse.store.PartDataStore;
+import com.warehouse.store.StockRecordDataStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,8 @@ import java.util.Map;
 public class FileStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
-    private static final String DATA_FILE_NAME = "parts.json";
+    private static final String PARTS_FILE_NAME = "parts.json";
+    private static final String RECORDS_FILE_NAME = "records.json";
 
     @Value("${data.directory:./data}")
     private String dataDirectory;
@@ -31,10 +34,14 @@ public class FileStorageService {
     @Autowired
     private PartDataStore partDataStore;
 
+    @Autowired
+    private StockRecordDataStore stockRecordDataStore;
+
     @PostConstruct
     public void init() {
         createDataDirectory();
         loadData();
+        loadRecords();
     }
 
     private void createDataDirectory() {
@@ -51,20 +58,20 @@ public class FileStorageService {
 
     public void saveData() {
         try {
-            File dataFile = new File(dataDirectory, DATA_FILE_NAME);
+            File dataFile = new File(dataDirectory, PARTS_FILE_NAME);
             List<Part> parts = partDataStore.getAllParts();
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(dataFile, parts);
-            logger.info("数据保存成功: 共 {} 条记录", parts.size());
+            logger.info("零件数据保存成功: 共 {} 条记录", parts.size());
         } catch (IOException e) {
-            logger.error("数据保存失败", e);
+            logger.error("零件数据保存失败", e);
         }
     }
 
     public void loadData() {
         try {
-            File dataFile = new File(dataDirectory, DATA_FILE_NAME);
+            File dataFile = new File(dataDirectory, PARTS_FILE_NAME);
             if (!dataFile.exists()) {
-                logger.info("数据文件不存在，使用空数据");
+                logger.info("零件数据文件不存在，使用示例数据");
                 initSampleData();
                 return;
             }
@@ -75,15 +82,46 @@ public class FileStorageService {
                 partsMap.put(part.getId(), part);
             }
             partDataStore.setPartsMap(partsMap);
-            logger.info("数据加载成功: 共 {} 条记录", parts.size());
+            logger.info("零件数据加载成功: 共 {} 条记录", parts.size());
         } catch (IOException e) {
-            logger.error("数据加载失败，使用空数据", e);
+            logger.error("零件数据加载失败，使用示例数据", e);
             initSampleData();
         }
     }
 
+    public void saveRecords() {
+        try {
+            File recordsFile = new File(dataDirectory, RECORDS_FILE_NAME);
+            List<StockRecord> records = stockRecordDataStore.getAllRecords();
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(recordsFile, records);
+            logger.info("出入库记录保存成功: 共 {} 条记录", records.size());
+        } catch (IOException e) {
+            logger.error("出入库记录保存失败", e);
+        }
+    }
+
+    public void loadRecords() {
+        try {
+            File recordsFile = new File(dataDirectory, RECORDS_FILE_NAME);
+            if (!recordsFile.exists()) {
+                logger.info("出入库记录文件不存在，使用空数据");
+                return;
+            }
+
+            List<StockRecord> records = objectMapper.readValue(recordsFile, new TypeReference<List<StockRecord>>() {});
+            Map<String, StockRecord> recordsMap = new HashMap<>();
+            for (StockRecord record : records) {
+                recordsMap.put(record.getId(), record);
+            }
+            stockRecordDataStore.setRecordsMap(recordsMap);
+            logger.info("出入库记录加载成功: 共 {} 条记录", records.size());
+        } catch (IOException e) {
+            logger.error("出入库记录加载失败，使用空数据", e);
+        }
+    }
+
     private void initSampleData() {
-        logger.info("初始化示例数据...");
+        logger.info("初始化示例零件数据...");
         
         addSamplePart("BAT-001", "锂离子电池", "电池", "50kWh", 100, 20, "块");
         addSamplePart("BAT-002", "锂离子电池", "电池", "75kWh", 80, 15, "块");
@@ -110,7 +148,7 @@ public class FileStorageService {
         addSamplePart("OIL-003", "刹车油", "机油", "DOT4", 50, 10, "升");
         
         saveData();
-        logger.info("示例数据初始化完成");
+        logger.info("示例零件数据初始化完成");
     }
 
     private void addSamplePart(String id, String name, String category, String spec, int qty, int minStock, String unit) {

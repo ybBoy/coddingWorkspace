@@ -35,7 +35,7 @@
           <el-button type="text" size="small" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button type="text" size="small" @click="handleDelete(scope.row)">删除</el-button>
           <el-button type="text" size="small" @click="handleStockIn(scope.row)">入库</el-button>
-          <el-button type="text" size="small" @click="handleStockOut(scope.row)">出库</el-button>
+          <el-button type="text" size="small" @click="handleStockOut(scope.row)" :disabled="scope.row.quantity <= 0">出库</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -114,6 +114,7 @@
 
 <script>
 import partApi from '../api/partApi'
+import { eventBus } from '../utils/eventBus'
 
 export default {
   name: 'PartsList',
@@ -245,6 +246,7 @@ export default {
         const res = await partApi.stockIn(this.currentPart.id, this.stockQuantity)
         if (res.success) {
           this.$message.success('入库成功，新增 ' + this.stockQuantity + ' ' + this.currentPart.unit)
+          eventBus.$emit('stock-changed')
           this.stockInDialogVisible = false
           this.loadParts()
         } else {
@@ -266,6 +268,7 @@ export default {
         const res = await partApi.stockOut(this.currentPart.id, this.stockQuantity)
         if (res.success) {
           this.$message.success('出库成功，减少 ' + this.stockQuantity + ' ' + this.currentPart.unit)
+          eventBus.$emit('stock-changed')
           this.stockOutDialogVisible = false
           this.loadParts()
         } else {

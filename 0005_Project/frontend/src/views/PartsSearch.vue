@@ -6,6 +6,17 @@
     
     <el-card class="search-card">
       <el-form :inline="true" :model="searchForm">
+        <el-form-item label="分类">
+          <el-select v-model="searchForm.category" placeholder="全部分类" clearable style="width: 120px;">
+            <el-option label="电池" value="电池"></el-option>
+            <el-option label="电机" value="电机"></el-option>
+            <el-option label="轮胎" value="轮胎"></el-option>
+            <el-option label="控制器" value="控制器"></el-option>
+            <el-option label="玻璃" value="玻璃"></el-option>
+            <el-option label="机油" value="机油"></el-option>
+            <el-option label="其他" value="其他"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="搜索关键词">
           <el-input
             v-model="searchForm.keyword"
@@ -23,8 +34,8 @@
       </el-form>
     </el-card>
 
-    <div class="search-tip" v-if="searchForm.keyword">
-      <span>搜索「{{ searchForm.keyword }}」的结果：共 {{ parts.length }} 条记录</span>
+    <div class="search-tip" v-if="hasSearched">
+      <span>搜索「{{ getSearchTip() }}」的结果：共 {{ parts.length }} 条记录</span>
     </div>
 
     <el-table :data="parts" v-loading="loading" style="width: 100%; margin-top: 20px;">
@@ -59,13 +70,13 @@
       <el-table-column label="操作" width="180" fixed="right">
         <template slot-scope="scope">
           <el-button type="text" size="small" @click="handleStockIn(scope.row)">入库</el-button>
-          <el-button type="text" size="small" @click="handleStockOut(scope.row)">出库</el-button>
+          <el-button type="text" size="small" @click="handleStockOut(scope.row)" :disabled="scope.row.quantity <= 0">出库</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <el-empty v-if="!loading && parts.length === 0 && hasSearched" :description="searchForm.keyword ? '未找到相关零件' : '请输入关键词搜索'">
-      <el-button type="primary" @click="$router.push('/parts')" v-if="!searchForm.keyword">查看全部库存</el-button>
+    <el-empty v-if="!loading && parts.length === 0 && hasSearched" description="未找到相关零件">
+      <el-button type="primary" @click="handleReset">查看全部</el-button>
     </el-empty>
 
     <el-dialog title="入库操作" :visible.sync="stockInDialogVisible" width="400px">
@@ -104,6 +115,7 @@
 
 <script>
 import partApi from '../api/partApi'
+import { eventBus } from '../utils/eventBus'
 
 export default {
   name: 'PartsSearch',
@@ -111,9 +123,12 @@ export default {
     return {
       loading: false,
       hasSearched: false,
+      searchedKeyword: '',
+      searchedCategory: '',
       parts: [],
       searchForm: {
-        keyword: ''
+        keyword: '',
+        category: ''
       },
       stockInDialogVisible: false,
       stockOutDialogVisible: false,
@@ -121,12 +136,24 @@ export default {
       stockQuantity: 1
     }
   },
+  created() {
+    this.handleSearch()
+  },
   methods: {
     async handleSearch() {
       this.loading = true
       this.hasSearched = true
+      this.searchedKeyword = this.searchForm.keyword
+      this.searchedCategory = this.searchForm.category
       try {
-        const res = await partApi.searchParts(this.searchForm.keyword)
+        const params = {}
+        if (this.searchForm.keyword) {
+          params.keyword = this.searchForm.keyword
+        }
+        if (this.searchForm.category) {
+          params.category = this.searchForm.category
+        }
+        const res = await partApi.searchParts(params)
         if (res.success) {
           this.parts = res.data || []
         } else {
@@ -139,10 +166,31 @@ export default {
       }
     },
 
+    getSearchTip() {
+      let tip = ''
+      if (this.searchedCategory) {
+        tip += '分类: ' + this.searchedCategory
+      }
+      if (this.searchedKeyword) {
+        if (tip) {
+          tip += ', '
+        }
+        tip += '关键词: ' + this.searchedKeyword
+      }
+      if (!tip) {
+        tip = '全部零件'
+      }
+      return tip
+    },
+
     handleReset() {
       this.searchForm.keyword = ''
+      this.searchForm.category = ''
+      this.searchedKeyword = ''
+      this.searchedCategory = ''
       this.parts = []
       this.hasSearched = false
+      this.handleSearch()
     },
 
     handleStockIn(row) {
@@ -156,6 +204,7 @@ export default {
         const res = await partApi.stockIn(this.currentPart.id, this.stockQuantity)
         if (res.success) {
           this.$message.success('入库成功，新增 ' + this.stockQuantity + ' ' + this.currentPart.unit)
+          eventBus.$emit('stock-changed')
           this.stockInDialogVisible = false
           this.handleSearch()
         } else {
@@ -177,6 +226,7 @@ export default {
         const res = await partApi.stockOut(this.currentPart.id, this.stockQuantity)
         if (res.success) {
           this.$message.success('出库成功，减少 ' + this.stockQuantity + ' ' + this.currentPart.unit)
+          eventBus.$emit('stock-changed')
           this.stockOutDialogVisible = false
           this.handleSearch()
         } else {

@@ -62,8 +62,10 @@ public class PartController {
     }
 
     @GetMapping("/search")
-    public ApiResponse<List<Part>> searchParts(@RequestParam(required = false) String keyword) {
-        return ApiResponse.success(partService.searchParts(keyword));
+    public ApiResponse<List<Part>> searchParts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category) {
+        return ApiResponse.success(partService.searchPartsByKeywordAndCategory(keyword, category));
     }
 
     @GetMapping("/need-restock")

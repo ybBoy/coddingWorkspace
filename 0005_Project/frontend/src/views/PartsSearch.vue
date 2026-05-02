@@ -1,0 +1,219 @@
+<template>
+  <div class="page-container">
+    <div class="page-title">
+      <i class="el-icon-search" style="margin-right: 10px;"></i>零件搜索
+    </div>
+    
+    <el-card class="search-card">
+      <el-form :inline="true" :model="searchForm">
+        <el-form-item label="搜索关键词">
+          <el-input
+            v-model="searchForm.keyword"
+            placeholder="请输入零件编号或名称"
+            prefix-icon="el-icon-search"
+            clearable
+            @keyup.enter.native="handleSearch"
+            style="width: 300px;"
+          ></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+          <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <div class="search-tip" v-if="searchForm.keyword">
+      <span>搜索「{{ searchForm.keyword }}」的结果：共 {{ parts.length }} 条记录</span>
+    </div>
+
+    <el-table :data="parts" v-loading="loading" style="width: 100%; margin-top: 20px;">
+      <el-table-column prop="id" label="零件编号" width="120">
+        <template slot-scope="scope">
+          <el-tag>{{ scope.row.id }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="零件名称" width="150">
+        <template slot-scope="scope">
+          <span class="highlight-text">{{ scope.row.name }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="category" label="分类" width="100"></el-table-column>
+      <el-table-column prop="specification" label="规格"></el-table-column>
+      <el-table-column prop="quantity" label="库存数量" width="100">
+        <template slot-scope="scope">
+          <span :class="{'danger-text': scope.row.quantity <= scope.row.minStock}">
+            {{ scope.row.quantity }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="minStock" label="最低库存" width="80"></el-table-column>
+      <el-table-column prop="unit" label="单位" width="80"></el-table-column>
+      <el-table-column label="状态" width="100">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.quantity <= scope.row.minStock ? 'danger' : 'success'">
+            {{ scope.row.quantity <= scope.row.minStock ? '需补货' : '正常' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="180" fixed="right">
+        <template slot-scope="scope">
+          <el-button type="text" size="small" @click="handleStockIn(scope.row)">入库</el-button>
+          <el-button type="text" size="small" @click="handleStockOut(scope.row)">出库</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-empty v-if="!loading && parts.length === 0 && hasSearched" :description="searchForm.keyword ? '未找到相关零件' : '请输入关键词搜索'">
+      <el-button type="primary" @click="$router.push('/parts')" v-if="!searchForm.keyword">查看全部库存</el-button>
+    </el-empty>
+
+    <el-dialog title="入库操作" :visible.sync="stockInDialogVisible" width="400px">
+      <div style="margin-bottom: 15px;">
+        <p><strong>零件：</strong>{{ currentPart.name }} ({{ currentPart.id }})</p>
+        <p><strong>当前库存：</strong>{{ currentPart.quantity }} {{ currentPart.unit }}</p>
+      </div>
+      <el-form label-width="100px">
+        <el-form-item label="入库数量">
+          <el-input-number v-model="stockQuantity" :min="1" style="width: 200px"></el-input-number>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="stockInDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmStockIn">确认入库</el-button>
+      </span>
+    </el-dialog>
+
+    <el-dialog title="出库操作" :visible.sync="stockOutDialogVisible" width="400px">
+      <div style="margin-bottom: 15px;">
+        <p><strong>零件：</strong>{{ currentPart.name }} ({{ currentPart.id }})</p>
+        <p><strong>当前库存：</strong>{{ currentPart.quantity }} {{ currentPart.unit }}</p>
+      </div>
+      <el-form label-width="100px">
+        <el-form-item label="出库数量">
+          <el-input-number v-model="stockQuantity" :min="1" :max="currentPart.quantity" style="width: 200px"></el-input-number>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="stockOutDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmStockOut">确认出库</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import partApi from '../api/partApi'
+
+export default {
+  name: 'PartsSearch',
+  data() {
+    return {
+      loading: false,
+      hasSearched: false,
+      parts: [],
+      searchForm: {
+        keyword: ''
+      },
+      stockInDialogVisible: false,
+      stockOutDialogVisible: false,
+      currentPart: {},
+      stockQuantity: 1
+    }
+  },
+  methods: {
+    async handleSearch() {
+      this.loading = true
+      this.hasSearched = true
+      try {
+        const res = await partApi.searchParts(this.searchForm.keyword)
+        if (res.success) {
+          this.parts = res.data || []
+        } else {
+          this.$message.error(res.message)
+        }
+      } catch (error) {
+        this.$message.error('搜索失败: ' + error.message)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    handleReset() {
+      this.searchForm.keyword = ''
+      this.parts = []
+      this.hasSearched = false
+    },
+
+    handleStockIn(row) {
+      this.currentPart = { ...row }
+      this.stockQuantity = 1
+      this.stockInDialogVisible = true
+    },
+
+    async confirmStockIn() {
+      try {
+        const res = await partApi.stockIn(this.currentPart.id, this.stockQuantity)
+        if (res.success) {
+          this.$message.success(`入库成功，新增 ${this.stockQuantity} ${this.currentPart.unit}`)
+          this.stockInDialogVisible = false
+          this.handleSearch()
+        } else {
+          this.$message.error(res.message)
+        }
+      } catch (error) {
+        this.$message.error('入库失败: ' + error.message)
+      }
+    },
+
+    handleStockOut(row) {
+      this.currentPart = { ...row }
+      this.stockQuantity = 1
+      this.stockOutDialogVisible = true
+    },
+
+    async confirmStockOut() {
+      try {
+        const res = await partApi.stockOut(this.currentPart.id, this.stockQuantity)
+        if (res.success) {
+          this.$message.success(`出库成功，减少 ${this.stockQuantity} ${this.currentPart.unit}`)
+          this.stockOutDialogVisible = false
+          this.handleSearch()
+        } else {
+          this.$message.error(res.message)
+        }
+      } catch (error) {
+        this.$message.error('出库失败: ' + error.message)
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+.search-card {
+  margin-bottom: 20px;
+}
+
+.search-tip {
+  padding: 10px 15px;
+  background-color: #ecf5ff;
+  border-radius: 4px;
+  color: #409EFF;
+  font-size: 14px;
+}
+
+.highlight-text {
+  color: #409EFF;
+  font-weight: bold;
+}
+
+.danger-text {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.dialog-footer {
+  text-align: right;
+}
+</style>

@@ -690,20 +690,25 @@
             const batteryPercent = status.batteryLevel;
             batteryFill.style.width = `${batteryPercent}%`;
             
+            const isCharging = status.charging === true;
+            
             batteryFill.classList.remove('low', 'charging');
             if (batteryPercent < 20) {
                 batteryFill.classList.add('low');
             }
-            if (status.charging) {
+            if (isCharging) {
                 batteryFill.classList.add('charging');
             }
 
             updateAcStatus(status.acOn);
-            updateChargingStatus(status.charging);
-            updateTempUI(status);
+            updateChargingStatus(isCharging);
+            
+            if (status.interiorTemp !== undefined) {
+                updateTempUI(status);
+            }
 
             const accelerateBtn = document.getElementById('accelerateBtn');
-            accelerateBtn.disabled = status.charging;
+            accelerateBtn.disabled = isCharging;
         }
 
         function updateAcStatus(acOn) {

@@ -6,11 +6,21 @@ public class VehicleStatus {
     private double range;
     private boolean acOn;
     private double baseRange;
+    private boolean charging;
+    private double interiorTemp;
+    private double targetTemp;
+    private String tempControlMode;
+    private double exteriorTemp;
 
     public VehicleStatus() {
         this.speed = 0.0;
         this.batteryLevel = 100.0;
         this.acOn = false;
+        this.charging = false;
+        this.interiorTemp = 22.0;
+        this.targetTemp = 22.0;
+        this.tempControlMode = "auto";
+        this.exteriorTemp = 25.0;
         calculateRange();
     }
 
@@ -19,6 +29,9 @@ public class VehicleStatus {
     }
 
     public void setSpeed(double speed) {
+        if (this.charging) {
+            return;
+        }
         this.speed = Math.max(0, Math.min(180, speed));
     }
 
@@ -42,6 +55,51 @@ public class VehicleStatus {
     public void setAcOn(boolean acOn) {
         this.acOn = acOn;
         calculateRange();
+    }
+
+    public boolean isCharging() {
+        return charging;
+    }
+
+    public void setCharging(boolean charging) {
+        if (charging && this.speed > 0) {
+            return;
+        }
+        this.charging = charging;
+    }
+
+    public double getInteriorTemp() {
+        return interiorTemp;
+    }
+
+    public void setInteriorTemp(double interiorTemp) {
+        this.interiorTemp = Math.max(-10, Math.min(50, interiorTemp));
+    }
+
+    public double getTargetTemp() {
+        return targetTemp;
+    }
+
+    public void setTargetTemp(double targetTemp) {
+        this.targetTemp = Math.max(16, Math.min(30, targetTemp));
+    }
+
+    public String getTempControlMode() {
+        return tempControlMode;
+    }
+
+    public void setTempControlMode(String tempControlMode) {
+        if ("auto".equals(tempControlMode) || "manual".equals(tempControlMode)) {
+            this.tempControlMode = tempControlMode;
+        }
+    }
+
+    public double getExteriorTemp() {
+        return exteriorTemp;
+    }
+
+    public void setExteriorTemp(double exteriorTemp) {
+        this.exteriorTemp = Math.max(-20, Math.min(45, exteriorTemp));
     }
 
     private void calculateRange() {

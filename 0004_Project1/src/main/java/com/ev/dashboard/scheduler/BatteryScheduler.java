@@ -15,4 +15,9 @@ public class BatteryScheduler {
     public void simulateBatteryChange() {
         vehicleService.simulateBatteryChange();
     }
+
+    @Scheduled(fixedRate = 2000)
+    public void simulateTemperatureChange() {
+        vehicleService.simulateTemperatureChange();
+    }
 }

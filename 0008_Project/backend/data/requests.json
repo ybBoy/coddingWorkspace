@@ -1,5 +1,78 @@
 [ {
+  "id" : "REQ-20260504005216-0002",
+  "type" : "退货入库申请",
+  "applicantIp" : "127.0.0.1",
+  "items" : [ {
+    "partId" : "GLS-001",
+    "partName" : "前挡风玻璃",
+    "category" : "玻璃",
+    "quantity" : 10,
+    "unit" : "块",
+    "currentStock" : 16
+  } ],
+  "remark" : "",
+  "status" : "已通过",
+  "createTime" : 1777827136083,
+  "reviewTime" : 1777827144068,
+  "reviewerIp" : "127.0.0.1",
+  "reviewComment" : "",
+  "approved" : true,
+  "outbound" : false,
+  "pending" : false,
+  "rejected" : false,
+  "return" : true,
+  "totalQuantity" : 10
+}, {
+  "id" : "REQ-20260504005029-0001",
+  "type" : "退货入库申请",
+  "applicantIp" : "127.0.0.1",
+  "items" : [ {
+    "partId" : "GLS-001",
+    "partName" : "前挡风玻璃",
+    "category" : "玻璃",
+    "quantity" : 2,
+    "unit" : "块",
+    "currentStock" : 14
+  } ],
+  "remark" : "退货",
+  "status" : "已通过",
+  "createTime" : 1777827029105,
+  "reviewTime" : 1777827111735,
+  "reviewerIp" : "127.0.0.1",
+  "reviewComment" : "",
+  "approved" : true,
+  "outbound" : false,
+  "pending" : false,
+  "rejected" : false,
+  "return" : true,
+  "totalQuantity" : 2
+}, {
+  "id" : "REQ-20260504001938-0001",
+  "type" : "出库申请",
+  "applicantIp" : "127.0.0.1",
+  "items" : [ {
+    "partId" : "BAT-003",
+    "partName" : "磷酸铁锂电池",
+    "category" : "电池",
+    "quantity" : 30,
+    "unit" : "块",
+    "currentStock" : 50
+  } ],
+  "remark" : "第一次申请测试",
+  "status" : "已通过",
+  "createTime" : 1777825178833,
+  "reviewTime" : 1777825216465,
+  "reviewerIp" : "127.0.0.1",
+  "reviewComment" : "",
+  "approved" : true,
+  "outbound" : true,
+  "pending" : false,
+  "rejected" : false,
+  "return" : false,
+  "totalQuantity" : 30
+}, {
   "id" : "REQ-20260503234005-0003",
+  "type" : "出库申请",
   "applicantIp" : "127.0.0.1",
   "items" : [ {
     "partId" : "GLS-002",
@@ -10,17 +83,20 @@
     "currentStock" : 12
   } ],
   "remark" : "都给我吧。。。。。",
-  "status" : "待审核",
+  "status" : "已拒绝",
   "createTime" : 1777822805526,
-  "reviewTime" : null,
-  "reviewerIp" : null,
-  "reviewComment" : null,
-  "pending" : true,
+  "reviewTime" : 1777825134044,
+  "reviewerIp" : "127.0.0.1",
+  "reviewComment" : "拒绝",
   "approved" : false,
-  "rejected" : false,
+  "outbound" : true,
+  "pending" : false,
+  "rejected" : true,
+  "return" : false,
   "totalQuantity" : 12
 }, {
   "id" : "REQ-20260503233711-0002",
+  "type" : "出库申请",
   "applicantIp" : "127.0.0.1",
   "items" : [ {
     "partId" : "GLS-001",
@@ -36,12 +112,15 @@
   "reviewTime" : 1777822701283,
   "reviewerIp" : "127.0.0.1",
   "reviewComment" : "",
-  "pending" : false,
   "approved" : true,
+  "outbound" : true,
+  "pending" : false,
   "rejected" : false,
+  "return" : false,
   "totalQuantity" : 1
 }, {
   "id" : "REQ-20260503233333-0001",
+  "type" : "出库申请",
   "applicantIp" : "127.0.0.1",
   "items" : [ {
     "partId" : "GLS-002",
@@ -64,8 +143,10 @@
   "reviewTime" : 1777822440007,
   "reviewerIp" : "127.0.0.1",
   "reviewComment" : "拒绝",
-  "pending" : false,
   "approved" : false,
+  "outbound" : true,
+  "pending" : false,
   "rejected" : true,
+  "return" : false,
   "totalQuantity" : 27
 } ]

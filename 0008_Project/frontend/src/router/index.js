@@ -10,6 +10,7 @@ import RecordsList from '../views/RecordsList.vue'
 import UserPartsSearch from '../views/user/UserPartsSearch.vue'
 import UserRecordsList from '../views/user/UserRecordsList.vue'
 import UserRequestSubmit from '../views/user/UserRequestSubmit.vue'
+import UserReturnRequestSubmit from '../views/user/UserReturnRequestSubmit.vue'
 import UserRequestsList from '../views/user/UserRequestsList.vue'
 
 import AdminHome from '../views/admin/AdminHome.vue'
@@ -47,6 +48,12 @@ const routes = [
     path: '/user/request-submit',
     name: 'UserRequestSubmit',
     component: UserRequestSubmit,
+    meta: { role: 'user' }
+  },
+  {
+    path: '/user/return-request-submit',
+    name: 'UserReturnRequestSubmit',
+    component: UserReturnRequestSubmit,
     meta: { role: 'user' }
   },
   {

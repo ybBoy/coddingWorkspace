@@ -41,14 +41,24 @@
                 <i class="el-icon-search"></i>
                 <span slot="title">零件搜索</span>
               </el-menu-item>
-              <el-menu-item index="/user/request-submit">
-                <i class="el-icon-s-order"></i>
-                <span slot="title">提交出库申请</span>
-              </el-menu-item>
-              <el-menu-item index="/user/requests">
-                <i class="el-icon-document"></i>
-                <span slot="title">我的申请</span>
-              </el-menu-item>
+              <el-submenu index="user-requests">
+                <template slot="title">
+                  <i class="el-icon-s-order"></i>
+                  <span>申请管理</span>
+                </template>
+                <el-menu-item index="/user/request-submit">
+                  <i class="el-icon-download"></i>
+                  <span slot="title">提交出库申请</span>
+                </el-menu-item>
+                <el-menu-item index="/user/return-request-submit">
+                  <i class="el-icon-upload"></i>
+                  <span slot="title">提交退货入库申请</span>
+                </el-menu-item>
+                <el-menu-item index="/user/requests">
+                  <i class="el-icon-document"></i>
+                  <span slot="title">我的申请</span>
+                </el-menu-item>
+              </el-submenu>
               <el-menu-item index="/user/records">
                 <i class="el-icon-tickets"></i>
                 <span slot="title">出入库记录</span>
@@ -161,10 +171,14 @@ export default {
     eventBus.$on('visibility-changed', () => {
       this.loadRestockCounts()
     })
+    eventBus.$on('request-reviewed', () => {
+      this.loadPendingRequestCount()
+    })
   },
   beforeDestroy() {
     eventBus.$off('stock-changed')
     eventBus.$off('visibility-changed')
+    eventBus.$off('request-reviewed')
   },
   methods: {
     async loadRestockCounts() {

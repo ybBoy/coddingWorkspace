@@ -3,6 +3,7 @@ package com.warehouse.controller;
 import com.warehouse.dto.ApiResponse;
 import com.warehouse.dto.OutboundRequestSubmitDto;
 import com.warehouse.entity.OutboundRequest;
+import com.warehouse.entity.RequestType;
 import com.warehouse.service.OutboundRequestService;
 import com.warehouse.util.IpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
- * 用户出库申请控制器
- * 提供用户提交申请、查看申请等接口
+ * 用户申请控制器
+ * 提供用户提交出库申请和退货入库申请、查看申请等接口
  */
 @RestController
 @RequestMapping("/api/user/requests")
@@ -46,21 +47,49 @@ public class UserOutboundRequestController {
     }
 
     /**
+     * 提交退货入库申请
+     * 
+     * 用户选择需要归还的零件和数量，提交退货入库申请
+     * 申请状态设置为"待审核"，等待管理员处理
+     * 
+     * @param submitDto 申请提交数据
+     * @param request HTTP请求对象（用于获取客户端IP）
+     * @return 创建的申请对象
+     */
+    @PostMapping("/return")
+    public ApiResponse<OutboundRequest> submitReturnRequest(
+            @RequestBody OutboundRequestSubmitDto submitDto,
+            HttpServletRequest request) {
+        try {
+            String applicantIp = IpUtils.getClientIpAddress(request);
+            OutboundRequest result = requestService.submitReturnRequest(submitDto, applicantIp);
+            return ApiResponse.success("退货入库申请提交成功", result);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
      * 获取我的申请列表
      * 根据用户IP地址获取该用户的所有申请记录
+     * 支持按类型和状态筛选
      * 
+     * @param type 可选的类型筛选参数（出库申请/退货入库申请）
      * @param status 可选的状态筛选参数
      * @param request HTTP请求对象（用于获取客户端IP）
      * @return 申请列表
      */
     @GetMapping
     public ApiResponse<List<OutboundRequest>> getMyRequests(
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) String status,
             HttpServletRequest request) {
         String applicantIp = IpUtils.getClientIpAddress(request);
         List<OutboundRequest> requests;
         
-        if (status != null && !status.trim().isEmpty()) {
+        if (type != null && !type.trim().isEmpty()) {
+            requests = requestService.getRequestsByApplicantIpAndTypeAndStatus(applicantIp, type, status);
+        } else if (status != null && !status.trim().isEmpty()) {
             requests = requestService.getRequestsByApplicantIpAndStatus(applicantIp, status);
         } else {
             requests = requestService.getRequestsByApplicantIp(applicantIp);

@@ -3,7 +3,7 @@
   "name" : "磷酸铁锂电池",
   "category" : "电池",
   "specification" : "100kWh",
-  "quantity" : 50,
+  "quantity" : 20,
   "minStock" : 10,
   "unit" : "块",
   "visible" : true,
@@ -43,10 +43,10 @@
   "name" : "前挡风玻璃",
   "category" : "玻璃",
   "specification" : "福耀/180*120cm",
-  "quantity" : 14,
+  "quantity" : 26,
   "minStock" : 5,
   "unit" : "块",
-  "visible" : true,
+  "visible" : false,
   "status" : "正常"
 }, {
   "id" : "GLS-003",

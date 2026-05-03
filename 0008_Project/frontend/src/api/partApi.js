@@ -210,7 +210,7 @@ const partApi = {
       return api.get('/user/records/summary')
     },
 
-    // ==================== 出库申请API ====================
+    // ==================== 申请API ====================
     /**
      * 提交出库申请
      * @param {Object} requestData - 申请数据
@@ -223,12 +223,27 @@ const partApi = {
     },
 
     /**
+     * 提交退货入库申请
+     * @param {Object} requestData - 申请数据
+     * @param {Array} requestData.items - 申请明细列表
+     * @param {string} requestData.remark - 申请备注
+     * @returns {Promise} API响应
+     */
+    submitReturnRequest(requestData) {
+      return api.post('/user/requests/return', requestData)
+    },
+
+    /**
      * 获取我的申请列表
+     * @param {string} type - 可选的类型筛选（出库申请/退货入库申请）
      * @param {string} status - 可选的状态筛选
      * @returns {Promise} API响应
      */
-    getMyRequests(status) {
+    getMyRequests(type, status) {
       const params = {}
+      if (type) {
+        params.type = type
+      }
       if (status) {
         params.status = status
       }
@@ -368,14 +383,18 @@ const partApi = {
       return api.get('/records/summary')
     },
 
-    // ==================== 出库申请API ====================
+    // ==================== 申请API ====================
     /**
      * 获取所有申请列表
+     * @param {string} type - 可选的类型筛选（出库申请/退货入库申请）
      * @param {string} status - 可选的状态筛选
      * @returns {Promise} API响应
      */
-    getAllRequests(status) {
+    getAllRequests(type, status) {
       const params = {}
+      if (type) {
+        params.type = type
+      }
       if (status) {
         params.status = status
       }

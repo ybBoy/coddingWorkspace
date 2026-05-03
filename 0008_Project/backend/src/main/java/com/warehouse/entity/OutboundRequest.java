@@ -7,12 +7,12 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 出库申请实体类
- * 用于管理用户提交的出库申请和管理员审核流程
+ * 申请实体类
+ * 用于管理用户提交的出库申请和退货入库申请，以及管理员审核流程
  * 
  * 申请流程：
  * 1. 用户提交申请（状态：PENDING）
- * 2. 管理员审核通过（状态：APPROVED）→ 自动执行出库
+ * 2. 管理员审核通过（状态：APPROVED）→ 自动执行出库或入库
  * 3. 管理员审核拒绝（状态：REJECTED）→ 记录拒绝原因
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -25,6 +25,12 @@ public class OutboundRequest implements Serializable {
      * 格式：REQ-yyyyMMddHHmmss-0001
      */
     private String id;
+    
+    /**
+     * 申请类型
+     * @see RequestType
+     */
+    private String type;
     
     /**
      * 申请人IP地址
@@ -73,11 +79,12 @@ public class OutboundRequest implements Serializable {
 
     /**
      * 默认构造函数
-     * 自动设置创建时间和初始状态为待审核
+     * 自动设置创建时间、初始状态为待审核、类型为出库申请
      */
     public OutboundRequest() {
         this.createTime = new Date();
         this.status = RequestStatus.PENDING.getDescription();
+        this.type = RequestType.OUTBOUND.getDescription();
     }
 
     /**
@@ -128,12 +135,36 @@ public class OutboundRequest implements Serializable {
         return items.stream().mapToInt(OutboundRequestItem::getQuantity).sum();
     }
 
+    /**
+     * 判断申请是否是出库申请
+     * @return true 表示是出库申请
+     */
+    public boolean isOutbound() {
+        return RequestType.OUTBOUND.getDescription().equals(this.type);
+    }
+
+    /**
+     * 判断申请是否是退货入库申请
+     * @return true 表示是退货入库申请
+     */
+    public boolean isReturn() {
+        return RequestType.RETURN.getDescription().equals(this.type);
+    }
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getApplicantIp() {

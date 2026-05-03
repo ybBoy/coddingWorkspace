@@ -6,6 +6,7 @@ import com.warehouse.entity.OutboundRequest;
 import com.warehouse.entity.OutboundRequestItem;
 import com.warehouse.entity.Part;
 import com.warehouse.entity.RequestStatus;
+import com.warehouse.entity.RequestType;
 import com.warehouse.store.OutboundRequestDataStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,14 +15,15 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * 出库申请服务类
- * 提供出库申请的提交、审核、查询等核心业务逻辑
+ * 申请服务类
+ * 提供出库申请和退货入库申请的提交、审核、查询等核心业务逻辑
  * 
  * 业务流程：
- * 1. 用户提交申请 → 状态：待审核
- * 2. 管理员审核通过 → 自动执行出库 → 状态：已通过
+ * 1. 用户提交申请（出库/退货） → 状态：待审核
+ * 2. 管理员审核通过 → 自动执行对应操作（出库/入库） → 状态：已通过
  * 3. 管理员审核拒绝 → 状态：已拒绝
  */
 @Service
@@ -52,6 +54,33 @@ public class OutboundRequestService {
      * @throws IllegalArgumentException 数据验证失败时抛出
      */
     public OutboundRequest submitRequest(OutboundRequestSubmitDto submitDto, String applicantIp) {
+        return submitRequest(submitDto, applicantIp, RequestType.OUTBOUND);
+    }
+
+    /**
+     * 提交退货入库申请
+     * 用户提交退货入库申请，系统验证数据后创建申请记录
+     * 
+     * @param submitDto 申请提交数据
+     * @param applicantIp 申请人IP地址
+     * @return 创建的申请对象
+     * @throws IllegalArgumentException 数据验证失败时抛出
+     */
+    public OutboundRequest submitReturnRequest(OutboundRequestSubmitDto submitDto, String applicantIp) {
+        return submitRequest(submitDto, applicantIp, RequestType.RETURN);
+    }
+
+    /**
+     * 通用的提交申请方法
+     * 根据申请类型创建对应的申请记录
+     * 
+     * @param submitDto 申请提交数据
+     * @param applicantIp 申请人IP地址
+     * @param requestType 申请类型
+     * @return 创建的申请对象
+     * @throws IllegalArgumentException 数据验证失败时抛出
+     */
+    private OutboundRequest submitRequest(OutboundRequestSubmitDto submitDto, String applicantIp, RequestType requestType) {
         if (submitDto.getItems() == null || submitDto.getItems().isEmpty()) {
             throw new IllegalArgumentException("申请明细不能为空");
         }
@@ -84,6 +113,7 @@ public class OutboundRequestService {
 
         OutboundRequest request = new OutboundRequest();
         request.setId(generateRequestId());
+        request.setType(requestType.getDescription());
         request.setApplicantIp(applicantIp);
         request.setItems(items);
         request.setRemark(submitDto.getRemark());
@@ -143,11 +173,18 @@ public class OutboundRequestService {
     }
 
     /**
-     * 审核出库申请
+     * 审核申请（支持出库申请和退货入库申请）
      * 
+     * 对于出库申请：
      * 审核通过时：
      * 1. 验证所有申请零件的库存是否充足
      * 2. 逐个执行出库操作
+     * 3. 更新申请状态为已通过
+     * 
+     * 对于退货入库申请：
+     * 审核通过时：
+     * 1. 验证零件是否存在
+     * 2. 逐个执行入库操作
      * 3. 更新申请状态为已通过
      * 
      * 审核拒绝时：
@@ -173,22 +210,35 @@ public class OutboundRequestService {
         }
 
         if (approved) {
-            for (OutboundRequestItem item : request.getItems()) {
-                Part part = partService.getPartById(item.getPartId());
-                if (part == null) {
-                    throw new IllegalArgumentException("零件不存在: " + item.getPartId());
+            if (request.isOutbound()) {
+                for (OutboundRequestItem item : request.getItems()) {
+                    Part part = partService.getPartById(item.getPartId());
+                    if (part == null) {
+                        throw new IllegalArgumentException("零件不存在: " + item.getPartId());
+                    }
+                    if (part.getQuantity() < item.getQuantity()) {
+                        throw new IllegalArgumentException(
+                            "零件库存不足: " + part.getName() + 
+                            "，当前库存: " + part.getQuantity() + 
+                            "，申请数量: " + item.getQuantity()
+                        );
+                    }
                 }
-                if (part.getQuantity() < item.getQuantity()) {
-                    throw new IllegalArgumentException(
-                        "零件库存不足: " + part.getName() + 
-                        "，当前库存: " + part.getQuantity() + 
-                        "，申请数量: " + item.getQuantity()
-                    );
-                }
-            }
 
-            for (OutboundRequestItem item : request.getItems()) {
-                partService.stockOut(item.getPartId(), item.getQuantity(), reviewerIp);
+                for (OutboundRequestItem item : request.getItems()) {
+                    partService.stockOut(item.getPartId(), item.getQuantity(), reviewerIp);
+                }
+            } else {
+                for (OutboundRequestItem item : request.getItems()) {
+                    Part part = partService.getPartById(item.getPartId());
+                    if (part == null) {
+                        throw new IllegalArgumentException("零件不存在: " + item.getPartId());
+                    }
+                }
+
+                for (OutboundRequestItem item : request.getItems()) {
+                    partService.stockIn(item.getPartId(), item.getQuantity(), reviewerIp);
+                }
             }
 
             request.setStatus(RequestStatus.APPROVED.getDescription());
@@ -228,6 +278,69 @@ public class OutboundRequestService {
             return getAllRequests();
         }
         return requestDataStore.getRequestsByStatus(status);
+    }
+
+    /**
+     * 根据类型获取申请列表
+     * @param type 申请类型
+     * @return 匹配的申请列表
+     */
+    public List<OutboundRequest> getRequestsByType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return getAllRequests();
+        }
+        return getAllRequests().stream()
+                .filter(r -> type.equals(r.getType()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据类型和状态获取申请列表
+     * @param type 申请类型
+     * @param status 状态
+     * @return 匹配的申请列表
+     */
+    public List<OutboundRequest> getRequestsByTypeAndStatus(String type, String status) {
+        List<OutboundRequest> requests = getRequestsByType(type);
+        if (status == null || status.trim().isEmpty()) {
+            return requests;
+        }
+        return requests.stream()
+                .filter(r -> status.equals(r.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据申请人IP和类型获取申请列表
+     * @param applicantIp 申请人IP
+     * @param type 申请类型
+     * @return 匹配的申请列表
+     */
+    public List<OutboundRequest> getRequestsByApplicantIpAndType(String applicantIp, String type) {
+        List<OutboundRequest> requests = getRequestsByApplicantIp(applicantIp);
+        if (type == null || type.trim().isEmpty()) {
+            return requests;
+        }
+        return requests.stream()
+                .filter(r -> type.equals(r.getType()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 根据申请人IP、类型和状态获取申请列表
+     * @param applicantIp 申请人IP
+     * @param type 申请类型
+     * @param status 状态
+     * @return 匹配的申请列表
+     */
+    public List<OutboundRequest> getRequestsByApplicantIpAndTypeAndStatus(String applicantIp, String type, String status) {
+        List<OutboundRequest> requests = getRequestsByApplicantIpAndType(applicantIp, type);
+        if (status == null || status.trim().isEmpty()) {
+            return requests;
+        }
+        return requests.stream()
+                .filter(r -> status.equals(r.getStatus()))
+                .collect(Collectors.toList());
     }
 
     /**

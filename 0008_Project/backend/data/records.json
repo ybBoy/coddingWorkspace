@@ -1,4 +1,40 @@
 [ {
+  "id" : "REC-20260504005224-0002",
+  "partId" : "GLS-001",
+  "partName" : "前挡风玻璃",
+  "category" : "玻璃",
+  "type" : "入库",
+  "quantity" : 10,
+  "unit" : "块",
+  "beforeQuantity" : 16,
+  "afterQuantity" : 26,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777827144063
+}, {
+  "id" : "REC-20260504005151-0001",
+  "partId" : "GLS-001",
+  "partName" : "前挡风玻璃",
+  "category" : "玻璃",
+  "type" : "入库",
+  "quantity" : 2,
+  "unit" : "块",
+  "beforeQuantity" : 14,
+  "afterQuantity" : 16,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777827111728
+}, {
+  "id" : "REC-20260504002016-0001",
+  "partId" : "BAT-003",
+  "partName" : "磷酸铁锂电池",
+  "category" : "电池",
+  "type" : "出库",
+  "quantity" : 30,
+  "unit" : "块",
+  "beforeQuantity" : 50,
+  "afterQuantity" : 20,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777825216457
+}, {
   "id" : "REC-20260503233821-0001",
   "partId" : "GLS-001",
   "partName" : "前挡风玻璃",

@@ -3,6 +3,7 @@ package com.warehouse.controller;
 import com.warehouse.dto.ApiResponse;
 import com.warehouse.dto.OutboundRequestReviewDto;
 import com.warehouse.entity.OutboundRequest;
+import com.warehouse.entity.RequestType;
 import com.warehouse.service.OutboundRequestService;
 import com.warehouse.util.IpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
- * 管理员出库申请控制器
- * 提供管理员查看所有申请、审核申请等接口
+ * 管理员申请控制器
+ * 提供管理员查看所有申请（出库申请和退货入库申请）、审核申请等接口
  */
 @RestController
 @RequestMapping("/api/admin/requests")
@@ -24,17 +25,22 @@ public class AdminOutboundRequestController {
 
     /**
      * 获取所有申请列表
-     * 管理员可查看所有出库申请
+     * 管理员可查看所有申请（出库申请和退货入库申请）
+     * 支持按类型和状态筛选
      * 
+     * @param type 可选的类型筛选参数（出库申请/退货入库申请）
      * @param status 可选的状态筛选参数
      * @return 申请列表
      */
     @GetMapping
     public ApiResponse<List<OutboundRequest>> getAllRequests(
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) String status) {
         List<OutboundRequest> requests;
         
-        if (status != null && !status.trim().isEmpty()) {
+        if (type != null && !type.trim().isEmpty()) {
+            requests = requestService.getRequestsByTypeAndStatus(type, status);
+        } else if (status != null && !status.trim().isEmpty()) {
             requests = requestService.getRequestsByStatus(status);
         } else {
             requests = requestService.getAllRequests();
@@ -72,10 +78,11 @@ public class AdminOutboundRequestController {
     }
 
     /**
-     * 审核出库申请
+     * 审核申请（支持出库申请和退货入库申请）
      * 
-     * 管理员审核用户提交的出库申请：
-     * - 通过：验证库存后自动执行出库操作
+     * 管理员审核用户提交的申请：
+     * - 对于出库申请，通过时：验证库存后自动执行出库操作
+     * - 对于退货入库申请，通过时：自动执行入库操作
      * - 拒绝：记录拒绝原因
      * 
      * @param id 申请编号
@@ -97,7 +104,16 @@ public class AdminOutboundRequestController {
                     reviewerIp
             );
             
-            String message = reviewDto.isApproved() ? "审核通过，已完成出库" : "申请已拒绝";
+            String message;
+            if (reviewDto.isApproved()) {
+                if (result.isOutbound()) {
+                    message = "审核通过，已完成出库";
+                } else {
+                    message = "审核通过，已完成退货入库";
+                }
+            } else {
+                message = "申请已拒绝";
+            }
             return ApiResponse.success(message, result);
         } catch (IllegalArgumentException e) {
             return ApiResponse.error(e.getMessage());

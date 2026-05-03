@@ -1,0 +1,49 @@
+[ {
+  "id" : "REC-20260503233821-0001",
+  "partId" : "GLS-001",
+  "partName" : "前挡风玻璃",
+  "category" : "玻璃",
+  "type" : "出库",
+  "quantity" : 1,
+  "unit" : "块",
+  "beforeQuantity" : 15,
+  "afterQuantity" : 14,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777822701275
+}, {
+  "id" : "REC-20260503010326-0003",
+  "partId" : "OIL-003",
+  "partName" : "刹车油",
+  "category" : "机油",
+  "type" : "入库",
+  "quantity" : 80,
+  "unit" : "升",
+  "beforeQuantity" : 0,
+  "afterQuantity" : 80,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777741406927
+}, {
+  "id" : "REC-20260503005239-0002",
+  "partId" : "OIL-003",
+  "partName" : "刹车油",
+  "category" : "机油",
+  "type" : "出库",
+  "quantity" : 50,
+  "unit" : "升",
+  "beforeQuantity" : 50,
+  "afterQuantity" : 0,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777740759948
+}, {
+  "id" : "REC-20260503005232-0001",
+  "partId" : "OIL-002",
+  "partName" : "防冻液",
+  "category" : "机油",
+  "type" : "入库",
+  "quantity" : 90,
+  "unit" : "升",
+  "beforeQuantity" : 80,
+  "afterQuantity" : 170,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777740752004
+} ]

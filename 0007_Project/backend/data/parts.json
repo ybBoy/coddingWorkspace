@@ -1,0 +1,181 @@
+[ {
+  "id" : "BAT-003",
+  "name" : "磷酸铁锂电池",
+  "category" : "电池",
+  "specification" : "100kWh",
+  "quantity" : 50,
+  "minStock" : 10,
+  "unit" : "块",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "BAT-002",
+  "name" : "锂离子电池",
+  "category" : "电池",
+  "specification" : "75kWh",
+  "quantity" : 80,
+  "minStock" : 15,
+  "unit" : "块",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "BAT-001",
+  "name" : "锂离子电池",
+  "category" : "电池",
+  "specification" : "50kWh",
+  "quantity" : 100,
+  "minStock" : 20,
+  "unit" : "块",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "GLS-002",
+  "name" : "后挡风玻璃",
+  "category" : "玻璃",
+  "specification" : "福耀/160*100cm",
+  "quantity" : 12,
+  "minStock" : 3,
+  "unit" : "块",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "GLS-001",
+  "name" : "前挡风玻璃",
+  "category" : "玻璃",
+  "specification" : "福耀/180*120cm",
+  "quantity" : 15,
+  "minStock" : 5,
+  "unit" : "块",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "GLS-003",
+  "name" : "侧窗玻璃",
+  "category" : "玻璃",
+  "specification" : "信义/60*80cm",
+  "quantity" : 30,
+  "minStock" : 10,
+  "unit" : "块",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "MOT-002",
+  "name" : "永磁同步电机",
+  "category" : "电机",
+  "specification" : "200kW",
+  "quantity" : 40,
+  "minStock" : 8,
+  "unit" : "台",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "TIR-001",
+  "name" : "子午线轮胎",
+  "category" : "轮胎",
+  "specification" : "225/55 R18",
+  "quantity" : 200,
+  "minStock" : 50,
+  "unit" : "条",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "CTR-001",
+  "name" : "整车控制器",
+  "category" : "控制器",
+  "specification" : "VCU-100",
+  "quantity" : 30,
+  "minStock" : 5,
+  "unit" : "个",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "OIL-001",
+  "name" : "齿轮油",
+  "category" : "机油",
+  "specification" : "75W-90",
+  "quantity" : 100,
+  "minStock" : 20,
+  "unit" : "升",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "MOT-001",
+  "name" : "永磁同步电机",
+  "category" : "电机",
+  "specification" : "150kW",
+  "quantity" : 60,
+  "minStock" : 10,
+  "unit" : "台",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "OIL-002",
+  "name" : "防冻液",
+  "category" : "机油",
+  "specification" : "-40℃",
+  "quantity" : 170,
+  "minStock" : 15,
+  "unit" : "升",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "TIR-003",
+  "name" : "防爆轮胎",
+  "category" : "轮胎",
+  "specification" : "245/45 R20",
+  "quantity" : 80,
+  "minStock" : 20,
+  "unit" : "条",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "CTR-003",
+  "name" : "电池管理系统",
+  "category" : "控制器",
+  "specification" : "BMS-300",
+  "quantity" : 20,
+  "minStock" : 3,
+  "unit" : "个",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "TIR-002",
+  "name" : "子午线轮胎",
+  "category" : "轮胎",
+  "specification" : "235/60 R19",
+  "quantity" : 150,
+  "minStock" : 40,
+  "unit" : "条",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "CTR-002",
+  "name" : "电机控制器",
+  "category" : "控制器",
+  "specification" : "MCU-200",
+  "quantity" : 25,
+  "minStock" : 5,
+  "unit" : "个",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "OIL-003",
+  "name" : "刹车油",
+  "category" : "机油",
+  "specification" : "DOT4",
+  "quantity" : 80,
+  "minStock" : 10,
+  "unit" : "升",
+  "visible" : true,
+  "status" : "正常"
+}, {
+  "id" : "MOT-003",
+  "name" : "异步电机",
+  "category" : "电机",
+  "specification" : "120kW",
+  "quantity" : 30,
+  "minStock" : 5,
+  "unit" : "台",
+  "visible" : true,
+  "status" : "正常"
+} ]

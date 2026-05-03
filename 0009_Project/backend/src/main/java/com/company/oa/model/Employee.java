@@ -1,7 +1,6 @@
 package com.company.oa.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,8 +9,6 @@ import java.time.LocalDateTime;
 public class Employee {
     private Long id;
     private String username;
-    
-    @JsonIgnore
     private String password;
     
     private String name;

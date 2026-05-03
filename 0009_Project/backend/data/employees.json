@@ -1,18 +1,20 @@
 [ {
   "id" : 1,
   "username" : "admin",
+  "password" : "123456",
   "name" : "系统管理员",
   "avatar" : null,
   "departmentId" : 1,
   "departmentName" : "人力资源部",
   "roleId" : 1,
   "roleName" : "管理员",
-  "status" : "NORMAL",
-  "createTime" : "2026-05-04 00:29:25",
-  "updateTime" : "2026-05-04 00:29:25"
+  "status" : "ON_LEAVE",
+  "createTime" : "2026-05-04 00:51:45",
+  "updateTime" : "2026-05-04 01:02:27"
 }, {
   "id" : 2,
   "username" : "zhangsan",
+  "password" : "123456",
   "name" : "张三",
   "avatar" : null,
   "departmentId" : 2,
@@ -20,11 +22,12 @@
   "roleId" : 2,
   "roleName" : "普通员工",
   "status" : "NORMAL",
-  "createTime" : "2026-05-04 00:29:25",
-  "updateTime" : "2026-05-04 00:29:25"
+  "createTime" : "2026-05-04 00:51:45",
+  "updateTime" : "2026-05-04 00:51:45"
 }, {
   "id" : 3,
   "username" : "lisi",
+  "password" : "123456",
   "name" : "李四",
   "avatar" : null,
   "departmentId" : 3,
@@ -32,6 +35,19 @@
   "roleId" : 2,
   "roleName" : "普通员工",
   "status" : "NORMAL",
-  "createTime" : "2026-05-04 00:29:25",
-  "updateTime" : "2026-05-04 00:29:25"
+  "createTime" : "2026-05-04 00:51:45",
+  "updateTime" : "2026-05-04 00:51:45"
+}, {
+  "id" : 4,
+  "username" : "zhaoliu",
+  "password" : "123456",
+  "name" : "赵六",
+  "avatar" : null,
+  "departmentId" : 5,
+  "departmentName" : "项目管理部",
+  "roleId" : 2,
+  "roleName" : "普通员工",
+  "status" : null,
+  "createTime" : "2026-05-04 01:01:50",
+  "updateTime" : "2026-05-04 01:01:50"
 } ]

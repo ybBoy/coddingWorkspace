@@ -1,0 +1,15 @@
+[ {
+  "id" : 1,
+  "employeeId" : 1,
+  "employeeName" : "系统管理员",
+  "departmentName" : "人力资源部",
+  "startDate" : "2026-05-06",
+  "endDate" : "2026-05-11",
+  "reason" : "请看看坎坎坷坷",
+  "status" : "APPROVED",
+  "approvalComment" : "同意",
+  "approverId" : 1,
+  "approverName" : "系统管理员",
+  "createTime" : "2026-05-04 01:02:27",
+  "updateTime" : "2026-05-04 01:02:49"
+} ]

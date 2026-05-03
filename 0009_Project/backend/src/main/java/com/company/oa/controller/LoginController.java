@@ -24,7 +24,9 @@ public class LoginController {
         
         Optional<Employee> employee = employeeService.login(loginDTO);
         if (employee.isPresent()) {
-            return Result.success(employee.get());
+            Employee emp = employee.get();
+            emp.setPassword(null);
+            return Result.success(emp);
         }
         return Result.error(401, "用户名或密码错误");
     }

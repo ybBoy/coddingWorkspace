@@ -1,4 +1,16 @@
 [ {
+  "id" : "REC-20260503233821-0001",
+  "partId" : "GLS-001",
+  "partName" : "前挡风玻璃",
+  "category" : "玻璃",
+  "type" : "出库",
+  "quantity" : 1,
+  "unit" : "块",
+  "beforeQuantity" : 15,
+  "afterQuantity" : 14,
+  "ipAddress" : "127.0.0.1",
+  "createTime" : 1777822701275
+}, {
   "id" : "REC-20260503010326-0003",
   "partId" : "OIL-003",
   "partName" : "刹车油",

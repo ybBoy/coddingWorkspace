@@ -9,12 +9,15 @@ import RecordsList from '../views/RecordsList.vue'
 
 import UserPartsSearch from '../views/user/UserPartsSearch.vue'
 import UserRecordsList from '../views/user/UserRecordsList.vue'
+import UserRequestSubmit from '../views/user/UserRequestSubmit.vue'
+import UserRequestsList from '../views/user/UserRequestsList.vue'
 
 import AdminHome from '../views/admin/AdminHome.vue'
 import AdminPartsList from '../views/admin/AdminPartsList.vue'
 import AdminPartsSearch from '../views/admin/AdminPartsSearch.vue'
 import AdminRecordsList from '../views/admin/AdminRecordsList.vue'
 import AdminRestockList from '../views/admin/AdminRestockList.vue'
+import AdminRequestsReview from '../views/admin/AdminRequestsReview.vue'
 
 Vue.use(VueRouter)
 
@@ -38,6 +41,18 @@ const routes = [
     path: '/user/records',
     name: 'UserRecordsList',
     component: UserRecordsList,
+    meta: { role: 'user' }
+  },
+  {
+    path: '/user/request-submit',
+    name: 'UserRequestSubmit',
+    component: UserRequestSubmit,
+    meta: { role: 'user' }
+  },
+  {
+    path: '/user/requests',
+    name: 'UserRequestsList',
+    component: UserRequestsList,
     meta: { role: 'user' }
   },
   {
@@ -74,6 +89,12 @@ const routes = [
     path: '/admin/restock',
     name: 'AdminRestockList',
     component: AdminRestockList,
+    meta: { role: 'admin' }
+  },
+  {
+    path: '/admin/requests',
+    name: 'AdminRequestsReview',
+    component: AdminRequestsReview,
     meta: { role: 'admin' }
   },
   {

@@ -208,6 +208,48 @@ const partApi = {
      */
     getRecordsSummary() {
       return api.get('/user/records/summary')
+    },
+
+    // ==================== 出库申请API ====================
+    /**
+     * 提交出库申请
+     * @param {Object} requestData - 申请数据
+     * @param {Array} requestData.items - 申请明细列表
+     * @param {string} requestData.remark - 申请备注
+     * @returns {Promise} API响应
+     */
+    submitRequest(requestData) {
+      return api.post('/user/requests', requestData)
+    },
+
+    /**
+     * 获取我的申请列表
+     * @param {string} status - 可选的状态筛选
+     * @returns {Promise} API响应
+     */
+    getMyRequests(status) {
+      const params = {}
+      if (status) {
+        params.status = status
+      }
+      return api.get('/user/requests', { params: params })
+    },
+
+    /**
+     * 获取我的申请详情
+     * @param {string} id - 申请编号
+     * @returns {Promise} API响应
+     */
+    getMyRequestById(id) {
+      return api.get('/user/requests/' + id)
+    },
+
+    /**
+     * 获取我的待审核申请数量
+     * @returns {Promise} API响应
+     */
+    getMyPendingCount() {
+      return api.get('/user/requests/pending/count')
     }
   },
 
@@ -324,6 +366,65 @@ const partApi = {
      */
     getRecordsSummary() {
       return api.get('/records/summary')
+    },
+
+    // ==================== 出库申请API ====================
+    /**
+     * 获取所有申请列表
+     * @param {string} status - 可选的状态筛选
+     * @returns {Promise} API响应
+     */
+    getAllRequests(status) {
+      const params = {}
+      if (status) {
+        params.status = status
+      }
+      return api.get('/admin/requests', { params: params })
+    },
+
+    /**
+     * 获取待审核申请列表
+     * @returns {Promise} API响应
+     */
+    getPendingRequests() {
+      return api.get('/admin/requests/pending')
+    },
+
+    /**
+     * 获取申请详情
+     * @param {string} id - 申请编号
+     * @returns {Promise} API响应
+     */
+    getRequestById(id) {
+      return api.get('/admin/requests/' + id)
+    },
+
+    /**
+     * 审核申请
+     * @param {string} id - 申请编号
+     * @param {boolean} approved - 是否通过
+     * @param {string} comment - 审核意见
+     * @returns {Promise} API响应
+     */
+    reviewRequest(id, approved, comment) {
+      return api.put('/admin/requests/' + id + '/review', { approved, comment })
+    },
+
+    /**
+     * 批量审核通过申请
+     * @param {Array} ids - 申请编号数组
+     * @returns {Promise} API响应
+     */
+    batchApprove(ids) {
+      return api.post('/admin/requests/batch-approve', ids)
+    },
+
+    /**
+     * 获取待审核申请数量
+     * @returns {Promise} API响应
+     */
+    getPendingRequestCount() {
+      return api.get('/admin/requests/pending/count')
     }
   }
 }

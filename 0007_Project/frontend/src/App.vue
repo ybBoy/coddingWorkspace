@@ -41,8 +41,16 @@
                 <i class="el-icon-search"></i>
                 <span slot="title">零件搜索</span>
               </el-menu-item>
-              <el-menu-item index="/user/records">
+              <el-menu-item index="/user/request-submit">
+                <i class="el-icon-s-order"></i>
+                <span slot="title">提交出库申请</span>
+              </el-menu-item>
+              <el-menu-item index="/user/requests">
                 <i class="el-icon-document"></i>
+                <span slot="title">我的申请</span>
+              </el-menu-item>
+              <el-menu-item index="/user/records">
+                <i class="el-icon-tickets"></i>
                 <span slot="title">出入库记录</span>
               </el-menu-item>
             </template>
@@ -63,6 +71,11 @@
               <el-menu-item index="/admin/stock">
                 <i class="el-icon-upload2"></i>
                 <span slot="title">入库/出库</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/requests">
+                <i class="el-icon-s-claim"></i>
+                <span slot="title">申请审核</span>
+                <el-badge :value="pendingRequestCount" :max="99" class="badge" v-if="pendingRequestCount > 0"></el-badge>
               </el-menu-item>
               <el-menu-item index="/admin/records">
                 <i class="el-icon-document"></i>
@@ -121,7 +134,8 @@ export default {
   data() {
     return {
       restockCount: 0,
-      adminRestockCount: 0
+      adminRestockCount: 0,
+      pendingRequestCount: 0
     }
   },
   computed: {
@@ -140,6 +154,7 @@ export default {
   },
   created() {
     this.loadRestockCounts()
+    this.loadPendingRequestCount()
     eventBus.$on('stock-changed', () => {
       this.loadRestockCounts()
     })
@@ -163,6 +178,16 @@ export default {
         console.error('加载需补货数量失败:', error)
       }
     },
+    async loadPendingRequestCount() {
+      try {
+        const res = await partApi.admin.getPendingRequestCount()
+        if (res.success) {
+          this.pendingRequestCount = res.data || 0
+        }
+      } catch (error) {
+        console.error('加载待审核申请数量失败:', error)
+      }
+    },
     switchToUser() {
       this.$router.push('/user/search')
     },
@@ -173,6 +198,7 @@ export default {
   watch: {
     $route() {
       this.loadRestockCounts()
+      this.loadPendingRequestCount()
     }
   }
 }

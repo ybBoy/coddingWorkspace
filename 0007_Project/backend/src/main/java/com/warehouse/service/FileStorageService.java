@@ -2,8 +2,10 @@ package com.warehouse.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.warehouse.entity.OutboundRequest;
 import com.warehouse.entity.Part;
 import com.warehouse.entity.StockRecord;
+import com.warehouse.store.OutboundRequestDataStore;
 import com.warehouse.store.PartDataStore;
 import com.warehouse.store.StockRecordDataStore;
 import org.slf4j.Logger;
@@ -21,12 +23,13 @@ import java.util.Map;
 
 /**
  * 文件存储服务类
- * 负责将零件数据和库存记录持久化到JSON文件
+ * 负责将零件数据、库存记录和出库申请持久化到JSON文件
  * 系统启动时自动加载数据，数据变更时自动保存
  * 
  * 数据存储位置：
  * - 零件数据：{data.directory}/parts.json
  * - 库存记录：{data.directory}/records.json
+ * - 出库申请：{data.directory}/requests.json
  */
 @Service
 public class FileStorageService {
@@ -42,6 +45,11 @@ public class FileStorageService {
      * 库存记录文件名
      */
     private static final String RECORDS_FILE_NAME = "records.json";
+    
+    /**
+     * 出库申请数据文件名
+     */
+    private static final String REQUESTS_FILE_NAME = "requests.json";
 
     /**
      * 数据存储目录路径
@@ -62,17 +70,21 @@ public class FileStorageService {
 
     @Autowired
     private StockRecordDataStore stockRecordDataStore;
+    
+    @Autowired
+    private OutboundRequestDataStore requestDataStore;
 
     /**
      * 初始化方法
      * Spring容器启动后自动执行
-     * 执行顺序：创建数据目录 -> 加载零件数据 -> 加载库存记录
+     * 执行顺序：创建数据目录 -> 加载零件数据 -> 加载库存记录 -> 加载出库申请
      */
     @PostConstruct
     public void init() {
         createDataDirectory();
         loadData();
         loadRecords();
+        loadRequests();
     }
 
     /**
@@ -227,5 +239,44 @@ public class FileStorageService {
         part.setMinStock(minStock);
         part.setUnit(unit);
         partDataStore.savePart(part);
+    }
+
+    /**
+     * 保存出库申请数据到JSON文件
+     * 每次申请数据变更后调用此方法持久化
+     */
+    public void saveRequests() {
+        try {
+            File requestsFile = new File(dataDirectory, REQUESTS_FILE_NAME);
+            List<OutboundRequest> requests = requestDataStore.getAllRequests();
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(requestsFile, requests);
+            logger.info("出库申请数据保存成功: 共 {} 条记录", requests.size());
+        } catch (IOException e) {
+            logger.error("出库申请数据保存失败", e);
+        }
+    }
+
+    /**
+     * 从JSON文件加载出库申请数据
+     * 如果文件不存在则使用空数据
+     */
+    public void loadRequests() {
+        try {
+            File requestsFile = new File(dataDirectory, REQUESTS_FILE_NAME);
+            if (!requestsFile.exists()) {
+                logger.info("出库申请数据文件不存在，使用空数据");
+                return;
+            }
+
+            List<OutboundRequest> requests = objectMapper.readValue(requestsFile, new TypeReference<List<OutboundRequest>>() {});
+            Map<String, OutboundRequest> requestsMap = new HashMap<>();
+            for (OutboundRequest request : requests) {
+                requestsMap.put(request.getId(), request);
+            }
+            requestDataStore.setRequestsMap(requestsMap);
+            logger.info("出库申请数据加载成功: 共 {} 条记录", requests.size());
+        } catch (IOException e) {
+            logger.error("出库申请数据加载失败，使用空数据", e);
+        }
     }
 }

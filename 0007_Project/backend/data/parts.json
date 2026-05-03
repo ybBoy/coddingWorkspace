@@ -43,7 +43,7 @@
   "name" : "前挡风玻璃",
   "category" : "玻璃",
   "specification" : "福耀/180*120cm",
-  "quantity" : 15,
+  "quantity" : 14,
   "minStock" : 5,
   "unit" : "块",
   "visible" : true,

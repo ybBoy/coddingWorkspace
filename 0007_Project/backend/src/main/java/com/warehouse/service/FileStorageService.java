@@ -19,16 +19,42 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 文件存储服务类
+ * 负责将零件数据和库存记录持久化到JSON文件
+ * 系统启动时自动加载数据，数据变更时自动保存
+ * 
+ * 数据存储位置：
+ * - 零件数据：{data.directory}/parts.json
+ * - 库存记录：{data.directory}/records.json
+ */
 @Service
 public class FileStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
+    
+    /**
+     * 零件数据文件名
+     */
     private static final String PARTS_FILE_NAME = "parts.json";
+    
+    /**
+     * 库存记录文件名
+     */
     private static final String RECORDS_FILE_NAME = "records.json";
 
+    /**
+     * 数据存储目录路径
+     * 可通过 application.properties 中的 data.directory 配置
+     * 默认值：./data
+     */
     @Value("${data.directory:./data}")
     private String dataDirectory;
 
+    /**
+     * Jackson对象映射器
+     * 用于Java对象与JSON之间的序列化和反序列化
+     */
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -37,6 +63,11 @@ public class FileStorageService {
     @Autowired
     private StockRecordDataStore stockRecordDataStore;
 
+    /**
+     * 初始化方法
+     * Spring容器启动后自动执行
+     * 执行顺序：创建数据目录 -> 加载零件数据 -> 加载库存记录
+     */
     @PostConstruct
     public void init() {
         createDataDirectory();
@@ -44,6 +75,10 @@ public class FileStorageService {
         loadRecords();
     }
 
+    /**
+     * 创建数据存储目录
+     * 如果目录不存在则创建
+     */
     private void createDataDirectory() {
         File directory = new File(dataDirectory);
         if (!directory.exists()) {
@@ -56,6 +91,10 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * 保存零件数据到JSON文件
+     * 每次零件数据变更后调用此方法持久化
+     */
     public void saveData() {
         try {
             File dataFile = new File(dataDirectory, PARTS_FILE_NAME);
@@ -67,6 +106,10 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * 从JSON文件加载零件数据
+     * 如果文件不存在或加载失败，使用示例数据初始化
+     */
     public void loadData() {
         try {
             File dataFile = new File(dataDirectory, PARTS_FILE_NAME);
@@ -89,6 +132,10 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * 保存库存记录到JSON文件
+     * 每次库存操作后调用此方法持久化
+     */
     public void saveRecords() {
         try {
             File recordsFile = new File(dataDirectory, RECORDS_FILE_NAME);
@@ -100,6 +147,10 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * 从JSON文件加载库存记录
+     * 如果文件不存在则使用空数据
+     */
     public void loadRecords() {
         try {
             File recordsFile = new File(dataDirectory, RECORDS_FILE_NAME);
@@ -120,6 +171,11 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * 初始化示例零件数据
+     * 当数据文件不存在或加载失败时调用
+     * 包含电动汽车常用零件的示例数据
+     */
     private void initSampleData() {
         logger.info("初始化示例零件数据...");
         
@@ -151,6 +207,16 @@ public class FileStorageService {
         logger.info("示例零件数据初始化完成");
     }
 
+    /**
+     * 添加单个示例零件
+     * @param id 零件编号
+     * @param name 零件名称
+     * @param category 分类
+     * @param spec 规格
+     * @param qty 库存数量
+     * @param minStock 最低库存预警值
+     * @param unit 计量单位
+     */
     private void addSamplePart(String id, String name, String category, String spec, int qty, int minStock, String unit) {
         Part part = new Part();
         part.setId(id);

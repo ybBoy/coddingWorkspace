@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议室预订管理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏢 会议室预订管理系统</h1>
+            <div class="user-switch">
+                <label for="userSelect">当前用户：</label>
+                <select id="userSelect" onchange="switchUser(this.value)">
+                </select>
+                <span id="userRole" class="role-badge"></span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="filter-section">
+                    <h3>筛选</h3>
+                    <div id="adminFilters" class="admin-only">
+                        <label>
+                            <input type="radio" name="scope" value="today" checked onchange="changeScope('today')">
+                            仅看今天
+                        </label>
+                        <label>
+                            <input type="radio" name="scope" value="all" onchange="changeScope('all')">
+                            全部预订
+                        </label>
+                        <div class="room-filter">
+                            <label for="roomFilter">会议室筛选：</label>
+                            <select id="roomFilter" onchange="filterByRoom(this.value)">
+                                <option value="">全部会议室</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="openBookingModal()">
+                        ＋ 新建预订
+                    </button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="date-info">
+                    <h2 id="currentDate"></h2>
+                </div>
+                <div id="meetingRooms" class="meeting-rooms">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">预订会议室</h2>
+                <button class="close-btn" onclick="closeBookingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="form-group">
+                        <label for="roomSelect">会议室</label>
+                        <select id="roomSelect" required>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookingDate">日期</label>
+                        <input type="date" id="bookingDate" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startTime">开始时间</label>
+                            <select id="startTime" required onchange="updateEndTimeOptions()">
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">结束时间</label>
+                            <select id="endTime" required>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group admin-only" id="bookerSelectGroup">
+                        <label for="bookerSelect">预订人</label>
+                        <select id="bookerSelect">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="purpose">事由</label>
+                        <textarea id="purpose" rows="3" required placeholder="请输入预订事由"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeBookingModal()">取消</button>
+                        <button type="submit" class="btn btn-primary">确认预订</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

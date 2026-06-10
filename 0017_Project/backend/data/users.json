@@ -1,0 +1,97 @@
+[ {
+  "id" : 1,
+  "name" : "张伟",
+  "department" : "TECH",
+  "role" : "MANAGER",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 2,
+  "name" : "李娜",
+  "department" : "TECH",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 11.0,
+  "usedTimeoffHours" : 4.0,
+  "remainingTimeoffHours" : 7.0
+}, {
+  "id" : 3,
+  "name" : "王强",
+  "department" : "TECH",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 4,
+  "name" : "赵敏",
+  "department" : "PRODUCT",
+  "role" : "MANAGER",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 5,
+  "name" : "刘洋",
+  "department" : "PRODUCT",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 6,
+  "name" : "陈静",
+  "department" : "PRODUCT",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 7,
+  "name" : "周磊",
+  "department" : "OPERATIONS",
+  "role" : "MANAGER",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 8,
+  "name" : "吴芳",
+  "department" : "OPERATIONS",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 9,
+  "name" : "郑涛",
+  "department" : "OPERATIONS",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 10,
+  "name" : "孙丽",
+  "department" : "HR",
+  "role" : "MANAGER",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 11,
+  "name" : "马超",
+  "department" : "HR",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+}, {
+  "id" : 12,
+  "name" : "朱琳",
+  "department" : "HR",
+  "role" : "EMPLOYEE",
+  "totalOvertimeHours" : 0.0,
+  "usedTimeoffHours" : 0.0,
+  "remainingTimeoffHours" : 0.0
+} ]

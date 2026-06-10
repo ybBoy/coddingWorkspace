@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>员工加班与调休管理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                </div>
+                <h1>加班与调休管理系统</h1>
+            </div>
+            <div class="header-right">
+                <label class="user-select-label">切换用户：</label>
+                <select id="userSelect" class="user-select"></select>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <a href="#" class="nav-item active" data-view="dashboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span>个人看板</span>
+                    </a>
+                    <a href="#" class="nav-item" data-view="overtime">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span>加班申请</span>
+                    </a>
+                    <a href="#" class="nav-item" data-view="timeoff">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        <span>调休申请</span>
+                    </a>
+                    <a href="#" class="nav-item manager-only" data-view="approval">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span>审批中心</span>
+                    </a>
+                    <a href="#" class="nav-item manager-only" data-view="report">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        <span>部门报表</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="content">
+                <div id="view-dashboard" class="view active">
+                    <div class="view-header">
+                        <h2>个人看板</h2>
+                    </div>
+                    <div class="user-profile-card">
+                        <div class="avatar" id="userAvatar"></div>
+                        <div class="user-info">
+                            <h3 id="userName">--</h3>
+                            <p id="userDeptRole">--</p>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">累计有效加班</div>
+                                <div class="stat-value"><span id="totalOvertime">0</span> 小时</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-orange">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">已使用调休</div>
+                                <div class="stat-value"><span id="usedTimeoff">0</span> 小时</div>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-label">剩余可用调休</div>
+                                <div class="stat-value"><span id="remainingTimeoff">0</span> 小时</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-overtime" class="view">
+                    <div class="view-header">
+                        <h2>加班申请</h2>
+                        <button class="btn-primary" id="btnAddOvertime">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            提交加班申请
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>加班日期</th>
+                                    <th>时间段</th>
+                                    <th>时长</th>
+                                    <th>事由</th>
+                                    <th>状态</th>
+                                    <th>审批意见</th>
+                                    <th>申请时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overtimeTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-timeoff" class="view">
+                    <div class="view-header">
+                        <h2>调休申请</h2>
+                        <button class="btn-primary" id="btnAddTimeoff">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            提交调休申请
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>调休日期</th>
+                                    <th>类型</th>
+                                    <th>时长</th>
+                                    <th>事由</th>
+                                    <th>状态</th>
+                                    <th>审批意见</th>
+                                    <th>申请时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeoffTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="view-approval" class="view">
+                    <div class="view-header">
+                        <h2>审批中心</h2>
+                    </div>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="ot-approval">加班审批</button>
+                        <button class="tab-btn" data-tab="to-approval">调休审批</button>
+                    </div>
+                    <div id="tab-ot-approval" class="tab-content active">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>申请人</th>
+                                        <th>加班日期</th>
+                                        <th>时间段</th>
+                                        <th>时长</th>
+                                        <th>事由</th>
+                                        <th>剩余调休</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="otApprovalTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="tab-to-approval" class="tab-content">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>申请人</th>
+                                        <th>调休日期</th>
+                                        <th>类型</th>
+                                        <th>时长</th>
+                                        <th>事由</th>
+                                        <th>剩余调休</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="toApprovalTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-report" class="view">
+                    <div class="view-header">
+                        <h2>部门工时报表</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>部门</th>
+                                    <th>累计加班</th>
+                                    <th>已调休</th>
+                                    <th>剩余时长</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal" id="overtimeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>提交加班申请</h3>
+                <button class="modal-close" data-close="overtimeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="overtimeForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>加班日期 <span class="required">*</span></label>
+                            <input type="date" id="otDate" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>开始时间 <span class="required">*</span></label>
+                            <input type="time" id="otStart" required>
+                        </div>
+                        <div class="form-group">
+                            <label>结束时间 <span class="required">*</span></label>
+                            <input type="time" id="otEnd" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>加班时长（自动计算）</label>
+                        <input type="text" id="otHours" readonly placeholder="选择时间后自动计算">
+                    </div>
+                    <div class="form-group">
+                        <label>加班事由 <span class="required">*</span></label>
+                        <textarea id="otReason" rows="3" required placeholder="请详细描述加班事由"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-close="overtimeModal">取消</button>
+                <button class="btn-primary" id="btnSubmitOvertime">提交申请</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="timeoffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>提交调休申请</h3>
+                <button class="modal-close" data-close="timeoffModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-info">
+                    <span>当前剩余调休时长：</span>
+                    <strong id="currentRemaining">0</strong> 小时
+                </div>
+                <form id="timeoffForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>调休日期 <span class="required">*</span></label>
+                            <input type="date" id="toDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>调休类型 <span class="required">*</span></label>
+                            <select id="toType" required>
+                                <option value="">请选择</option>
+                                <option value="HALF_DAY">半天（4小时）</option>
+                                <option value="FULL_DAY">全天（8小时）</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>调休事由 <span class="required">*</span></label>
+                        <textarea id="toReason" rows="3" required placeholder="请详细描述调休事由"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-close="timeoffModal">取消</button>
+                <button class="btn-primary" id="btnSubmitTimeoff">提交申请</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="rejectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>拒绝申请</h3>
+                <button class="modal-close" data-close="rejectModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>拒绝原因 <span class="required">*</span></label>
+                    <textarea id="rejectReason" rows="3" required placeholder="请填写拒绝原因"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" data-close="rejectModal">取消</button>
+                <button class="btn-danger" id="btnConfirmReject">确认拒绝</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

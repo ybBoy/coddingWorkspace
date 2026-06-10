@@ -1,0 +1,27 @@
+[ {
+  "id" : 1,
+  "userId" : 2,
+  "userName" : "李娜",
+  "department" : "TECH",
+  "overtimeDate" : "2026-06-09",
+  "startTime" : "05:37:00",
+  "endTime" : "13:48:00",
+  "hours" : 8.5,
+  "reason" : "535435",
+  "status" : "REJECTED",
+  "approvalComment" : "不通过",
+  "createTime" : "2026-06-10"
+}, {
+  "id" : 2,
+  "userId" : 2,
+  "userName" : "李娜",
+  "department" : "TECH",
+  "overtimeDate" : "2026-06-10",
+  "startTime" : "10:51:00",
+  "endTime" : "21:51:00",
+  "hours" : 11.0,
+  "reason" : "34234",
+  "status" : "APPROVED",
+  "approvalComment" : "已通过",
+  "createTime" : "2026-06-10"
+} ]

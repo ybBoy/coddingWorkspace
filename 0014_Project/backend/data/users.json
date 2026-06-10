@@ -1,0 +1,21 @@
+[ {
+  "id" : 1,
+  "name" : "张伟",
+  "role" : "LEADER",
+  "avatarColor" : "#3B82F6"
+}, {
+  "id" : 2,
+  "name" : "李娜",
+  "role" : "MEMBER",
+  "avatarColor" : "#10B981"
+}, {
+  "id" : 3,
+  "name" : "王强",
+  "role" : "MEMBER",
+  "avatarColor" : "#F59E0B"
+}, {
+  "id" : 4,
+  "name" : "刘敏",
+  "role" : "MEMBER",
+  "avatarColor" : "#EF4444"
+} ]

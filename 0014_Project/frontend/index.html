@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>团队任务管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div id="app">
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                            T
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-800">团队任务管理</h1>
+                            <p class="text-xs text-slate-500">Team Task Manager</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div id="userInfo" class="flex items-center space-x-3">
+                            <div id="userAvatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"></div>
+                            <div class="text-right">
+                                <p id="userName" class="text-sm font-semibold text-slate-800"></p>
+                                <p id="userRole" class="text-xs text-slate-500"></p>
+                            </div>
+                        </div>
+                        <div class="border-l border-slate-200 h-10"></div>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-sm text-slate-600">切换用户：</label>
+                            <select id="userSelect" class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-1" id="pageTitle">我的任务</h2>
+                    <p class="text-sm text-slate-500" id="pageSubtitle">管理和追踪你负责的所有任务</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative">
+                        <select id="statusFilter" class="pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer">
+                            <option value="ALL">全部任务</option>
+                            <option value="UNCOMPLETED">未完成</option>
+                            <option value="PENDING">未开始</option>
+                            <option value="IN_PROGRESS">进行中</option>
+                            <option value="COMPLETED">已完成</option>
+                        </select>
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div id="assigneeFilterContainer" class="relative hidden">
+                        <select id="assigneeFilter" class="pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer">
+                            <option value="">全部负责人</option>
+                        </select>
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <button id="createTaskBtn" class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5 transition-all duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        新建任务
+                    </button>
+                </div>
+            </div>
+
+            <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8"></div>
+
+            <div id="tasksContainer" class="space-y-8">
+                <div id="pendingSection" class="task-section">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+                            <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">未开始</h3>
+                            <span id="pendingCount" class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">0</span>
+                        </div>
+                    </div>
+                    <div id="pendingTasks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+
+                <div id="inProgressSection" class="task-section">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                            <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">进行中</h3>
+                            <span id="inProgressCount" class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">0</span>
+                        </div>
+                    </div>
+                    <div id="inProgressTasks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+
+                <div id="completedSection" class="task-section">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                            <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wider">已完成</h3>
+                            <span id="completedCount" class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">0</span>
+                        </div>
+                    </div>
+                    <div id="completedTasks" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
+
+            <div id="emptyState" class="hidden text-center py-20">
+                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-100 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-slate-700 mb-1">暂无任务</h3>
+                <p class="text-slate-500 text-sm">点击上方"新建任务"按钮创建第一个任务</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-[100]">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 id="modalTitle" class="text-lg font-bold text-slate-800">新建任务</h3>
+                <button id="closeModalBtn" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors">
+                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">任务标题</label>
+                    <input type="text" id="taskTitle" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="请输入任务标题">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">截止日期</label>
+                        <input type="date" id="taskDueDate" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">优先级</label>
+                        <select id="taskPriority" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <option value="HIGH">高</option>
+                            <option value="MEDIUM" selected>中</option>
+                            <option value="LOW">低</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="statusField" class="hidden">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">状态</label>
+                    <select id="taskStatus" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <option value="PENDING">未开始</option>
+                        <option value="IN_PROGRESS">进行中</option>
+                        <option value="COMPLETED">已完成</option>
+                    </select>
+                </div>
+                <div id="assigneeField">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">负责人</label>
+                    <select id="taskAssignee" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></select>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button id="cancelModalBtn" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-white transition-colors">取消</button>
+                <button id="submitModalBtn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 transition-all">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-[200] transform translate-y-4 opacity-0 transition-all duration-300 pointer-events-none">
+        <div id="toastContent" class="px-5 py-3 rounded-xl shadow-xl text-sm font-medium text-white"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

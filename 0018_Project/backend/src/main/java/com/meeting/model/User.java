@@ -1,5 +1,6 @@
 package com.meeting.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
@@ -17,6 +18,7 @@ public class User {
         this.role = role;
     }
 
+    @JsonIgnore
     public boolean isAdmin() {
         return "admin".equals(role);
     }

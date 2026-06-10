@@ -38,23 +38,26 @@ function showToast(message, type = 'success') {
 function loadUsers() {
     apiRequest('/users')
         .then(users => {
-            allUsers = users;
+            allUsers = users.map(u => {
+                u.isAdmin = u.role === 'admin';
+                return u;
+            });
             const select = document.getElementById('userSelect');
-            select.innerHTML = users.map(u => 
+            select.innerHTML = allUsers.map(u => 
                 `<option value="${u.id}">${u.name}</option>`
             ).join('');
 
             const bookerSelect = document.getElementById('bookerSelect');
-            bookerSelect.innerHTML = users
+            bookerSelect.innerHTML = allUsers
                 .filter(u => u.role === 'employee')
                 .map(u => `<option value="${u.id}">${u.name}</option>`)
             .join('');
 
             const savedUserId = localStorage.getItem('currentUserId');
-            if (savedUserId && users.find(u => u.id === savedUserId)) {
+            if (savedUserId && allUsers.find(u => u.id === savedUserId)) {
                 switchUser(savedUserId);
             } else {
-                switchUser(users[0].id);
+                switchUser(allUsers[0].id);
             }
         })
         .catch(err => {

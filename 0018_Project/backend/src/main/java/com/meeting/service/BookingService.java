@@ -22,6 +22,14 @@ public class BookingService {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
+    private int timeToMinutes(String time) {
+        if ("24:00".equals(time)) {
+            return 24 * 60;
+        }
+        String[] parts = time.split(":");
+        return Integer.parseInt(parts[0]) * 60 + Integer.parseInt(parts[1]);
+    }
+
     public List<MeetingRoom> getAllMeetingRoomsWithBookings() {
         List<MeetingRoom> rooms = dataStoreService.getMeetingRooms();
         for (MeetingRoom room : rooms) {
@@ -131,25 +139,31 @@ public class BookingService {
     private void validateTime(String date, String startTime, String endTime) {
         try {
             LocalDate bookingDate = LocalDate.parse(date);
-            LocalTime start = LocalTime.parse(startTime, TIME_FORMATTER);
-            LocalTime end = LocalTime.parse(endTime, TIME_FORMATTER);
 
-            if (start.isAfter(end) || start.equals(end)) {
+            int startMinutes = timeToMinutes(startTime);
+            int endMinutes = timeToMinutes(endTime);
+
+            if (startMinutes >= endMinutes) {
                 throw new IllegalArgumentException("开始时间必须早于结束时间");
             }
 
-            if (start.getMinute() % 30 != 0 || end.getMinute() % 30 != 0) {
+            if (startMinutes % 30 != 0 || endMinutes % 30 != 0) {
                 throw new IllegalArgumentException("时间必须以半小时为单位");
+            }
+
+            if (startMinutes < 0 || startMinutes > 24 * 60 || endMinutes < 0 || endMinutes > 24 * 60) {
+                throw new IllegalArgumentException("时间格式不正确");
             }
 
             LocalDate today = LocalDate.now();
             LocalTime now = LocalTime.now();
+            int nowMinutes = now.getHour() * 60 + now.getMinute();
 
             if (bookingDate.isBefore(today)) {
                 throw new IllegalArgumentException("不能预订过去的时间");
             }
 
-            if (bookingDate.equals(today) && start.isBefore(now)) {
+            if (bookingDate.equals(today) && startMinutes < nowMinutes) {
                 throw new IllegalArgumentException("不能预订过去的时间");
             }
         } catch (IllegalArgumentException e) {
@@ -165,18 +179,18 @@ public class BookingService {
             return false;
         }
 
-        LocalTime newStart = LocalTime.parse(startTime, TIME_FORMATTER);
-        LocalTime newEnd = LocalTime.parse(endTime, TIME_FORMATTER);
+        int newStart = timeToMinutes(startTime);
+        int newEnd = timeToMinutes(endTime);
 
         for (Booking booking : room.getBookings()) {
             if (excludeBookingId != null && excludeBookingId.equals(booking.getId())) {
                 continue;
             }
             if (date.equals(booking.getDate())) {
-                LocalTime existStart = LocalTime.parse(booking.getStartTime(), TIME_FORMATTER);
-                LocalTime existEnd = LocalTime.parse(booking.getEndTime(), TIME_FORMATTER);
+                int existStart = timeToMinutes(booking.getStartTime());
+                int existEnd = timeToMinutes(booking.getEndTime());
 
-                if (newStart.isBefore(existEnd) && newEnd.isAfter(existStart)) {
+                if (newStart < existEnd && newEnd > existStart) {
                     return true;
                 }
             }

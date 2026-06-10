@@ -192,6 +192,9 @@ function openBookingModal(roomId) {
     const today = new Date();
     todayInput.value = formatDate(today);
     todayInput.min = formatDate(today);
+    todayInput.onchange = function() {
+        generateTimeOptions();
+    };
 
     generateTimeOptions();
 }
@@ -204,34 +207,68 @@ function closeBookingModal() {
 function generateTimeOptions() {
     const startSelect = document.getElementById('startTime');
     const endSelect = document.getElementById('endTime');
-    const times = [];
-    
-    for (let hour = 8; hour <= 21; hour++) {
-        times.push(`${padZero(hour)}:00`);
-        if (hour < 21) {
-            times.push(`${padZero(hour)}:30`);
-        }
+    const selectedDate = document.getElementById('bookingDate').value;
+    const today = formatDate(new Date());
+    const now = new Date();
+
+    const allTimes = [];
+    for (let hour = 0; hour <= 23; hour++) {
+        allTimes.push(`${padZero(hour)}:00`);
+        allTimes.push(`${padZero(hour)}:30`);
+    }
+    allTimes.push('24:00');
+
+    let availableTimes = allTimes.slice(0, -1);
+
+    if (selectedDate === today) {
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const ceilMinutes = Math.ceil(currentMinutes / 30) * 30;
+        availableTimes = availableTimes.filter(t => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m >= ceilMinutes;
+        });
     }
 
-    startSelect.innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join('');
+    if (availableTimes.length === 0) {
+        startSelect.innerHTML = '<option value="">今天已无可预订时间</option>';
+        endSelect.innerHTML = '<option value="">请先选择开始时间</option>';
+        return;
+    }
+
+    startSelect.innerHTML = availableTimes.map(t => `<option value="${t}">${t}</option>`).join('');
     updateEndTimeOptions();
 }
 
 function updateEndTimeOptions() {
     const startTime = document.getElementById('startTime').value;
     const endSelect = document.getElementById('endTime');
-    const times = [];
-    
+
+    if (!startTime) {
+        endSelect.innerHTML = '<option value="">请先选择开始时间</option>';
+        return;
+    }
+
     const [startHour, startMin] = startTime.split(':').map(Number);
     const startMinutes = startHour * 60 + startMin;
 
-    for (let minutes = startMinutes + 30; minutes <= 21 * 60; minutes += 30) {
-        const hour = Math.floor(minutes / 60);
-        const min = minutes % 60;
-        times.push(`${padZero(hour)}:${padZero(min)}`);
+    const allTimes = [];
+    for (let hour = 0; hour <= 23; hour++) {
+        allTimes.push(`${padZero(hour)}:00`);
+        allTimes.push(`${padZero(hour)}:30`);
+    }
+    allTimes.push('24:00');
+
+    const endTimes = allTimes.filter(t => {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m > startMinutes;
+    });
+
+    if (endTimes.length === 0) {
+        endSelect.innerHTML = '<option value="">无可用结束时间</option>';
+        return;
     }
 
-    endSelect.innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join('');
+    endSelect.innerHTML = endTimes.map(t => `<option value="${t}">${t}</option>`).join('');
 }
 
 function submitBooking(event) {

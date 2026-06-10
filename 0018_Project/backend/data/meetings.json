@@ -2,12 +2,42 @@
   "id" : "room1",
   "name" : "会议室A",
   "capacity" : 6,
-  "bookings" : [ ]
+  "bookings" : [ {
+    "id" : "1753a02eaff84c55854e8f4e3aa1ad4c",
+    "roomId" : "room1",
+    "date" : "2026-06-11",
+    "startTime" : "00:00",
+    "endTime" : "23:30",
+    "purpose" : "胜多负少",
+    "bookerId" : "u1",
+    "bookerName" : "张三",
+    "createdAt" : 1781097218169
+  } ]
 }, {
   "id" : "room2",
   "name" : "会议室B",
   "capacity" : 10,
-  "bookings" : [ ]
+  "bookings" : [ {
+    "id" : "57631e334de5445a926602a878f94e90",
+    "roomId" : "room2",
+    "date" : "2026-06-11",
+    "startTime" : "00:00",
+    "endTime" : "00:30",
+    "purpose" : "4534",
+    "bookerId" : "u1",
+    "bookerName" : "张三",
+    "createdAt" : 1781097524474
+  }, {
+    "id" : "6bcf061448ff4d009530505e12bb08d9",
+    "roomId" : "room2",
+    "date" : "2026-06-11",
+    "startTime" : "09:00",
+    "endTime" : "09:30",
+    "purpose" : "345",
+    "bookerId" : "admin",
+    "bookerName" : "管理员",
+    "createdAt" : 1781097565348
+  } ]
 }, {
   "id" : "room3",
   "name" : "会议室C",

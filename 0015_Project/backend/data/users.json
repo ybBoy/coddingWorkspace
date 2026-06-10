@@ -1,0 +1,24 @@
+{
+  "users": [
+    {
+      "id": "u001",
+      "name": "张三",
+      "role": "EMPLOYEE"
+    },
+    {
+      "id": "u002",
+      "name": "李四",
+      "role": "EMPLOYEE"
+    },
+    {
+      "id": "u003",
+      "name": "王五",
+      "role": "EMPLOYEE"
+    },
+    {
+      "id": "u004",
+      "name": "赵六",
+      "role": "ADMIN"
+    }
+  ]
+}

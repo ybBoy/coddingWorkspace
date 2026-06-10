@@ -1,0 +1,12 @@
+{
+  "rooms": [
+    {"id":"roomA","name":"会议室A","capacity":6},
+    {"id":"roomB","name":"会议室B","capacity":10},
+    {"id":"roomC","name":"会议室C","capacity":4}
+  ],
+  "bookings": [
+    {"id":"B1781092834667","roomId":"roomA","userId":"u001","userName":"张三","date":"2026-06-10","startTime":"20:30","endTime":"21:00","purpose":"事由","createdAt":1781092834667},
+    {"id":"B1781092902899","roomId":"roomB","userId":"u001","userName":"张三","date":"2026-06-10","startTime":"20:30","endTime":"21:00","purpose":"事由","createdAt":1781092902899},
+    {"id":"B1781092942012","roomId":"roomB","userId":"u004","userName":"赵六","date":"2026-06-12","startTime":"09:00","endTime":"10:00","purpose":"事由","createdAt":1781092942012}
+  ]
+}

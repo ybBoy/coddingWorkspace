@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议室预订管理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">会议室预订管理系统</h1>
+                <div class="user-section">
+                    <label for="userSelect">当前用户：</label>
+                    <select id="userSelect" class="user-select"></select>
+                    <span id="userRole" class="user-role"></span>
+                </div>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div id="adminFilters" class="admin-filters" style="display:none;">
+                <label>筛选会议室：</label>
+                <select id="roomFilter">
+                    <option value="">全部会议室</option>
+                </select>
+            </div>
+            <div class="today-info">
+                <span id="todayDate"></span>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div id="roomsContainer" class="rooms-container"></div>
+        </main>
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">预订会议室</h2>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <form id="bookingForm" class="modal-body">
+                <div class="form-group">
+                    <label for="modalRoomSelect">会议室</label>
+                    <select id="modalRoomSelect" required></select>
+                </div>
+                <div id="forUserGroup" class="form-group" style="display:none;">
+                    <label for="forUserSelect">预订人（管理员可为他人预订）</label>
+                    <select id="forUserSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label for="bookingDate">日期</label>
+                    <input type="date" id="bookingDate" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startTime">开始时间</label>
+                        <select id="startTime" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="endTime">结束时间</label>
+                        <select id="endTime" required></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="purpose">事由</label>
+                    <textarea id="purpose" rows="3" required placeholder="请输入会议事由..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn btn-primary">确认预订</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

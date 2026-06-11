@@ -23,11 +23,12 @@ import javax.servlet.annotation.WebServlet;
 public class AppServer {
     private static final int PORT = 8080;
     private static final String DATA_FILE = "vote-data.json";
+    private static final String ADMIN_PASSWORD = "admin123"; // 管理员密码，可修改
 
     public static void main(String[] args) throws Exception {
         // 初始化存储与服务
         FileStore fileStore = new FileStore(DATA_FILE);
-        VoteService voteService = new VoteService(fileStore);
+        VoteService voteService = new VoteService(fileStore, ADMIN_PASSWORD);
         VoteWebSocket.setVoteService(voteService);
 
         // 注册 JVM 关闭钩子，确保数据落盘

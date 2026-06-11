@@ -241,3 +241,188 @@ body {
   font-size: 13px;
   color: #6b7280;
 }
+
+/* 状态文字样式 */
+.app-header .status.reconnecting {
+  color: #d97706;
+}
+
+/* 面板标题中的徽章 */
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lock-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.timer-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #dbeafe;
+  color: #2563eb;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* 选中的选项高亮 */
+.option-item-selected {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+}
+
+.option-item-selected .option-name {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.vote-indicator {
+  color: #2563eb;
+  font-weight: bold;
+}
+
+/* 小按钮 */
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* 按钮禁用 */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 重命名编辑模式 */
+.option-edit {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: center;
+}
+
+.option-edit input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.option-edit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* 柱状图选中高亮 */
+.name-selected {
+  color: #1d4ed8 !important;
+  font-weight: 600 !important;
+}
+
+.chart-bar-fill-selected {
+  background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+/* 管理员面板 */
+.admin-panel {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #fef3c7;
+  color: #b45309;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.admin-login {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.admin-login input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.admin-login input:focus {
+  border-color: #3b82f6;
+}
+
+.admin-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.admin-hint {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.admin-section {
+  margin-bottom: 16px;
+}
+
+.admin-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.admin-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-label {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.timer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-logout {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 输入框禁用 */
+input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  color: #9ca3af;
+}

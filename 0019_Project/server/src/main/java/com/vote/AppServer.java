@@ -5,14 +5,10 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.websocket.server.WebSocketUpgradeFilter;
-import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.annotation.WebServlet;
-import java.util.EnumSet;
 
 /**
  * AppServer 职责：
@@ -48,8 +44,7 @@ public class AppServer {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
 
-        // WebSocket 配置
-        JettyWebSocketServletContainerInitializer.configure(context, null);
+        // WebSocket 配置：通过 WebSocketServlet 注册
         context.addServlet(new ServletHolder(new VoteServlet()), "/ws/*");
 
         // 静态资源（可选，指向前端 dist 目录）

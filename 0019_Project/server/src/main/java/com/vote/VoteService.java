@@ -36,6 +36,11 @@ public class VoteService {
         // 恢复倒计时任务：如果结束时间还未到
         if (state.getTimerEndTime() > System.currentTimeMillis()) {
             startTimerTask();
+        } else if (state.getTimerEndTime() > 0) {
+            // 倒计时在服务停机期间已过期，恢复为"已结束/已锁定"状态
+            state.setTimerEndTime(0);
+            state.setLocked(true);
+            System.out.println("倒计时已在停机期间结束，投票已恢复为锁定状态");
         } else {
             state.setTimerEndTime(0);
         }
@@ -123,8 +128,11 @@ public class VoteService {
         return state.copy();
     }
 
-    /** 新增选项，任何人都可以 */
+    /** 新增选项，任何人都可以，但锁定状态下不允许 */
     public synchronized VoteState addOption(String name) {
+        if (state.isLocked()) {
+            return state.copy();
+        }
         if (name == null || name.trim().isEmpty()) return state.copy();
         String id = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         VoteOption newOpt = new VoteOption(id, name.trim(), 0);
@@ -148,6 +156,7 @@ public class VoteService {
         state.getClientVotes().clear();
         state.setLocked(false);
         stopTimer();
+        state.setTimerEndTime(0);
         persistAsync();
         broadcast();
         return state.copy();
@@ -158,14 +167,15 @@ public class VoteService {
         if (!isAdmin(adminToken)) return state.copy();
         if (optionId == null) return state.copy();
 
-        // 移除选项
-        Iterator<VoteOption> it = state.getOptions().iterator();
-        while (it.hasNext()) {
-            if (it.next().getId().equals(optionId)) {
-                it.remove();
-                break;
+        // 移除选项（CopyOnWriteArrayList 不支持 iterator.remove，重建列表）
+        List<VoteOption> newOptions = new ArrayList<>();
+        for (VoteOption opt : state.getOptions()) {
+            if (!opt.getId().equals(optionId)) {
+                newOptions.add(opt);
             }
         }
+        state.setOptions(newOptions);
+
         // 移除相关投票记录
         Iterator<Map.Entry<String, String>> cvIt = state.getClientVotes().entrySet().iterator();
         while (cvIt.hasNext()) {

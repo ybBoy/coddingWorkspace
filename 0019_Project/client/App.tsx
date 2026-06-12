@@ -20,6 +20,7 @@ export interface VoteStateData {
   options: VoteOptionData[];
   locked: boolean;
   remainingSeconds: number;
+  myVoteId: string | null;
 }
 
 /**
@@ -111,6 +112,13 @@ function App() {
       reconnectAttemptsRef.current = 0;
       eventBus.emit(EVENTS.WS_CONNECTED);
       console.log('[WS] 已连接');
+      // 连接建立后立即发送 HELLO 消息，把 clientId 告知后端
+      // 后端绑定 session 与 clientId，并返回带正确 myVoteId 的 INIT 状态
+      const helloMsg = {
+        type: 'HELLO',
+        clientId: clientIdRef.current,
+      };
+      ws.send(JSON.stringify(helloMsg));
     };
 
     ws.onclose = () => {
@@ -153,6 +161,8 @@ function App() {
           setOptions(state.options || []);
           setIsLocked(state.locked || false);
           setRemainingSeconds(state.remainingSeconds || 0);
+          // 后端返回 myVoteId，刷新/重连后也能正确高亮
+          setMyVoteId(state.myVoteId || null);
           eventBus.emit(EVENTS.DATA_UPDATED, state);
         } else if (msg.type === 'ADMIN_LOGIN_OK') {
           const token = msg.data as string;

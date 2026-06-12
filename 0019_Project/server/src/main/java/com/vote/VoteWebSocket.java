@@ -5,13 +5,15 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 
 import java.io.IOException;
 import java.util.Queue;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * VoteWebSocket 职责：
  * - 处理每个客户端的 WebSocket 连接生命周期
  * - 接收客户端消息，根据类型和权限转发给 VoteService
- * - 将最新状态广播给所有在线客户端
+ * - 将最新状态广播给所有在线客户端（每条消息附带该 session 对应 clientId 的 myVoteId）
  * - 新连接立即发送 INIT 消息（完整状态）
  * - 定期清理失效 Session
  *
@@ -19,16 +21,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 客户端 -> 服务端：
  *   {type:"VOTE", clientId:"xxx", data:"optionId"}
  *   {type:"ADD", clientId:"xxx", data:"optionName"}
- *   {type:"CLEAR", adminToken:"xxx"}
- *   {type:"ADMIN_LOGIN", data:"password"}
- *   {type:"DELETE", adminToken:"xxx", data:"optionId"}
- *   {type:"RENAME", adminToken:"xxx", data:{id:"opt1", name:"新名称"}}
- *   {type:"LOCK", adminToken:"xxx", data:true/false}
- *   {type:"SET_TIMER", adminToken:"xxx", data:60}
+ *   {type:"CLEAR", adminToken:"xxx", clientId:"xxx"}
+ *   {type:"ADMIN_LOGIN", data:"password", clientId:"xxx"}
+ *   {type:"DELETE", adminToken:"xxx", data:"optionId", clientId:"xxx"}
+ *   {type:"RENAME", adminToken:"xxx", data:{id:"opt1", name:"新名称"}, clientId:"xxx"}
+ *   {type:"LOCK", adminToken:"xxx", data:true/false, clientId:"xxx"}
+ *   {type:"SET_TIMER", adminToken:"xxx", data:60, clientId:"xxx"}
  *
  * 服务端 -> 客户端：
- *   {type:"INIT", data:{options:[...], locked:false, remainingSeconds:0}}
- *   {type:"UPDATE", data:{options:[...], locked:false, remainingSeconds:0}}
+ *   {type:"INIT", data:{options:[...], locked:false, remainingSeconds:0, myVoteId:"opt1"}}
+ *   {type:"UPDATE", data:{options:[...], locked:false, remainingSeconds:0, myVoteId:"opt1"}}
  *   {type:"ADMIN_LOGIN_OK"}
  *   {type:"ADMIN_LOGIN_FAIL"}
  */
@@ -36,6 +38,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class VoteWebSocket {
     // 保存所有在线会话
     private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
+    // 保存每个会话对应的 clientId（用于给每个客户端附带自己的 myVoteId）
+    private static final Map<Session, String> sessionClientMap = new ConcurrentHashMap<>();
     private static VoteService voteService;
 
     public static void setVoteService(VoteService service) {
@@ -54,13 +58,14 @@ public class VoteWebSocket {
         sessions.add(session);
         System.out.println("客户端连接: " + session.getRemoteAddress().getAddress()
             + ", 当前在线: " + sessions.size());
-        // 新连接上来立刻发送当前完整状态
-        sendToSession(session, buildStateMessage("INIT", voteService.getState()));
+        // 新连接上来立刻发送当前完整状态（此时 clientId 还未知，myVoteId 为 null）
+        sendToSession(session, buildStateMessage("INIT", voteService.getState(), null));
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
         sessions.remove(session);
+        sessionClientMap.remove(session);
         System.out.println("客户端断开: " + session.getRemoteAddress().getAddress()
             + ", 当前在线: " + sessions.size());
     }
@@ -74,21 +79,36 @@ public class VoteWebSocket {
             String data = extractJsonRaw(message, "data");
 
             if (type == null) return;
-            VoteState newState = null;
+
+            // 记录该 session 对应的 clientId（用于后续广播时附带 myVoteId）
+            if (clientId != null) {
+                sessionClientMap.put(session, clientId);
+            }
 
             switch (type) {
+                case "HELLO": {
+                    // 客户端连接后立即发送 HELLO 绑定 clientId，并获取带正确 myVoteId 的初始状态
+                    VoteState cur = voteService.getState();
+                    String cid = sessionClientMap.get(session);
+                    String myVote = null;
+                    if (cid != null) {
+                        myVote = cur.getClientVotes().get(cid);
+                    }
+                    sendToSession(session, buildStateMessage("INIT", cur, myVote));
+                    return;
+                }
                 case "VOTE": {
                     String optionId = stripQuotes(data);
-                    newState = voteService.vote(clientId, optionId);
+                    voteService.vote(clientId, optionId);
                     break;
                 }
                 case "ADD": {
                     String name = stripQuotes(data);
-                    newState = voteService.addOption(name);
+                    voteService.addOption(name);
                     break;
                 }
                 case "CLEAR": {
-                    newState = voteService.clearAll(adminToken);
+                    voteService.clearAll(adminToken);
                     break;
                 }
                 case "ADMIN_LOGIN": {
@@ -101,25 +121,24 @@ public class VoteWebSocket {
                 }
                 case "DELETE": {
                     String optionId = stripQuotes(data);
-                    newState = voteService.deleteOption(adminToken, optionId);
+                    voteService.deleteOption(adminToken, optionId);
                     break;
                 }
                 case "RENAME": {
-                    // data 是 {"id":"xxx","name":"xxx"} 格式
                     String id = extractJsonValue(data, "id");
                     String name = extractJsonValue(data, "name");
-                    newState = voteService.renameOption(adminToken, id, name);
+                    voteService.renameOption(adminToken, id, name);
                     break;
                 }
                 case "LOCK": {
                     boolean locked = "true".equals(data.trim());
-                    newState = voteService.setLocked(adminToken, locked);
+                    voteService.setLocked(adminToken, locked);
                     break;
                 }
                 case "SET_TIMER": {
                     try {
                         int seconds = Integer.parseInt(data.trim());
-                        newState = voteService.setTimer(adminToken, seconds);
+                        voteService.setTimer(adminToken, seconds);
                     } catch (NumberFormatException ignored) {}
                     break;
                 }
@@ -127,9 +146,7 @@ public class VoteWebSocket {
                     return;
             }
 
-            if (newState != null) {
-                broadcastState(newState);
-            }
+            // 注意：VoteService 内部已经调用了 broadcast()，这里不再重复广播
         } catch (Exception e) {
             System.err.println("处理消息异常: " + e.getMessage() + ", 消息: " + message);
         }
@@ -140,11 +157,16 @@ public class VoteWebSocket {
         System.err.println("WebSocket 错误: " + error.getMessage());
     }
 
-    // 广播完整状态给所有客户端
+    // 广播完整状态给所有客户端，每个客户端附带自己的 myVoteId
     private static void broadcastState(VoteState state) {
-        String msg = buildStateMessage("UPDATE", state);
         for (Session s : sessions) {
-            if (s.isOpen()) sendToSession(s, msg);
+            if (!s.isOpen()) continue;
+            String cid = sessionClientMap.get(s);
+            String myVoteId = null;
+            if (cid != null) {
+                myVoteId = state.getClientVotes().get(cid);
+            }
+            sendToSession(s, buildStateMessage("UPDATE", state, myVoteId));
         }
     }
 
@@ -156,8 +178,8 @@ public class VoteWebSocket {
         }
     }
 
-    // 构建包含完整状态的 JSON 消息
-    private static String buildStateMessage(String type, VoteState state) {
+    // 构建包含完整状态的 JSON 消息，附带该 clientId 的 myVoteId（可为 null）
+    private static String buildStateMessage(String type, VoteState state, String myVoteId) {
         StringBuilder sb = new StringBuilder();
         sb.append("{\"type\":\"").append(type).append("\",\"data\":{");
 
@@ -175,7 +197,14 @@ public class VoteWebSocket {
 
         // locked 和 remainingSeconds
         sb.append("\"locked\":").append(state.isLocked()).append(",");
-        sb.append("\"remainingSeconds\":").append(state.getRemainingSeconds());
+        sb.append("\"remainingSeconds\":").append(state.getRemainingSeconds()).append(",");
+
+        // myVoteId（当前用户投了谁，刷新/重连后仍能高亮）
+        if (myVoteId != null) {
+            sb.append("\"myVoteId\":\"").append(escape(myVoteId)).append("\"");
+        } else {
+            sb.append("\"myVoteId\":null");
+        }
 
         sb.append("}}");
         return sb.toString();
@@ -192,13 +221,11 @@ public class VoteWebSocket {
 
         char first = json.charAt(start);
         if (first == '"') {
-            // 字符串
             start++;
             int end = json.indexOf('"', start);
             if (end < 0) return null;
             return "\"" + json.substring(start, end) + "\"";
         } else if (first == '{' || first == '[') {
-            // 对象或数组，找匹配的结束符
             char open = first;
             char close = (open == '{') ? '}' : ']';
             int depth = 0;
@@ -218,14 +245,12 @@ public class VoteWebSocket {
             }
             return json.substring(start, end);
         } else {
-            // 数字或布尔
             int end = start;
             while (end < json.length() && json.charAt(end) != ',' && json.charAt(end) != '}') end++;
             return json.substring(start, end).trim();
         }
     }
 
-    // 提取 JSON 字段值（去掉字符串的引号）
     private String extractJsonValue(String json, String key) {
         String raw = extractJsonRaw(json, key);
         if (raw == null) return null;

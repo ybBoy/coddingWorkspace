@@ -1,95 +1,84 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { eventBus } from '../utils/EventBus';
-import { DanmakuMessage } from '../types';
+import { DanmakuMessage, Settings } from '../types';
 
 interface DanmakuItem extends DanmakuMessage {
   top: number;
   duration: number;
   track: number;
   instanceKey: string;
-  createdAt: number;
 }
 
 const MAX_DANMAKU = 30;
-const TRACK_COUNT = 12;
-const MIN_DURATION = 8;
-const MAX_DURATION = 14;
 
 export const WallScreen: React.FC = () => {
   const [danmakus, setDanmakus] = useState<DanmakuItem[]>([]);
-  const [sendingEnabled, setSendingEnabled] = useState(true);
-  const trackAvailableAt = useRef<number[]>(new Array(TRACK_COUNT).fill(0));
+  const [pinned, setPinned] = useState<DanmakuMessage[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [playbackPaused, setPlaybackPaused] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const trackAvailableAt = useRef<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceCounter = useRef(0);
   const removeTimers = useRef<Map<string, number>>(new Map());
   const historyLoaded = useRef(false);
+  const pausedQueue = useRef<DanmakuMessage[]>([]);
+
+  const getTrackCount = () => settings?.trackCount || 12;
+  const getSpeedMin = () => (settings?.speedMin || 8);
+  const getSpeedMax = () => (settings?.speedMax || 14);
+  const getFontSize = () => (settings?.fontSize || 28);
 
   const findAvailableTrack = useCallback((): number => {
-    const now = Date.now();
-    let bestTrack = 0;
-    let earliestTime = trackAvailableAt.current[0];
-
-    for (let i = 0; i < TRACK_COUNT; i++) {
-      if (trackAvailableAt.current[i] <= now) {
-        return i;
-      }
-      if (trackAvailableAt.current[i] < earliestTime) {
-        earliestTime = trackAvailableAt.current[i];
-        bestTrack = i;
-      }
+    const tc = getTrackCount();
+    if (trackAvailableAt.current.length !== tc) {
+      trackAvailableAt.current = new Array(tc).fill(0);
     }
-    return bestTrack;
-  }, []);
+    const now = Date.now();
+    let best = 0;
+    let earliest = trackAvailableAt.current[0];
+    for (let i = 0; i < tc; i++) {
+      if (trackAvailableAt.current[i] <= now) return i;
+      if (trackAvailableAt.current[i] < earliest) { earliest = trackAvailableAt.current[i]; best = i; }
+    }
+    return best;
+  }, [settings]);
 
-  const removeDanmaku = useCallback((instanceKey: string) => {
-    setDanmakus(prev => prev.filter(d => d.instanceKey !== instanceKey));
-    removeTimers.current.delete(instanceKey);
+  const removeDanmaku = useCallback((key: string) => {
+    setDanmakus(prev => prev.filter(d => d.instanceKey !== key));
+    removeTimers.current.delete(key);
   }, []);
 
   const addDanmaku = useCallback((msg: DanmakuMessage) => {
     instanceCounter.current += 1;
     const instanceKey = msg.id + '-' + instanceCounter.current;
-    const createdAt = Date.now();
-
+    const tc = getTrackCount();
     const track = findAvailableTrack();
-    const duration = MIN_DURATION + Math.random() * (MAX_DURATION - MIN_DURATION);
+    const speedMin = getSpeedMin();
+    const speedMax = getSpeedMax();
+    const duration = speedMin + Math.random() * (speedMax - speedMin);
     const containerHeight = containerRef.current?.clientHeight || window.innerHeight;
-    const trackHeight = containerHeight / TRACK_COUNT;
+    const trackHeight = containerHeight / tc;
     const top = track * trackHeight + Math.random() * (trackHeight * 0.3);
+    if (trackAvailableAt.current.length === tc) {
+      trackAvailableAt.current[track] = Date.now() + duration * 1000 * 0.35;
+    }
 
-    trackAvailableAt.current[track] = createdAt + duration * 1000 * 0.35;
-
-    const item: DanmakuItem = {
-      ...msg,
-      top,
-      duration,
-      track,
-      instanceKey,
-      createdAt,
-    };
-
+    const item: DanmakuItem = { ...msg, top, duration, track, instanceKey };
     setDanmakus(prev => {
       let next = [...prev, item];
       if (next.length > MAX_DANMAKU) {
-        const toRemove = next.slice(0, next.length - MAX_DANMAKU);
-        toRemove.forEach(d => {
-          const timer = removeTimers.current.get(d.instanceKey);
-          if (timer) {
-            window.clearTimeout(timer);
-            removeTimers.current.delete(d.instanceKey);
-          }
+        next.slice(0, next.length - MAX_DANMAKU).forEach(d => {
+          const t = removeTimers.current.get(d.instanceKey);
+          if (t) { clearTimeout(t); removeTimers.current.delete(d.instanceKey); }
         });
         next = next.slice(next.length - MAX_DANMAKU);
       }
       return next;
     });
-
-    const removeTimer = window.setTimeout(() => {
-      removeDanmaku(instanceKey);
-    }, duration * 1000 + 500);
-
-    removeTimers.current.set(instanceKey, removeTimer);
-  }, [findAvailableTrack, removeDanmaku]);
+    const timer = window.setTimeout(() => removeDanmaku(instanceKey), duration * 1000 + 500);
+    removeTimers.current.set(instanceKey, timer);
+  }, [findAvailableTrack, removeDanmaku, settings]);
 
   useEffect(() => {
     if (!historyLoaded.current) {
@@ -98,68 +87,92 @@ export const WallScreen: React.FC = () => {
     }
 
     const unsub1 = eventBus.on('NEW_MESSAGE', (msg: DanmakuMessage) => {
+      if (playbackPaused) { pausedQueue.current.push(msg); return; }
       addDanmaku(msg);
     });
-
     const unsub2 = eventBus.on('CLEAR_SCREEN', () => {
       setDanmakus([]);
-      trackAvailableAt.current = new Array(TRACK_COUNT).fill(0);
-      removeTimers.current.forEach(timer => window.clearTimeout(timer));
+      setPinned([]);
+      trackAvailableAt.current = new Array(getTrackCount()).fill(0);
+      removeTimers.current.forEach(t => clearTimeout(t));
       removeTimers.current.clear();
+      pausedQueue.current = [];
     });
-
-    const unsub3 = eventBus.on('SETTING_UPDATED', (data: any) => {
-      setSendingEnabled(data?.sendingEnabled ?? true);
+    const unsub3 = eventBus.on('SETTING_UPDATED', (data: any) => setSettings(data as Settings));
+    const unsub4 = eventBus.on('HISTORY_MESSAGES', (msgs: DanmakuMessage[]) => {
+      if (msgs && msgs.length > 0) msgs.forEach((m, i) => setTimeout(() => addDanmaku(m), i * 200));
     });
-
-    const unsub4 = eventBus.on('HISTORY_MESSAGES', (messages: DanmakuMessage[]) => {
-      if (messages && messages.length > 0) {
-        messages.forEach((msg, i) => {
-          setTimeout(() => addDanmaku(msg), i * 200);
-        });
+    const unsub5 = eventBus.on('PIN_UPDATED', (msg: DanmakuMessage) => {
+      setPinned(prev => msg.pinned ? [...prev.filter(p => p.id !== msg.id), msg] : prev.filter(p => p.id !== msg.id));
+    });
+    const unsub6 = eventBus.on('PLAYBACK_STATE', (data: any) => {
+      const paused = !!data?.playbackPaused;
+      setPlaybackPaused(paused);
+      if (!paused && pausedQueue.current.length > 0) {
+        pausedQueue.current.forEach(m => addDanmaku(m));
+        pausedQueue.current = [];
       }
     });
-
-    return () => {
-      unsub1();
-      unsub2();
-      unsub3();
-      unsub4();
-      removeTimers.current.forEach(timer => window.clearTimeout(timer));
-      removeTimers.current.clear();
+    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6();
+      removeTimers.current.forEach(t => clearTimeout(t)); removeTimers.current.clear();
     };
-  }, [addDanmaku]);
+  }, [addDanmaku, playbackPaused]);
+
+  const fontSize = getFontSize();
+  const qrUrl = window.location.origin;
 
   return (
     <div className="wall-screen" ref={containerRef}>
       <div className="wall-header">
-        <div className="wall-logo">LIVE DANMAKU</div>
-        <div className="wall-stats">
-          <span>{'Danmaku: ' + danmakus.length + '/' + MAX_DANMAKU}</span>
-          <span className={sendingEnabled ? 'status-on' : 'status-off'}>
-            {sendingEnabled ? 'Sending ON' : 'Sending OFF'}
+        <div className="wall-logo">{settings?.eventTitle || 'LIVE DANMAKU'}</div>
+        <div className="wall-controls">
+          <button className="wall-ctrl-btn" onClick={() => setShowQR(!showQR)} title="QR Code">QR</button>
+          <button className="wall-ctrl-btn" onClick={() => eventBus.emit('TOGGLE_PLAYBACK', { data: { paused: !playbackPaused } })}>
+            {playbackPaused ? 'Resume' : 'Pause'}
+          </button>
+          <span className="wall-stats-text">{'Danmaku: ' + danmakus.length + '/' + MAX_DANMAKU}</span>
+          <span className={settings?.sendingEnabled !== false ? 'status-on' : 'status-off'}>
+            {settings?.sendingEnabled !== false ? 'Sending ON' : 'Sending OFF'}
           </span>
         </div>
       </div>
 
-      <div className="danmaku-container">
-        {danmakus.map(danmaku => (
-          <div
-            key={danmaku.instanceKey}
-            className={'danmaku-item' + (danmaku.sensitive ? ' sensitive' : '')}
-            style={{
-              top: danmaku.top,
-              color: danmaku.color,
-              animationDuration: danmaku.duration + 's',
-            }}
-          >
-            <span className="danmaku-nickname">{danmaku.nickname}:</span>
-            <span className="danmaku-content">{danmaku.content}</span>
+      {showQR && (
+        <div className="qr-overlay" onClick={() => setShowQR(false)}>
+          <div className="qr-card" onClick={e => e.stopPropagation()}>
+            <div className="qr-placeholder">
+              <p>Scan to join</p>
+              <p className="qr-url">{qrUrl}</p>
+            </div>
+            <button className="qr-close" onClick={() => setShowQR(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {pinned.length > 0 && (
+        <div className="pinned-bar">
+          {pinned.map(msg => (
+            <div key={msg.id} className="pinned-item" style={{ color: msg.color }}>
+              <span className="pinned-badge">PINNED</span>
+              <span className="pinned-nick">{msg.nickname}:</span>
+              <span className="pinned-content">{msg.content}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className={'danmaku-container' + (playbackPaused ? ' paused' : '')}>
+        {danmakus.map(d => (
+          <div key={d.instanceKey}
+            className={'danmaku-item' + (d.sensitive ? ' sensitive' : '')}
+            style={{ top: d.top, color: d.color, animationDuration: d.duration + 's', fontSize: fontSize + 'px' }}>
+            <span className="danmaku-nickname">{d.nickname}:</span>
+            <span className="danmaku-content">{d.content}</span>
           </div>
         ))}
       </div>
 
-      {danmakus.length === 0 && (
+      {danmakus.length === 0 && pinned.length === 0 && (
         <div className="empty-wall">
           <p>No danmaku yet</p>
           <p className="sub">Waiting for the first message...</p>

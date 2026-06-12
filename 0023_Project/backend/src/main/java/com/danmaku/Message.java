@@ -8,11 +8,12 @@ public class Message {
     private String status;
     private boolean sensitive;
     private String color;
+    private boolean pinned;
 
-    public Message() {
-    }
+    public Message() {}
 
-    public Message(String id, String content, String nickname, long timestamp, String status, boolean sensitive, String color) {
+    public Message(String id, String content, String nickname, long timestamp,
+                   String status, boolean sensitive, String color, boolean pinned) {
         this.id = id;
         this.content = content;
         this.nickname = nickname;
@@ -20,6 +21,7 @@ public class Message {
         this.status = status;
         this.sensitive = sensitive;
         this.color = color;
+        this.pinned = pinned;
     }
 
     public String getId() { return id; }
@@ -42,4 +44,7 @@ public class Message {
 
     public String getColor() { return color; }
     public void setColor(String color) { this.color = color; }
+
+    public boolean isPinned() { return pinned; }
+    public void setPinned(boolean pinned) { this.pinned = pinned; }
 }

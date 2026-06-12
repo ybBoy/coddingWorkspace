@@ -120,12 +120,7 @@ public class FileStore {
                 return;
             }
 
-            Files.move(
-                    tmpFile.toPath(),
-                    dataFile.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE
-            );
+            atomicMove(tmpFile, dataFile);
         } catch (IOException e) {
             System.err.println("保存队列数据失败: " + e.getMessage());
             if (tmpFile.exists()) {
@@ -161,12 +156,7 @@ public class FileStore {
 
             if (loadFile == tmpFile) {
                 try {
-                    Files.move(
-                            tmpFile.toPath(),
-                            dataFile.toPath(),
-                            StandardCopyOption.REPLACE_EXISTING,
-                            StandardCopyOption.ATOMIC_MOVE
-                    );
+                    atomicMove(tmpFile, dataFile);
                     System.out.println("已将临时文件迁移为正式文件");
                 } catch (IOException e) {
                     System.err.println("迁移临时文件失败: " + e.getMessage());
@@ -209,17 +199,33 @@ public class FileStore {
             if (!tmp.exists() || tmp.length() == 0) {
                 return;
             }
-            Files.move(
-                    tmp.toPath(),
-                    countersFile.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE
-            );
+            atomicMove(tmp, countersFile);
         } catch (IOException e) {
             System.err.println("保存窗口配置失败: " + e.getMessage());
             if (tmp.exists()) {
                 try { tmp.delete(); } catch (Exception ignored) {}
             }
+        }
+    }
+
+    /**
+     * 原子移动文件，优先使用 ATOMIC_MOVE，文件系统不支持时 fallback 到普通 REPLACE_EXISTING
+     */
+    private void atomicMove(File src, File dst) throws IOException {
+        try {
+            Files.move(
+                    src.toPath(),
+                    dst.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+            );
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            System.out.println("文件系统不支持 ATOMIC_MOVE，使用普通移动: " + dst.getName());
+            Files.move(
+                    src.toPath(),
+                    dst.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
         }
     }
 

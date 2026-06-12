@@ -31,6 +31,18 @@ public class CallRecord implements Serializable {
         this.timestamp = timestamp;
     }
 
+    /**
+     * 深拷贝构造方法
+     */
+    public CallRecord(CallRecord other) {
+        if (other != null) {
+            this.ticket = other.ticket != null ? new Ticket(other.ticket) : null;
+            this.counterName = other.counterName;
+            this.action = other.action;
+            this.timestamp = other.timestamp;
+        }
+    }
+
     public Ticket getTicket() {
         return ticket;
     }

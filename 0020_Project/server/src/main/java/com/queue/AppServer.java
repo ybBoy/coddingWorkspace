@@ -52,6 +52,7 @@ public class AppServer {
         fileStore.startAutoSave();
 
         final QueueWebSocket wsServer = new QueueWebSocket(WS_PORT, queueService);
+        wsServer.setFileStore(fileStore);
         wsServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {

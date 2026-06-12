@@ -7,16 +7,18 @@
  * 1. 过号列表管理（missedQueue）：支持重新入队、直接重叫、标记结束
  * 2. 按业务类型筛选叫号：支持指定业务类型或全部业务
  * 3. 窗口配置 CRUD：新增窗口、修改名称和业务类型、启用/停用
- * 4. 今日统计：实时计算取号总数、等待、办理中、完成、过号、平均等待时长
+ * 4. 今日统计：按日期实时计算取号总数、等待、办理中、完成、过号、平均等待时长
+ * 5. 跨天重置：日期变更时重置号码计数和统计数据
  *
  * 线程安全：所有读写方法都加了 synchronized 锁
  *
  * 数据流：
  * 接收 WebSocket 消息 -> 调用对应方法更新内存数据 -> 添加叫号记录 -> 计算今日统计
- *   -> 获取最新 QueueState -> 通知 WebSocket 广播给所有客户端
+ *   -> 获取最新 QueueState（深拷贝） -> 通知 WebSocket 广播给所有客户端
  */
 package com.queue;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -28,9 +30,7 @@ public class QueueService {
     private final List<CallRecord> callRecords;
     private int nextNumber;
     private Ticket currentCalling;
-    private int totalTakenToday;
-    private long totalWaitSeconds;
-    private int completedWithWait;
+    private String todayDate;
 
     public QueueService() {
         this.waitingQueue = new CopyOnWriteArrayList<>();
@@ -38,9 +38,7 @@ public class QueueService {
         this.counters = new CopyOnWriteArrayList<>();
         this.callRecords = new CopyOnWriteArrayList<>();
         this.nextNumber = 1;
-        this.totalTakenToday = 0;
-        this.totalWaitSeconds = 0;
-        this.completedWithWait = 0;
+        this.todayDate = getTodayDateStr();
     }
 
     public void setCounters(List<Counter> initialCounters) {
@@ -50,47 +48,97 @@ public class QueueService {
         }
     }
 
+    private String getTodayDateStr() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(new Date());
+    }
+
+    private long getStartOfTodayMillis() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTimeInMillis();
+    }
+
+    private boolean isToday(long timestamp) {
+        return timestamp >= getStartOfTodayMillis();
+    }
+
+    /**
+     * 检查日期是否变更，跨天则重置号码计数
+     */
+    private void checkDayChange() {
+        String newDate = getTodayDateStr();
+        if (!newDate.equals(todayDate)) {
+            System.out.println("检测到日期变更: " + todayDate + " -> " + newDate + "，重置号码计数");
+            todayDate = newDate;
+            nextNumber = 1;
+        }
+    }
+
     public synchronized void restoreState(QueueState state) {
+        checkDayChange();
         if (state == null) {
             return;
         }
+
+        String savedDate = state.getTodayDate();
+        boolean dateChanged = (savedDate == null || !savedDate.equals(todayDate));
+
         if (state.getWaitingQueue() != null) {
             waitingQueue.clear();
-            waitingQueue.addAll(state.getWaitingQueue());
+            if (!dateChanged) {
+                waitingQueue.addAll(state.getWaitingQueue());
+            } else {
+                System.out.println("跨天：清空等待队列，共丢弃 " + state.getWaitingQueue().size() + " 个号");
+            }
         }
         if (state.getMissedQueue() != null) {
             missedQueue.clear();
-            missedQueue.addAll(state.getMissedQueue());
+            if (!dateChanged) {
+                missedQueue.addAll(state.getMissedQueue());
+            } else {
+                System.out.println("跨天：清空过号队列，共丢弃 " + state.getMissedQueue().size() + " 个号");
+            }
         }
         if (state.getCounters() != null && !state.getCounters().isEmpty()) {
             counters.clear();
-            counters.addAll(state.getCounters());
+            for (Counter savedCounter : state.getCounters()) {
+                Counter counterCopy = new Counter(savedCounter);
+                if (dateChanged && counterCopy.getCurrentTicket() != null) {
+                    System.out.println("跨天：清除窗口 " + counterCopy.getName() + " 的办理中号票");
+                    counterCopy.setCurrentTicket(null);
+                    counterCopy.setStatus("idle");
+                }
+                counters.add(counterCopy);
+            }
         }
         if (state.getCallRecords() != null) {
             callRecords.clear();
-            callRecords.addAll(state.getCallRecords());
+            long startOfToday = getStartOfTodayMillis();
+            for (CallRecord r : state.getCallRecords()) {
+                if (r.getTimestamp() >= startOfToday) {
+                    callRecords.add(r);
+                }
+            }
+            System.out.println("恢复今日叫号记录: " + callRecords.size() + " 条");
         }
-        if (state.getNextNumber() > 0) {
+        if (!dateChanged && state.getNextNumber() > 0) {
             nextNumber = state.getNextNumber();
+        } else {
+            nextNumber = 1;
         }
-        currentCalling = state.getCurrentCalling();
-        totalTakenToday = waitingQueue.size() + missedQueue.size();
-        for (Counter c : counters) {
-            if (c.getCurrentTicket() != null) {
-                totalTakenToday++;
-            }
-        }
-        for (CallRecord r : callRecords) {
-            if ("completed".equals(r.getAction())) {
-                totalTakenToday++;
-            }
-        }
+        updateCurrentCalling();
         System.out.println("队列状态已恢复，等待: " + waitingQueue.size() +
                 ", 过号: " + missedQueue.size() +
-                ", 下一个号码: " + nextNumber);
+                ", 下一个号码: " + nextNumber +
+                ", 今日日期: " + todayDate);
     }
 
     public synchronized Ticket takeTicket(String businessType) {
+        checkDayChange();
         Ticket ticket = new Ticket(
                 UUID.randomUUID().toString(),
                 nextNumber++,
@@ -99,7 +147,6 @@ public class QueueService {
                 System.currentTimeMillis()
         );
         waitingQueue.add(ticket);
-        totalTakenToday++;
         System.out.println("取号成功: " + ticket.getNumber() + " - " + businessType);
         return ticket;
     }
@@ -109,6 +156,7 @@ public class QueueService {
     }
 
     public synchronized Ticket callNextByType(String counterId, String businessType) {
+        checkDayChange();
         Counter counter = findEnabledCounter(counterId);
         if (counter == null) {
             return null;
@@ -175,6 +223,7 @@ public class QueueService {
     }
 
     public synchronized boolean completeTicket(String counterId, String ticketId) {
+        checkDayChange();
         Counter counter = findEnabledCounter(counterId);
         if (counter == null || counter.getCurrentTicket() == null) {
             return false;
@@ -186,11 +235,6 @@ public class QueueService {
 
         ticket.setStatus("completed");
         ticket.setCompletedAt(System.currentTimeMillis());
-        if (ticket.getCalledAt() != null) {
-            long waitMs = ticket.getCalledAt() - ticket.getCreatedAt();
-            totalWaitSeconds += waitMs / 1000;
-            completedWithWait++;
-        }
 
         addCallRecord(ticket, counter.getName(), "completed");
 
@@ -203,6 +247,7 @@ public class QueueService {
     }
 
     public synchronized boolean missTicket(String counterId, String ticketId) {
+        checkDayChange();
         Counter counter = findEnabledCounter(counterId);
         if (counter == null || counter.getCurrentTicket() == null) {
             return false;
@@ -225,6 +270,7 @@ public class QueueService {
     }
 
     public synchronized boolean recallTicket(String counterId, String ticketId) {
+        checkDayChange();
         Counter counter = findEnabledCounter(counterId);
         if (counter == null) {
             return false;
@@ -257,6 +303,7 @@ public class QueueService {
     }
 
     public synchronized boolean requeueMissed(String ticketId) {
+        checkDayChange();
         Ticket ticket = findMissedTicket(ticketId);
         if (ticket == null) {
             return false;
@@ -274,6 +321,7 @@ public class QueueService {
     }
 
     public synchronized boolean finishMissed(String ticketId) {
+        checkDayChange();
         Ticket ticket = findMissedTicket(ticketId);
         if (ticket == null) {
             return false;
@@ -400,20 +448,76 @@ public class QueueService {
         return null;
     }
 
+    /**
+     * 按今日日期过滤，准确计算今日统计
+     */
     private TodayStats calculateTodayStats() {
-        int waiting = waitingQueue.size();
+        checkDayChange();
+        long startOfToday = getStartOfTodayMillis();
+
+        int totalTakenToday = 0;
+        int waiting = 0;
         int inProgress = 0;
         int completed = 0;
-        int missed = missedQueue.size();
+        int missed = 0;
+        long totalWaitSeconds = 0;
+        int completedWithWait = 0;
 
-        for (CallRecord record : callRecords) {
-            if ("completed".equals(record.getAction())) {
-                completed++;
+        for (Ticket t : waitingQueue) {
+            if (isToday(t.getCreatedAt())) {
+                waiting++;
+                totalTakenToday++;
             }
         }
+
+        for (Ticket t : missedQueue) {
+            if (isToday(t.getCreatedAt())) {
+                missed++;
+                totalTakenToday++;
+            }
+        }
+
         for (Counter c : counters) {
             if (c.isEnabled() && c.getCurrentTicket() != null) {
-                inProgress++;
+                Ticket t = c.getCurrentTicket();
+                if (isToday(t.getCreatedAt())) {
+                    inProgress++;
+                    totalTakenToday++;
+                }
+            }
+        }
+
+        for (CallRecord record : callRecords) {
+            if (!isToday(record.getTimestamp())) {
+                continue;
+            }
+            String action = record.getAction();
+            if ("completed".equals(action)) {
+                completed++;
+                Ticket t = record.getTicket();
+                if (t != null && t.getCreatedAt() > 0 && !isToday(t.getCreatedAt())) {
+                    continue;
+                }
+                totalTakenToday++;
+                if (t != null && t.getCalledAt() != null && t.getCreatedAt() > 0) {
+                    long waitMs = t.getCalledAt() - t.getCreatedAt();
+                    if (waitMs >= 0) {
+                        totalWaitSeconds += waitMs / 1000;
+                        completedWithWait++;
+                    }
+                }
+            } else if ("missed".equals(action)) {
+                Ticket t = record.getTicket();
+                if (t != null && t.getCreatedAt() > 0 && !isToday(t.getCreatedAt())) {
+                    continue;
+                }
+                totalTakenToday++;
+            } else if ("finished".equals(action)) {
+                Ticket t = record.getTicket();
+                if (t != null && t.getCreatedAt() > 0 && !isToday(t.getCreatedAt())) {
+                    continue;
+                }
+                totalTakenToday++;
             }
         }
 
@@ -422,8 +526,16 @@ public class QueueService {
         return new TodayStats(totalTakenToday, waiting, inProgress, completed, missed, avgWait);
     }
 
+    /**
+     * 获取队列状态，返回全部对象的深拷贝，避免序列化过程中被并发修改
+     */
     public synchronized QueueState getQueueState() {
-        List<Ticket> waitingCopy = new ArrayList<>(waitingQueue);
+        checkDayChange();
+
+        List<Ticket> waitingCopy = new ArrayList<>();
+        for (Ticket t : waitingQueue) {
+            waitingCopy.add(new Ticket(t));
+        }
         Collections.sort(waitingCopy, new Comparator<Ticket>() {
             @Override
             public int compare(Ticket t1, Ticket t2) {
@@ -431,7 +543,10 @@ public class QueueService {
             }
         });
 
-        List<Ticket> missedCopy = new ArrayList<>(missedQueue);
+        List<Ticket> missedCopy = new ArrayList<>();
+        for (Ticket t : missedQueue) {
+            missedCopy.add(new Ticket(t));
+        }
         Collections.sort(missedCopy, new Comparator<Ticket>() {
             @Override
             public int compare(Ticket t1, Ticket t2) {
@@ -443,18 +558,35 @@ public class QueueService {
             }
         });
 
+        List<Counter> countersCopy = new ArrayList<>();
+        for (Counter c : counters) {
+            countersCopy.add(new Counter(c));
+        }
+
+        List<CallRecord> recordsCopy = new ArrayList<>();
+        for (CallRecord r : callRecords) {
+            recordsCopy.add(new CallRecord(r));
+        }
+
+        Ticket callingCopy = (currentCalling != null) ? new Ticket(currentCalling) : null;
+
         QueueState state = new QueueState();
         state.setWaitingQueue(waitingCopy);
         state.setMissedQueue(missedCopy);
-        state.setCounters(new ArrayList<>(counters));
-        state.setCurrentCalling(currentCalling);
-        state.setCallRecords(new ArrayList<>(callRecords));
+        state.setCounters(countersCopy);
+        state.setCurrentCalling(callingCopy);
+        state.setCallRecords(recordsCopy);
         state.setTodayStats(calculateTodayStats());
         state.setNextNumber(nextNumber);
+        state.setTodayDate(todayDate);
         return state;
     }
 
     public synchronized List<Counter> getCounters() {
-        return new ArrayList<>(counters);
+        List<Counter> result = new ArrayList<>();
+        for (Counter c : counters) {
+            result.add(new Counter(c));
+        }
+        return result;
     }
 }

@@ -48,6 +48,24 @@ public class Counter implements Serializable {
         this.supportedBusinessTypes = supportedBusinessTypes;
     }
 
+    /**
+     * 深拷贝构造方法
+     */
+    public Counter(Counter other) {
+        if (other != null) {
+            this.id = other.id;
+            this.name = other.name;
+            this.status = other.status;
+            this.enabled = other.enabled;
+            this.supportedBusinessTypes = other.supportedBusinessTypes != null
+                    ? new ArrayList<>(other.supportedBusinessTypes)
+                    : new ArrayList<>();
+            this.currentTicket = other.currentTicket != null
+                    ? new Ticket(other.currentTicket)
+                    : null;
+        }
+    }
+
     public String getId() {
         return id;
     }

@@ -27,6 +27,8 @@ public class QueueState implements Serializable {
 
     private int nextNumber;
 
+    private String todayDate;
+
     public QueueState() {
         this.waitingQueue = new ArrayList<>();
         this.missedQueue = new ArrayList<>();
@@ -34,6 +36,7 @@ public class QueueState implements Serializable {
         this.callRecords = new ArrayList<>();
         this.todayStats = new TodayStats();
         this.nextNumber = 1;
+        this.todayDate = "";
     }
 
     public List<Ticket> getWaitingQueue() {
@@ -90,5 +93,13 @@ public class QueueState implements Serializable {
 
     public void setNextNumber(int nextNumber) {
         this.nextNumber = nextNumber;
+    }
+
+    public String getTodayDate() {
+        return todayDate;
+    }
+
+    public void setTodayDate(String todayDate) {
+        this.todayDate = todayDate;
     }
 }

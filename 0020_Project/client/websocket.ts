@@ -17,7 +17,10 @@ import { WsMessage, QueueState, OperationResultPayload, ConnectionStatus, ToastM
 /**
  * 构建 WebSocket 连接地址
  * 优先级：VITE_WS_URL 环境变量 > 根据当前页面协议/主机自动推断
- * 自动推断时开发环境使用 localhost:8080，生产环境使用当前 host
+ * 自动推断时：协议使用 ws/wss 根据当前页面，主机使用当前页面 host，端口固定 8080
+ *   - 本机开发：http://localhost:5173 → ws://localhost:8080/ws
+ *   - 局域网访问：http://192.168.1.100:5173 → ws://192.168.1.100:8080/ws
+ *   - 生产部署：https://your-domain.com → wss://your-domain.com/ws
  */
 function buildWsUrl(): string {
   const envUrl = (import.meta as any).env?.VITE_WS_URL as string | undefined;
@@ -27,10 +30,11 @@ function buildWsUrl(): string {
 
   const isHttps = window.location.protocol === 'https:';
   const protocol = isHttps ? 'wss:' : 'ws:';
+  const hostname = window.location.hostname || 'localhost';
   const isDev = (import.meta as any).env?.DEV as boolean;
 
   if (isDev) {
-    return `${protocol}//localhost:8080/ws`;
+    return `${protocol}//${hostname}:8080/ws`;
   }
 
   return `${protocol}//${window.location.host}/ws`;

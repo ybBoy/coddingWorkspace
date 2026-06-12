@@ -43,6 +43,22 @@ public class Ticket implements Serializable {
         this.createdAt = createdAt;
     }
 
+    /**
+     * 深拷贝构造方法
+     */
+    public Ticket(Ticket other) {
+        if (other != null) {
+            this.id = other.id;
+            this.number = other.number;
+            this.businessType = other.businessType;
+            this.status = other.status;
+            this.createdAt = other.createdAt;
+            this.calledAt = other.calledAt;
+            this.counterId = other.counterId;
+            this.completedAt = other.completedAt;
+        }
+    }
+
     public String getId() {
         return id;
     }

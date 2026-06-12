@@ -25,7 +25,7 @@ const CounterPanel: React.FC = () => {
   const selectedCounter = state?.counters.find((c) => c.id === selectedCounterId);
   const currentTicket = selectedCounter?.currentTicket;
   const hasWaiting = state && state.waitingQueue.length > 0;
-  const hasCurrent = selectedCounter && selectedCounter.currentTicket;
+  const hasCurrent = !!(selectedCounter && selectedCounter.currentTicket);
 
   const handleSelectCounter = (counterId: string) => {
     setSelectedCounterId(counterId);

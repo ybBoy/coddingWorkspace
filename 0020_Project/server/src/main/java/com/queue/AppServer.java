@@ -49,7 +49,7 @@ public class AppServer {
         System.out.println("========================================");
         System.out.println("  服务启动完成！");
         System.out.println("  WebSocket 端口: " + WS_PORT);
-        System.out.println("  数据文件: queue-data.json");
+        System.out.println("  数据文件: " + fileStore.getDataFilePath());
         System.out.println("  按 Ctrl+C 停止服务");
         System.out.println("========================================");
 

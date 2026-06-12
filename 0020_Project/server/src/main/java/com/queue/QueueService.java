@@ -34,7 +34,7 @@ public class QueueService {
         counters.add(new Counter("counter-3", "3号窗口", "idle"));
     }
 
-    public void restoreState(QueueState state) {
+    public synchronized void restoreState(QueueState state) {
         if (state == null) {
             return;
         }
@@ -187,7 +187,7 @@ public class QueueService {
         return null;
     }
 
-    public QueueState getQueueState() {
+    public synchronized QueueState getQueueState() {
         List<Ticket> waitingCopy = new ArrayList<>(waitingQueue);
         Collections.sort(waitingCopy, new Comparator<Ticket>() {
             @Override
@@ -204,7 +204,7 @@ public class QueueService {
         );
     }
 
-    public List<Counter> getCounters() {
+    public synchronized List<Counter> getCounters() {
         return new ArrayList<>(counters);
     }
 }

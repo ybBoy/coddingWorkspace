@@ -107,7 +107,7 @@ body {
   opacity: 0.9;
 }
 
-/* 主内容区域 */
+/* 主内容区域：左侧等待队列 + 右侧操作面板 */
 .main-content {
   display: flex;
   flex: 1;
@@ -116,10 +116,22 @@ body {
   flex-wrap: wrap;
 }
 
+.content-left {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+}
+
+.content-right {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* 左侧等待队列 */
 .waiting-queue {
   flex: 1;
-  min-width: 280px;
   background: var(--card-bg);
   border-radius: 12px;
   padding: 16px;
@@ -184,7 +196,7 @@ body {
   padding: 32px 0;
 }
 
-/* 右侧面板容器 */
+/* 旧版右侧面板容器（兼容保留） */
 .right-panel {
   width: 360px;
   display: flex;
@@ -424,10 +436,15 @@ body {
   font-size: 0.75rem;
 }
 
-/* 响应式适配 */
+/* 响应式适配 - iPad 及以下 */
 @media (max-width: 1024px) {
-  .right-panel {
+  .content-left,
+  .content-right {
     width: 100%;
+    flex: none;
+  }
+
+  .content-right {
     flex-direction: row;
     flex-wrap: wrap;
   }
@@ -439,12 +456,14 @@ body {
   }
 }
 
+/* 响应式适配 - 手机 */
 @media (max-width: 640px) {
   .main-content {
     flex-direction: column;
   }
 
-  .right-panel {
+  .content-right {
+    width: 100%;
     flex-direction: column;
   }
 

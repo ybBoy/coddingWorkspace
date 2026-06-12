@@ -3,9 +3,9 @@ package com.kitchen;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.*;
 
+import javax.websocket.*;
+import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.List;
 import java.util.Queue;
@@ -15,7 +15,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * WebSocket 端点
+ * WebSocket 端点（标准 JSR-356 注解，与 AppServer 的注册方式一致）
+ *
+ *  注意：这里统一使用 javax.websocket.* 标准注解，
+ *       配合 AppServer 中 WebSocketServerContainerInitializer.configureContext() 的 JSR-356 注册方式
+ *       不再使用 Jetty 原生的 @WebSocket 注解，避免 API 不兼容导致 /ws 无法连接。
+ *
  *  - 维护所有已连接的前端 Session
  *  - 接收前端消息（新增订单、开始制作、完成、重做标记等）并转发给 OrderService
  *  - OrderService 每次变更会回调 broadcastOrders() 推送给所有前端
@@ -33,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  *    { "type": "ORDERS", "data": [ ... ] }   全量订单列表
  *    { "type": "PONG" }
  */
-@WebSocket
+@ServerEndpoint("/ws")
 public class KitchenSocket {
     private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
     private static OrderService orderService;
@@ -55,7 +60,7 @@ public class KitchenSocket {
         }, 30, 30, TimeUnit.SECONDS);
     }
 
-    @OnWebSocketConnect
+    @OnOpen
     public void onConnect(Session session) {
         sessions.add(session);
         // 新连接上来立即推一次全量数据
@@ -64,17 +69,17 @@ public class KitchenSocket {
         }
     }
 
-    @OnWebSocketClose
-    public void onClose(Session session, int status, String reason) {
+    @OnClose
+    public void onClose(Session session, CloseReason reason) {
         sessions.remove(session);
     }
 
-    @OnWebSocketError
+    @OnError
     public void onError(Session session, Throwable t) {
         sessions.remove(session);
     }
 
-    @OnWebSocketMessage
+    @OnMessage
     public void onMessage(Session session, String msg) {
         try {
             JsonObject json = new JsonParser().parse(msg).getAsJsonObject();
@@ -144,7 +149,8 @@ public class KitchenSocket {
 
     private static void send(Session s, String text) {
         try {
-            s.getRemote().sendStringByFuture(text);
+            // JSR-356 异步发送，等价于之前 Jetty 原生的 sendStringByFuture
+            s.getAsyncRemote().sendText(text);
         } catch (Exception e) {
             // ignore
         }

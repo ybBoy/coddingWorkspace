@@ -9,7 +9,6 @@ import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainer
 import org.eclipse.jetty.util.resource.PathResource;
 
 import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,14 +34,27 @@ import java.nio.file.Paths;
  */
 public class AppServer {
     public static void main(String[] args) throws Exception {
-        // ---- 1. 工作目录：取 backend/ 作为根（data/、dist/ 都在这个目录下
-        String baseDir = new File(AppServer.class.getProtectionDomain().getCodeSource().getLocation().getPath())
-                .getParentFile().getParentFile().getParentFile().getParentFile().getParent();
-        // 上面在 IDE/打包后路径不一，回退到 backend/
-        // 简单起见：从系统属性或默认值：
-        String workingDir = System.getProperty("app.baseDir", baseDir);
+        // ---- 1. 工作目录推算（健壮版）
+        // 优先级：
+        //   ① 命令行指定：java -Dapp.baseDir=./backend -jar xxx.jar
+        //   ② JVM 当前工作目录（System.getProperty("user.dir")，即执行命令时所在目录
+        //   ③ 从 class 路径回退（兜底，尽量避免走到这一步）
+        String workingDir = System.getProperty("app.baseDir");
+        if (workingDir == null || workingDir.isEmpty()) {
+            workingDir = System.getProperty("user.dir");
+            // 如果 user.dir 是项目根目录（含 frontend/backend 子目录），则自动切到 backend/
+            Path userDir = Paths.get(workingDir).toAbsolutePath();
+            if (java.nio.file.Files.isDirectory(userDir.resolve("backend"))) {
+                workingDir = userDir.resolve("backend").toString();
+            }
+        }
         Path basePath = Paths.get(workingDir).toAbsolutePath();
         System.out.println("[App] baseDir = " + basePath);
+        // 校验关键目录是否存在，找不到就给出明确提示
+        if (!java.nio.file.Files.isDirectory(basePath.resolve("data"))) {
+            System.out.println("[Warn] data/ 目录不存在，自动创建: " + basePath.resolve("data"));
+            java.nio.file.Files.createDirectories(basePath.resolve("data"));
+        }
 
         // ---- 2. 初始化业务层
         FileStore fileStore = new FileStore(basePath.toString());
@@ -61,11 +73,9 @@ public class AppServer {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
 
-        // WebSocket
+        // WebSocket - KitchenSocket 已用 @ServerEndpoint("/ws") 标注，直接注册类即可
         ServerContainer wsContainer = WebSocketServerContainerInitializer.configureContext(context);
-        wsContainer.addEndpoint(ServerEndpointConfig.Builder
-                .create(KitchenSocket.class, "/ws")
-                .build());
+        wsContainer.addEndpoint(KitchenSocket.class);
 
         // 静态资源：优先 backend/dist/（前端 build 产物），其次 backend/static/
         ResourceHandler rh = new ResourceHandler();

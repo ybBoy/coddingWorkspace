@@ -16,12 +16,17 @@ import { EventBus, EVT } from './EventBus'
  *   制作中列（COOKING）："完成出餐" 按钮 + 每个菜品可单独 "标记重做"
  *   已出餐列（DONE）：绿色卡片，不显示操作按钮
  */
-type ColDef = { key: OrderStatus; title: string; cls: string; icon: string }
+type ColDef = {
+  key: OrderStatus
+  title: string
+  cls: 'new' | 'cooking' | 'done'
+  icon: string
+}
 
 const COLS: ColDef[] = [
   { key: 'NEW',     title: '🆕 新订单',   cls: 'new',     icon: '🆕' },
   { key: 'COOKING', title: '🔥 制作中',   cls: 'cooking', icon: '🔥' },
-  { key: 'DONE',      title: '✅ 已出餐',    cls: 'done',    icon: '✅' },
+  { key: 'DONE',    title: '✅ 已出餐',   cls: 'done',    icon: '✅' },
 ]
 
 export default function KitchenBoard({ allOrders }: { allOrders: Order[] }) {

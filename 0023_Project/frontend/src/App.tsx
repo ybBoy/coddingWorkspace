@@ -49,30 +49,34 @@ const App: React.FC = () => {
     }
   };
 
+  const getModeBtnClass = (btnMode: Mode) => {
+    return 'mode-btn' + (mode === btnMode ? ' active' : '');
+  };
+
   return (
-    <div className={`app mode-${mode}`}>
+    <div className={'app mode-' + mode}>
       {mode !== 'wall' && (
         <nav className="mode-switcher">
           <button
-            className={`mode-btn ${mode === 'audience' ? 'active' : ''}`}
+            className={getModeBtnClass('audience')}
             onClick={() => handleModeChange('audience')}
           >
-            📱 观众端
+            Audience
           </button>
           <button
-            className={`mode-btn ${mode === 'wall' ? 'active' : ''}`}
+            className={getModeBtnClass('wall')}
             onClick={() => handleModeChange('wall')}
           >
-            🖥️ 大屏
+            Wall Screen
           </button>
           <button
-            className={`mode-btn ${mode === 'moderator' ? 'active' : ''}`}
+            className={getModeBtnClass('moderator')}
             onClick={() => handleModeChange('moderator')}
           >
-            🎛️ 主持人
+            Moderator
           </button>
-          <span className={`nav-connection ${connected ? 'ok' : 'bad'}`}>
-            {connected ? '●' : '○'}
+          <span className={'nav-connection ' + (connected ? 'ok' : 'bad')}>
+            {connected ? 'ON' : 'OFF'}
           </span>
         </nav>
       )}

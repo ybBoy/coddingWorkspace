@@ -1,12 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { eventBus } from '../utils/EventBus';
-import { DanmakuMessage, AppState } from '../types';
+import { DanmakuMessage } from '../types';
 
 const WS_URL = `ws://${window.location.host}/ws`;
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
+  const connectedRef = useRef(false);
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -18,7 +19,7 @@ export function useWebSocket() {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('[WS] Connected');
+        connectedRef.current = true;
         eventBus.emit('WS_CONNECTED');
       };
 
@@ -32,13 +33,13 @@ export function useWebSocket() {
       };
 
       ws.onclose = () => {
-        console.log('[WS] Disconnected');
+        connectedRef.current = false;
         eventBus.emit('WS_DISCONNECTED');
         scheduleReconnect();
       };
 
-      ws.onerror = (err) => {
-        console.error('[WS] Error:', err);
+      ws.onerror = () => {
+        // error handled by onclose
       };
     } catch (e) {
       console.error('[WS] Connect error:', e);
@@ -61,9 +62,6 @@ export function useWebSocket() {
     switch (type) {
       case 'INITIAL_STATE':
         eventBus.emit('SETTING_UPDATED', data);
-        if (data?.historyMessages) {
-          eventBus.emit('HISTORY_MESSAGES', data.historyMessages as DanmakuMessage[]);
-        }
         break;
       case 'NEW_MESSAGE':
         eventBus.emit('NEW_MESSAGE', data as DanmakuMessage);
@@ -152,5 +150,5 @@ export function useWebSocket() {
     };
   }, [connect, send]);
 
-  return { send };
+  return { send, connectedRef };
 }

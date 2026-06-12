@@ -17,10 +17,10 @@ export const AudiencePanel: React.FC = () => {
     const unsub3 = eventBus.on('WS_DISCONNECTED', () => setConnected(false));
     const unsub4 = eventBus.on('MESSAGE_QUEUED', () => {
       setSentCount(c => c + 1);
-      showNotification('消息已提交，等待审核~');
+      showNotification('msg queued');
     });
     const unsub5 = eventBus.on('SENDING_DISABLED', () => {
-      showNotification('主持人暂时关闭了发送功能');
+      showNotification('sending disabled by moderator');
     });
 
     return () => {
@@ -41,13 +41,13 @@ export const AudiencePanel: React.FC = () => {
     e.preventDefault();
     if (!content.trim()) return;
     if (!sendingEnabled) {
-      showNotification('主持人暂时关闭了发送功能');
+      showNotification('sending disabled by moderator');
       return;
     }
 
     eventBus.emit('SEND_MESSAGE', {
       content: content.trim(),
-      nickname: nickname.trim() || '匿名',
+      nickname: nickname.trim() || 'anonymous',
     });
     setContent('');
   };
@@ -55,44 +55,44 @@ export const AudiencePanel: React.FC = () => {
   return (
     <div className="audience-panel">
       <div className="audience-header">
-        <h1 className="audience-title">📢 现场弹幕墙</h1>
+        <h1 className="audience-title">Live Danmaku Wall</h1>
         <div className="connection-status">
           <span className={`status-dot ${connected ? 'online' : 'offline'}`}></span>
-          <span className="status-text">{connected ? '已连接' : '连接中...'}</span>
+          <span className="status-text">{connected ? 'Connected' : 'Connecting...'}</span>
         </div>
       </div>
 
       <div className="audience-body">
         <div className="info-card">
-          <p>在这里发送你的想法，通过审核后会在大屏幕上显示~</p>
-          <p className="hint">已发送 {sentCount} 条消息</p>
+          <p>Send your message here, it will appear on the big screen after review!</p>
+          <p className="hint">Sent: {sentCount}</p>
         </div>
 
         {!sendingEnabled && (
           <div className="disabled-notice">
-            ⚠️ 主持人暂时关闭了弹幕发送
+            Moderator has paused danmaku sending
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="send-form">
           <div className="form-group">
-            <label>你的昵称（可选）</label>
+            <label>Nickname (optional)</label>
             <input
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="匿名用户"
+              placeholder="Anonymous"
               maxLength={20}
               className="nickname-input"
             />
           </div>
 
           <div className="form-group">
-            <label>想说的话</label>
+            <label>Your message</label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="发送一条弹幕吧~"
+              placeholder="Send a danmaku~"
               maxLength={100}
               rows={4}
               className="content-input"
@@ -106,7 +106,7 @@ export const AudiencePanel: React.FC = () => {
             className="send-btn"
             disabled={!content.trim() || !sendingEnabled || !connected}
           >
-            🚀 发送弹幕
+            Send Danmaku
           </button>
         </form>
       </div>

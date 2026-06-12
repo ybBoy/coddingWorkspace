@@ -22,6 +22,7 @@ export const WallScreen: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceCounter = useRef(0);
   const removeTimers = useRef<Map<string, number>>(new Map());
+  const historyLoaded = useRef(false);
 
   const findAvailableTrack = useCallback((): number => {
     const now = Date.now();
@@ -47,7 +48,7 @@ export const WallScreen: React.FC = () => {
 
   const addDanmaku = useCallback((msg: DanmakuMessage) => {
     instanceCounter.current += 1;
-    const instanceKey = `${msg.id}-${instanceCounter.current}`;
+    const instanceKey = msg.id + '-' + instanceCounter.current;
     const createdAt = Date.now();
 
     const track = findAvailableTrack();
@@ -91,6 +92,11 @@ export const WallScreen: React.FC = () => {
   }, [findAvailableTrack, removeDanmaku]);
 
   useEffect(() => {
+    if (!historyLoaded.current) {
+      historyLoaded.current = true;
+      eventBus.emit('GET_HISTORY');
+    }
+
     const unsub1 = eventBus.on('NEW_MESSAGE', (msg: DanmakuMessage) => {
       addDanmaku(msg);
     });
@@ -106,11 +112,7 @@ export const WallScreen: React.FC = () => {
       setSendingEnabled(data?.sendingEnabled ?? true);
     });
 
-    const unsub4 = eventBus.on('WS_CONNECTED', () => {
-      eventBus.emit('GET_HISTORY');
-    });
-
-    const unsub5 = eventBus.on('HISTORY_MESSAGES', (messages: DanmakuMessage[]) => {
+    const unsub4 = eventBus.on('HISTORY_MESSAGES', (messages: DanmakuMessage[]) => {
       if (messages && messages.length > 0) {
         messages.forEach((msg, i) => {
           setTimeout(() => addDanmaku(msg), i * 200);
@@ -123,7 +125,6 @@ export const WallScreen: React.FC = () => {
       unsub2();
       unsub3();
       unsub4();
-      unsub5();
       removeTimers.current.forEach(timer => window.clearTimeout(timer));
       removeTimers.current.clear();
     };
@@ -132,11 +133,11 @@ export const WallScreen: React.FC = () => {
   return (
     <div className="wall-screen" ref={containerRef}>
       <div className="wall-header">
-        <div className="wall-logo">🎬 LIVE DANMAKU</div>
+        <div className="wall-logo">LIVE DANMAKU</div>
         <div className="wall-stats">
-          <span>弹幕数: {danmakus.length}/{MAX_DANMAKU}</span>
+          <span>{'Danmaku: ' + danmakus.length + '/' + MAX_DANMAKU}</span>
           <span className={sendingEnabled ? 'status-on' : 'status-off'}>
-            {sendingEnabled ? '● 发送开启' : '○ 发送关闭'}
+            {sendingEnabled ? 'Sending ON' : 'Sending OFF'}
           </span>
         </div>
       </div>
@@ -145,11 +146,11 @@ export const WallScreen: React.FC = () => {
         {danmakus.map(danmaku => (
           <div
             key={danmaku.instanceKey}
-            className={`danmaku-item ${danmaku.sensitive ? 'sensitive' : ''}`}
+            className={'danmaku-item' + (danmaku.sensitive ? ' sensitive' : '')}
             style={{
               top: danmaku.top,
               color: danmaku.color,
-              animationDuration: `${danmaku.duration}s`,
+              animationDuration: danmaku.duration + 's',
             }}
           >
             <span className="danmaku-nickname">{danmaku.nickname}:</span>
@@ -160,8 +161,8 @@ export const WallScreen: React.FC = () => {
 
       {danmakus.length === 0 && (
         <div className="empty-wall">
-          <p>暂无弹幕</p>
-          <p className="sub">等待第一条精彩消息~</p>
+          <p>No danmaku yet</p>
+          <p className="sub">Waiting for the first message...</p>
         </div>
       )}
     </div>

@@ -7,8 +7,10 @@ public class DanmakuService {
     private static DanmakuService instance;
     private List<Message> pendingMessages;
     private List<Message> approvedMessages;
+    private List<Message> rejectedMessages;
     private boolean sendingEnabled;
     private List<String> sensitiveWords;
+    private static final int MAX_RECENT = 30;
     private static final String[] DEFAULT_COLORS = {
         "#ff6b6b", "#4ecdc4", "#ffe66d", "#95e1d3", "#f38181",
         "#aa96da", "#fcbad3", "#a8d8ea", "#ffd93d", "#6bcb77"
@@ -19,11 +21,12 @@ public class DanmakuService {
         this.sendingEnabled = settings.isSendingEnabled();
         this.sensitiveWords = settings.getSensitiveWords() != null ?
                 new ArrayList<String>(settings.getSensitiveWords()) :
-                new ArrayList<String>(Arrays.asList("违规", "广告", "赌博"));
+                new ArrayList<String>(Arrays.asList("\u8fdd\u89c4", "\u5e7f\u544a", "\u8d4c\u535a"));
 
         List<Message> allMessages = FileStore.loadMessages();
         this.pendingMessages = new CopyOnWriteArrayList<Message>();
         this.approvedMessages = new CopyOnWriteArrayList<Message>();
+        this.rejectedMessages = new CopyOnWriteArrayList<Message>();
 
         if (allMessages != null) {
             for (Message msg : allMessages) {
@@ -31,6 +34,8 @@ public class DanmakuService {
                     pendingMessages.add(msg);
                 } else if ("approved".equals(msg.getStatus())) {
                     approvedMessages.add(msg);
+                } else if ("rejected".equals(msg.getStatus())) {
+                    rejectedMessages.add(msg);
                 }
             }
         }
@@ -57,7 +62,7 @@ public class DanmakuService {
         Message message = new Message(
                 id,
                 content,
-                nickname != null ? nickname : "匿名",
+                nickname != null ? nickname : "\u533f\u540d",
                 System.currentTimeMillis(),
                 "pending",
                 sensitive,
@@ -103,6 +108,7 @@ public class DanmakuService {
         if (target != null && index >= 0) {
             pendingMessages.remove(index);
             target.setStatus("rejected");
+            rejectedMessages.add(target);
             DanmakuWebSocket.broadcastToModerators(buildMessage("PENDING_UPDATED", target));
             return target;
         }
@@ -129,6 +135,14 @@ public class DanmakuService {
 
     public List<Message> getApprovedMessages() {
         return new ArrayList<Message>(approvedMessages);
+    }
+
+    public List<Message> getRecentApproved() {
+        int size = approvedMessages.size();
+        if (size <= MAX_RECENT) {
+            return new ArrayList<Message>(approvedMessages);
+        }
+        return new ArrayList<Message>(approvedMessages.subList(size - MAX_RECENT, size));
     }
 
     public List<String> getSensitiveWords() {
@@ -161,6 +175,7 @@ public class DanmakuService {
         List<Message> allMessages = new ArrayList<Message>();
         allMessages.addAll(pendingMessages);
         allMessages.addAll(approvedMessages);
+        allMessages.addAll(rejectedMessages);
         FileStore.saveMessages(allMessages);
         FileStore.saveSettings(new FileStore.Settings(sendingEnabled, sensitiveWords));
     }

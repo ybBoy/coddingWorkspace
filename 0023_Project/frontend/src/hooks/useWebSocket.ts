@@ -61,6 +61,9 @@ export function useWebSocket() {
     switch (type) {
       case 'INITIAL_STATE':
         eventBus.emit('SETTING_UPDATED', data);
+        if (data?.historyMessages) {
+          eventBus.emit('HISTORY_MESSAGES', data.historyMessages as DanmakuMessage[]);
+        }
         break;
       case 'NEW_MESSAGE':
         eventBus.emit('NEW_MESSAGE', data as DanmakuMessage);
@@ -85,6 +88,12 @@ export function useWebSocket() {
         break;
       case 'SENDING_DISABLED':
         eventBus.emit('SENDING_DISABLED');
+        break;
+      case 'HISTORY_MESSAGES':
+        eventBus.emit('HISTORY_MESSAGES', data as DanmakuMessage[]);
+        break;
+      case 'AUTH_FAILED':
+        eventBus.emit('AUTH_FAILED');
         break;
     }
   };
@@ -121,6 +130,9 @@ export function useWebSocket() {
     const unsub7 = eventBus.on('GET_PENDING', () => {
       send('GET_PENDING');
     });
+    const unsub8 = eventBus.on('GET_HISTORY', () => {
+      send('GET_HISTORY');
+    });
 
     return () => {
       unsub1();
@@ -130,6 +142,7 @@ export function useWebSocket() {
       unsub5();
       unsub6();
       unsub7();
+      unsub8();
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
       }

@@ -8,10 +8,12 @@ export const ModeratorPanel: React.FC = () => {
   const [connected, setConnected] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
   const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
 
   useEffect(() => {
     const unsub1 = eventBus.on('PENDING_LIST', (list: DanmakuMessage[]) => {
       setPendingMessages(list);
+      setIsModerator(true);
     });
     const unsub2 = eventBus.on('NEW_PENDING', (msg: DanmakuMessage) => {
       setPendingMessages(prev => [...prev, msg]);
@@ -24,6 +26,10 @@ export const ModeratorPanel: React.FC = () => {
     });
     const unsub5 = eventBus.on('WS_CONNECTED', () => setConnected(true));
     const unsub6 = eventBus.on('WS_DISCONNECTED', () => setConnected(false));
+    const unsub7 = eventBus.on('AUTH_FAILED', () => {
+      setIsModerator(false);
+      setAuthError('密码验证失败，请重试');
+    });
 
     return () => {
       unsub1();
@@ -32,20 +38,15 @@ export const ModeratorPanel: React.FC = () => {
       unsub4();
       unsub5();
       unsub6();
+      unsub7();
     };
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin123') {
-      setIsModerator(true);
-      eventBus.emit('SET_ROLE', { role: 'moderator' });
-      setTimeout(() => {
-        eventBus.emit('GET_PENDING');
-      }, 100);
-    } else {
-      alert('密码错误');
-    }
+    if (!password.trim()) return;
+    setAuthError('');
+    eventBus.emit('SET_ROLE', { role: 'moderator', password });
   };
 
   const handleApprove = (id: string) => {
@@ -97,9 +98,9 @@ export const ModeratorPanel: React.FC = () => {
               placeholder="请输入主持人密码"
               className="password-input"
             />
+            {authError && <p className="auth-error">{authError}</p>}
             <button type="submit" className="login-btn">进入管理面板</button>
           </form>
-          <p className="hint">默认密码: admin123</p>
         </div>
       </div>
     );

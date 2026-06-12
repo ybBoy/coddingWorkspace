@@ -19,6 +19,7 @@ public class DanmakuWebSocket {
             Collections.newSetFromMap(new ConcurrentHashMap<Session, Boolean>());
     private static final Gson gson = new Gson();
     private static final DanmakuService service = DanmakuService.getInstance();
+    private static final String MODERATOR_PASSWORD = "admin123";
 
     private Session session;
     private String role = "viewer";
@@ -55,7 +56,11 @@ public class DanmakuWebSocket {
             } else if ("TOGGLE_SENDING".equals(type)) {
                 handleToggleSending(map);
             } else if ("GET_PENDING".equals(type)) {
-                sendPendingList();
+                if ("moderator".equals(role)) {
+                    sendPendingList();
+                }
+            } else if ("GET_HISTORY".equals(type)) {
+                sendHistoryMessages();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -100,6 +105,11 @@ public class DanmakuWebSocket {
         Map data = (Map) map.get("data");
         String newRole = (String) data.get("role");
         if ("moderator".equals(newRole)) {
+            String password = (String) data.get("password");
+            if (!MODERATOR_PASSWORD.equals(password)) {
+                sendMessage(buildSimpleMessage("AUTH_FAILED"));
+                return;
+            }
             this.role = "moderator";
             moderatorSessions.add(session);
             sendPendingList();
@@ -129,6 +139,7 @@ public class DanmakuWebSocket {
         Map<String, Object> data = new HashMap<String, Object>();
         data.put("sendingEnabled", service.isSendingEnabled());
         data.put("pendingCount", service.getPendingMessages().size());
+        data.put("historyMessages", service.getRecentApproved());
         state.put("data", data);
         sendMessage(state);
     }
@@ -137,6 +148,13 @@ public class DanmakuWebSocket {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("type", "PENDING_LIST");
         map.put("data", service.getPendingMessages());
+        sendMessage(map);
+    }
+
+    private void sendHistoryMessages() {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("type", "HISTORY_MESSAGES");
+        map.put("data", service.getRecentApproved());
         sendMessage(map);
     }
 

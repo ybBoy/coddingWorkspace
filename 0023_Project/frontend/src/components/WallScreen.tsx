@@ -106,10 +106,24 @@ export const WallScreen: React.FC = () => {
       setSendingEnabled(data?.sendingEnabled ?? true);
     });
 
+    const unsub4 = eventBus.on('WS_CONNECTED', () => {
+      eventBus.emit('GET_HISTORY');
+    });
+
+    const unsub5 = eventBus.on('HISTORY_MESSAGES', (messages: DanmakuMessage[]) => {
+      if (messages && messages.length > 0) {
+        messages.forEach((msg, i) => {
+          setTimeout(() => addDanmaku(msg), i * 200);
+        });
+      }
+    });
+
     return () => {
       unsub1();
       unsub2();
       unsub3();
+      unsub4();
+      unsub5();
       removeTimers.current.forEach(timer => window.clearTimeout(timer));
       removeTimers.current.clear();
     };

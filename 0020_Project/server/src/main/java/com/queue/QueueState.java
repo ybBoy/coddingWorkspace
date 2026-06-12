@@ -1,11 +1,12 @@
 /**
  * QueueState 队列状态类
- * 职责：封装完整的队列状态，用于序列化后广播给所有前端
- * 包含：等待队列、窗口列表、当前叫号、叫号记录、下一个号码
+ * 职责：封装当前完整的队列状态，用于后端广播给所有前端
+ * 迭代新增：missedQueue 过号列表、todayStats 今日统计
  */
 package com.queue;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class QueueState implements Serializable {
@@ -14,24 +15,25 @@ public class QueueState implements Serializable {
 
     private List<Ticket> waitingQueue;
 
+    private List<Ticket> missedQueue;
+
     private List<Counter> counters;
 
     private Ticket currentCalling;
 
     private List<CallRecord> callRecords;
 
+    private TodayStats todayStats;
+
     private int nextNumber;
 
     public QueueState() {
-    }
-
-    public QueueState(List<Ticket> waitingQueue, List<Counter> counters,
-                      Ticket currentCalling, List<CallRecord> callRecords, int nextNumber) {
-        this.waitingQueue = waitingQueue;
-        this.counters = counters;
-        this.currentCalling = currentCalling;
-        this.callRecords = callRecords;
-        this.nextNumber = nextNumber;
+        this.waitingQueue = new ArrayList<>();
+        this.missedQueue = new ArrayList<>();
+        this.counters = new ArrayList<>();
+        this.callRecords = new ArrayList<>();
+        this.todayStats = new TodayStats();
+        this.nextNumber = 1;
     }
 
     public List<Ticket> getWaitingQueue() {
@@ -40,6 +42,14 @@ public class QueueState implements Serializable {
 
     public void setWaitingQueue(List<Ticket> waitingQueue) {
         this.waitingQueue = waitingQueue;
+    }
+
+    public List<Ticket> getMissedQueue() {
+        return missedQueue;
+    }
+
+    public void setMissedQueue(List<Ticket> missedQueue) {
+        this.missedQueue = missedQueue;
     }
 
     public List<Counter> getCounters() {
@@ -64,6 +74,14 @@ public class QueueState implements Serializable {
 
     public void setCallRecords(List<CallRecord> callRecords) {
         this.callRecords = callRecords;
+    }
+
+    public TodayStats getTodayStats() {
+        return todayStats;
+    }
+
+    public void setTodayStats(TodayStats todayStats) {
+        this.todayStats = todayStats;
     }
 
     public int getNextNumber() {

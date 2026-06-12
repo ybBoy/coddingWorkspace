@@ -3,6 +3,10 @@
  * 职责：处理 WebSocket 连接、消息接收、状态广播
  * 使用 org.java-websocket 库实现 WebSocket 服务器
  *
+ * 迭代新增：
+ * 1. 新增消息类型：CALL_NEXT_BY_TYPE、REQUEUE_MISSED、FINISH_MISSED、ADD_COUNTER、UPDATE_COUNTER、TOGGLE_COUNTER
+ * 2. 所有操作返回 OPERATION_RESULT，供前端显示 Toast 提示
+ *
  * 安全增强：
  * 1. payload 非空校验
  * 2. 必填字段（businessType/counterId/ticketId）校验
@@ -10,21 +14,19 @@
  *
  * 数据流：
  * 前端发送消息 -> onMessage 解析 -> 调用 QueueService 处理
- *   -> 获取 QueueState -> broadcastState 发送给所有连接的客户端
+ *   -> 发送 OPERATION_RESULT 反馈 -> 获取 QueueState -> broadcastState 发送给所有连接的客户端
  */
 package com.queue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class QueueWebSocket extends WebSocketServer {
 
@@ -80,141 +82,310 @@ public class QueueWebSocket extends WebSocketServer {
         }
 
         switch (action) {
-            case "GET_STATE":
+            case WsMessage.GET_STATE:
                 sendState(conn);
                 break;
 
-            case "TAKE_TICKET":
+            case WsMessage.TAKE_TICKET:
                 handleTakeTicket(payload);
                 break;
 
-            case "CALL_NEXT":
+            case WsMessage.CALL_NEXT:
                 handleCallNext(payload);
                 break;
 
-            case "COMPLETE":
+            case WsMessage.CALL_NEXT_BY_TYPE:
+                handleCallNextByType(payload);
+                break;
+
+            case WsMessage.COMPLETE:
                 handleComplete(payload);
                 break;
 
-            case "MISS":
+            case WsMessage.MISS:
                 handleMiss(payload);
                 break;
 
-            case "RECALL":
+            case WsMessage.RECALL:
                 handleRecall(payload);
+                break;
+
+            case WsMessage.REQUEUE_MISSED:
+                handleRequeueMissed(payload);
+                break;
+
+            case WsMessage.FINISH_MISSED:
+                handleFinishMissed(payload);
+                break;
+
+            case WsMessage.ADD_COUNTER:
+                handleAddCounter(payload);
+                break;
+
+            case WsMessage.UPDATE_COUNTER:
+                handleUpdateCounter(payload);
+                break;
+
+            case WsMessage.TOGGLE_COUNTER:
+                handleToggleCounter(payload);
                 break;
 
             default:
                 System.out.println("未知动作: " + action);
+                sendOperationResult(action, false, "未知操作类型");
         }
     }
 
-    /**
-     * 校验并处理取号请求
-     * 需要 payload 非空，且 businessType 合法
-     */
+    private void sendOperationResult(String action, boolean success, String message) {
+        try {
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", success);
+            result.put("action", action);
+            result.put("message", message);
+            WsMessage wsMsg = new WsMessage(WsMessage.OPERATION_RESULT, result);
+            String json = objectMapper.writeValueAsString(wsMsg);
+            Collection<WebSocket> connections = getConnections();
+            for (WebSocket conn : connections) {
+                if (conn.isOpen()) {
+                    conn.send(json);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("发送操作结果失败: " + e.getMessage());
+        }
+    }
+
     private void handleTakeTicket(JsonNode payload) {
         if (payload == null || payload.isNull()) {
-            System.err.println("TAKE_TICKET 失败：payload 为空");
+            sendOperationResult(WsMessage.TAKE_TICKET, false, "请求数据为空");
             return;
         }
         JsonNode btNode = payload.get("businessType");
         if (btNode == null || btNode.isNull() || !btNode.isTextual()) {
-            System.err.println("TAKE_TICKET 失败：businessType 字段缺失或类型错误");
+            sendOperationResult(WsMessage.TAKE_TICKET, false, "业务类型字段缺失");
             return;
         }
         String businessType = btNode.asText();
         if (businessType == null || businessType.trim().isEmpty()) {
-            System.err.println("TAKE_TICKET 失败：businessType 为空");
+            sendOperationResult(WsMessage.TAKE_TICKET, false, "业务类型为空");
             return;
         }
         if (!VALID_BUSINESS_TYPES.contains(businessType)) {
-            System.err.println("TAKE_TICKET 失败：非法 businessType=" + businessType);
+            sendOperationResult(WsMessage.TAKE_TICKET, false, "非法业务类型: " + businessType);
             return;
         }
-        queueService.takeTicket(businessType);
-        broadcastState();
+        Ticket ticket = queueService.takeTicket(businessType);
+        if (ticket != null) {
+            sendOperationResult(WsMessage.TAKE_TICKET, true, "取号成功：" + String.format("%03d", ticket.getNumber()));
+            broadcastState();
+        } else {
+            sendOperationResult(WsMessage.TAKE_TICKET, false, "取号失败");
+        }
     }
 
-    /**
-     * 校验并处理叫号请求
-     * 需要 counterId 非空
-     */
     private void handleCallNext(JsonNode payload) {
         if (payload == null || payload.isNull()) {
-            System.err.println("CALL_NEXT 失败：payload 为空");
+            sendOperationResult(WsMessage.CALL_NEXT, false, "请求数据为空");
             return;
         }
         String counterId = getTextValue(payload, "counterId");
         if (counterId == null) {
-            System.err.println("CALL_NEXT 失败：counterId 为空");
+            sendOperationResult(WsMessage.CALL_NEXT, false, "未选择窗口");
             return;
         }
-        queueService.callNext(counterId);
-        broadcastState();
+        Ticket ticket = queueService.callNext(counterId);
+        if (ticket != null) {
+            sendOperationResult(WsMessage.CALL_NEXT, true, "叫号成功：" + String.format("%03d", ticket.getNumber()));
+            broadcastState();
+        } else {
+            sendOperationResult(WsMessage.CALL_NEXT, false, "没有等待的号票或窗口忙");
+        }
     }
 
-    /**
-     * 校验并处理完成请求
-     * 需要 counterId 非空，ticketId 可选
-     */
+    private void handleCallNextByType(JsonNode payload) {
+        if (payload == null || payload.isNull()) {
+            sendOperationResult(WsMessage.CALL_NEXT_BY_TYPE, false, "请求数据为空");
+            return;
+        }
+        String counterId = getTextValue(payload, "counterId");
+        if (counterId == null) {
+            sendOperationResult(WsMessage.CALL_NEXT_BY_TYPE, false, "未选择窗口");
+            return;
+        }
+        String businessType = getTextValue(payload, "businessType");
+        if (businessType == null) {
+            sendOperationResult(WsMessage.CALL_NEXT_BY_TYPE, false, "未选择业务类型");
+            return;
+        }
+        if (!"all".equals(businessType) && !VALID_BUSINESS_TYPES.contains(businessType)) {
+            sendOperationResult(WsMessage.CALL_NEXT_BY_TYPE, false, "非法业务类型");
+            return;
+        }
+        Ticket ticket = queueService.callNextByType(counterId, businessType);
+        if (ticket != null) {
+            sendOperationResult(WsMessage.CALL_NEXT_BY_TYPE, true,
+                    "叫号成功：" + String.format("%03d", ticket.getNumber()) + "（" + ticket.getBusinessType() + "）");
+            broadcastState();
+        } else {
+            sendOperationResult(WsMessage.CALL_NEXT_BY_TYPE, false,
+                    "该业务类型下暂无等待号票");
+        }
+    }
+
     private void handleComplete(JsonNode payload) {
         if (payload == null || payload.isNull()) {
-            System.err.println("COMPLETE 失败：payload 为空");
+            sendOperationResult(WsMessage.COMPLETE, false, "请求数据为空");
             return;
         }
         String counterId = getTextValue(payload, "counterId");
         if (counterId == null) {
-            System.err.println("COMPLETE 失败：counterId 为空");
+            sendOperationResult(WsMessage.COMPLETE, false, "未选择窗口");
             return;
         }
         String ticketId = getOptionalTextValue(payload, "ticketId");
-        queueService.completeTicket(counterId, ticketId);
-        broadcastState();
+        boolean success = queueService.completeTicket(counterId, ticketId);
+        sendOperationResult(WsMessage.COMPLETE, success, success ? "办理完成" : "操作失败，当前没有办理业务");
+        if (success) broadcastState();
     }
 
-    /**
-     * 校验并处理过号请求
-     * 需要 counterId 非空，ticketId 可选
-     */
     private void handleMiss(JsonNode payload) {
         if (payload == null || payload.isNull()) {
-            System.err.println("MISS 失败：payload 为空");
+            sendOperationResult(WsMessage.MISS, false, "请求数据为空");
             return;
         }
         String counterId = getTextValue(payload, "counterId");
         if (counterId == null) {
-            System.err.println("MISS 失败：counterId 为空");
+            sendOperationResult(WsMessage.MISS, false, "未选择窗口");
             return;
         }
         String ticketId = getOptionalTextValue(payload, "ticketId");
-        queueService.missTicket(counterId, ticketId);
-        broadcastState();
+        boolean success = queueService.missTicket(counterId, ticketId);
+        sendOperationResult(WsMessage.MISS, success, success ? "已标记过号" : "操作失败，当前没有办理业务");
+        if (success) broadcastState();
     }
 
-    /**
-     * 校验并处理重新叫号请求
-     * 需要 counterId 非空，ticketId 可选
-     */
     private void handleRecall(JsonNode payload) {
         if (payload == null || payload.isNull()) {
-            System.err.println("RECALL 失败：payload 为空");
+            sendOperationResult(WsMessage.RECALL, false, "请求数据为空");
+            return;
+        }
+        String counterId = getTextValue(payload, "counterId");
+        String ticketId = getOptionalTextValue(payload, "ticketId");
+        if (counterId == null) {
+            sendOperationResult(WsMessage.RECALL, false, "未选择窗口");
+            return;
+        }
+        boolean success = queueService.recallTicket(counterId, ticketId);
+        sendOperationResult(WsMessage.RECALL, success, success ? "重新叫号成功" : "重新叫号失败");
+        if (success) broadcastState();
+    }
+
+    private void handleRequeueMissed(JsonNode payload) {
+        if (payload == null || payload.isNull()) {
+            sendOperationResult(WsMessage.REQUEUE_MISSED, false, "请求数据为空");
+            return;
+        }
+        String ticketId = getTextValue(payload, "ticketId");
+        if (ticketId == null) {
+            sendOperationResult(WsMessage.REQUEUE_MISSED, false, "ticketId 为空");
+            return;
+        }
+        boolean success = queueService.requeueMissed(ticketId);
+        sendOperationResult(WsMessage.REQUEUE_MISSED, success, success ? "已重新加入等待队列" : "操作失败");
+        if (success) broadcastState();
+    }
+
+    private void handleFinishMissed(JsonNode payload) {
+        if (payload == null || payload.isNull()) {
+            sendOperationResult(WsMessage.FINISH_MISSED, false, "请求数据为空");
+            return;
+        }
+        String ticketId = getTextValue(payload, "ticketId");
+        if (ticketId == null) {
+            sendOperationResult(WsMessage.FINISH_MISSED, false, "ticketId 为空");
+            return;
+        }
+        boolean success = queueService.finishMissed(ticketId);
+        sendOperationResult(WsMessage.FINISH_MISSED, success, success ? "已标记结束" : "操作失败");
+        if (success) broadcastState();
+    }
+
+    private void handleAddCounter(JsonNode payload) {
+        if (payload == null || payload.isNull()) {
+            sendOperationResult(WsMessage.ADD_COUNTER, false, "请求数据为空");
+            return;
+        }
+        String name = getTextValue(payload, "name");
+        if (name == null) {
+            sendOperationResult(WsMessage.ADD_COUNTER, false, "窗口名称为空");
+            return;
+        }
+        List<String> types = getStringList(payload, "supportedBusinessTypes");
+        if (types != null && !types.isEmpty()) {
+            for (String t : types) {
+                if (!VALID_BUSINESS_TYPES.contains(t)) {
+                    sendOperationResult(WsMessage.ADD_COUNTER, false, "非法业务类型: " + t);
+                    return;
+                }
+            }
+        }
+        Counter counter = queueService.addCounter(name, types);
+        if (counter != null) {
+            sendOperationResult(WsMessage.ADD_COUNTER, true, "已新增窗口：" + counter.getName());
+            broadcastState();
+        } else {
+            sendOperationResult(WsMessage.ADD_COUNTER, false, "新增窗口失败");
+        }
+    }
+
+    private void handleUpdateCounter(JsonNode payload) {
+        if (payload == null || payload.isNull()) {
+            sendOperationResult(WsMessage.UPDATE_COUNTER, false, "请求数据为空");
             return;
         }
         String counterId = getTextValue(payload, "counterId");
         if (counterId == null) {
-            System.err.println("RECALL 失败：counterId 为空");
+            sendOperationResult(WsMessage.UPDATE_COUNTER, false, "counterId 为空");
             return;
         }
-        String ticketId = getOptionalTextValue(payload, "ticketId");
-        queueService.recallTicket(counterId, ticketId);
-        broadcastState();
+        String name = getOptionalTextValue(payload, "name");
+        List<String> types = getStringList(payload, "supportedBusinessTypes");
+        if (types != null && !types.isEmpty()) {
+            for (String t : types) {
+                if (!VALID_BUSINESS_TYPES.contains(t)) {
+                    sendOperationResult(WsMessage.UPDATE_COUNTER, false, "非法业务类型: " + t);
+                    return;
+                }
+            }
+        }
+        boolean success = queueService.updateCounter(counterId, name, types);
+        sendOperationResult(WsMessage.UPDATE_COUNTER, success, success ? "窗口已更新" : "更新失败，窗口不存在");
+        if (success) broadcastState();
     }
 
-    /**
-     * 从 JsonNode 中安全读取必填文本字段
-     * @return 字段值，若为空/缺失/null 返回 null
-     */
+    private void handleToggleCounter(JsonNode payload) {
+        if (payload == null || payload.isNull()) {
+            sendOperationResult(WsMessage.TOGGLE_COUNTER, false, "请求数据为空");
+            return;
+        }
+        String counterId = getTextValue(payload, "counterId");
+        if (counterId == null) {
+            sendOperationResult(WsMessage.TOGGLE_COUNTER, false, "counterId 为空");
+            return;
+        }
+        JsonNode enabledNode = payload.get("enabled");
+        if (enabledNode == null || !enabledNode.isBoolean()) {
+            sendOperationResult(WsMessage.TOGGLE_COUNTER, false, "enabled 字段缺失或类型错误");
+            return;
+        }
+        boolean enabled = enabledNode.asBoolean();
+        boolean success = queueService.toggleCounter(counterId, enabled);
+        sendOperationResult(WsMessage.TOGGLE_COUNTER, success,
+                success ? "窗口已" + (enabled ? "启用" : "停用")
+                        : "操作失败，窗口可能正在办理业务");
+        if (success) broadcastState();
+    }
+
     private String getTextValue(JsonNode node, String fieldName) {
         if (node == null || node.isNull()) {
             return null;
@@ -230,10 +401,6 @@ public class QueueWebSocket extends WebSocketServer {
         return value;
     }
 
-    /**
-     * 从 JsonNode 中安全读取可选文本字段（允许为空字符串）
-     * @return 字段值，若缺失/null 返回 null
-     */
     private String getOptionalTextValue(JsonNode node, String fieldName) {
         if (node == null || node.isNull()) {
             return null;
@@ -248,10 +415,27 @@ public class QueueWebSocket extends WebSocketServer {
         return fieldNode.asText();
     }
 
+    private List<String> getStringList(JsonNode node, String fieldName) {
+        if (node == null || node.isNull() || !node.has(fieldName)) {
+            return null;
+        }
+        JsonNode fieldNode = node.get(fieldName);
+        if (fieldNode == null || fieldNode.isNull() || !fieldNode.isArray()) {
+            return null;
+        }
+        List<String> list = new ArrayList<>();
+        for (JsonNode item : (ArrayNode) fieldNode) {
+            if (item.isTextual()) {
+                list.add(item.asText());
+            }
+        }
+        return list;
+    }
+
     private void sendState(WebSocket conn) {
         try {
             QueueState state = queueService.getQueueState();
-            WsMessage response = new WsMessage("STATE_UPDATE", state);
+            WsMessage response = new WsMessage(WsMessage.STATE_UPDATE, state);
             conn.send(objectMapper.writeValueAsString(response));
         } catch (Exception e) {
             System.err.println("发送状态失败: " + e.getMessage());
@@ -261,7 +445,7 @@ public class QueueWebSocket extends WebSocketServer {
     public void broadcastState() {
         try {
             QueueState state = queueService.getQueueState();
-            WsMessage response = new WsMessage("STATE_UPDATE", state);
+            WsMessage response = new WsMessage(WsMessage.STATE_UPDATE, state);
             String json = objectMapper.writeValueAsString(response);
             Collection<WebSocket> connections = getConnections();
             for (WebSocket conn : connections) {

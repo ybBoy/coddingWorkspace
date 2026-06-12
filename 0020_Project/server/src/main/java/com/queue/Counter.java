@@ -1,10 +1,13 @@
 /**
  * Counter 窗口实体类
- * 职责：表示办理窗口，包含窗口ID、名称、状态、当前办理的号票等信息
+ * 职责：表示一个业务办理窗口，包含窗口ID、名称、状态、当前正在处理的号票
+ * 迭代新增：enabled 启用状态、supportedBusinessTypes 支持的业务类型列表
  */
 package com.queue;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Counter implements Serializable {
 
@@ -16,15 +19,33 @@ public class Counter implements Serializable {
 
     private String status;
 
+    private boolean enabled;
+
+    private List<String> supportedBusinessTypes;
+
     private Ticket currentTicket;
 
     public Counter() {
+        this.enabled = true;
+        this.supportedBusinessTypes = new ArrayList<>();
+        this.supportedBusinessTypes.add("咨询");
+        this.supportedBusinessTypes.add("办理");
+        this.supportedBusinessTypes.add("售后");
     }
 
-    public Counter(String id, String name, String status) {
+    public Counter(String id, String name) {
+        this();
         this.id = id;
         this.name = name;
-        this.status = status;
+        this.status = "idle";
+    }
+
+    public Counter(String id, String name, List<String> supportedBusinessTypes) {
+        this.id = id;
+        this.name = name;
+        this.status = "idle";
+        this.enabled = true;
+        this.supportedBusinessTypes = supportedBusinessTypes;
     }
 
     public String getId() {
@@ -49,6 +70,22 @@ public class Counter implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public List<String> getSupportedBusinessTypes() {
+        return supportedBusinessTypes;
+    }
+
+    public void setSupportedBusinessTypes(List<String> supportedBusinessTypes) {
+        this.supportedBusinessTypes = supportedBusinessTypes;
     }
 
     public Ticket getCurrentTicket() {

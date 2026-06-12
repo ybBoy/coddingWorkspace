@@ -2,19 +2,17 @@
  * WebSocket 连接管理模块
  * 职责：维护与后端的 WebSocket 长连接，处理消息收发、断线重连、待发送队列
  *
- * 增强功能：
- * 1. 支持 VITE_WS_URL 环境变量配置地址
- * 2. 根据页面协议自动选择 ws 或 wss
- * 3. close() 后不再自动重连（手动关闭 vs 意外断开区分）
- * 4. 连接未建立时消息存入待发送队列，连接成功后统一发送
- * 5. 内部状态防重复连接
+ * 增强功能（迭代新增）：
+ * 1. 连接状态变更时通过 EventBus 通知（online/reconnecting/offline）
+ * 2. 接收 OPERATION_RESULT 消息转发为 Toast 提示
  *
  * 数据流：
  * 1. 接收后端广播的 STATE_UPDATE 消息 -> 通过 EventBus 通知前端组件更新
- * 2. 接收前端事件 -> 通过 WebSocket 发送操作消息到后端（未连接时放入队列）
+ * 2. 接收 OPERATION_RESULT -> 转 Toast 提示
+ * 3. 接收前端事件 -> 通过 WebSocket 发送操作消息到后端（未连接时放入队列）
  */
 import { eventBus, EVENTS } from './EventBus';
-import { WsMessage, QueueState } from './types';
+import { WsMessage, QueueState, OperationResultPayload, ConnectionStatus, ToastMessage } from './types';
 
 /**
  * 构建 WebSocket 连接地址
@@ -38,6 +36,10 @@ function buildWsUrl(): string {
   return `${protocol}//${window.location.host}/ws`;
 }
 
+function createToastId(): string {
+  return 'toast-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+}
+
 class WebSocketClient {
   private ws: WebSocket | null = null;
   private reconnectTimer: number | null = null;
@@ -46,9 +48,26 @@ class WebSocketClient {
   private connecting: boolean = false;
   private readonly pendingQueue: WsMessage[] = [];
   private readonly RECONNECT_DELAY = 3000;
+  private lastStatus: ConnectionStatus = 'offline';
 
   constructor() {
     this.url = buildWsUrl();
+  }
+
+  private emitStatus(status: ConnectionStatus) {
+    if (this.lastStatus !== status) {
+      this.lastStatus = status;
+      eventBus.emit(EVENTS.CONNECTION_STATUS_CHANGED, status);
+    }
+  }
+
+  private emitToast(data: Partial<ToastMessage> & { type: ToastMessage['type']; title: string }) {
+    const toast: ToastMessage = {
+      id: createToastId(),
+      duration: 3000,
+      ...data,
+    };
+    eventBus.emit(EVENTS.SHOW_TOAST, toast);
   }
 
   /**
@@ -61,14 +80,14 @@ class WebSocketClient {
     }
     this.manuallyClosed = false;
     this.connecting = true;
+    this.emitStatus('reconnecting');
 
     try {
       this.ws = new WebSocket(this.url);
-      console.log('[WebSocket] 正在连接: ' + this.url);
 
       this.ws.onopen = () => {
         this.connecting = false;
-        console.log('[WebSocket] 连接成功');
+        this.emitStatus('online');
         if (this.reconnectTimer) {
           clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
@@ -86,11 +105,9 @@ class WebSocketClient {
         }
       };
 
-      this.ws.onclose = (event) => {
+      this.ws.onclose = (_event) => {
         this.connecting = false;
-        console.log(
-          `[WebSocket] 连接关闭 (code=${event.code}), 手动关闭=${this.manuallyClosed}`
-        );
+        this.emitStatus(this.manuallyClosed ? 'offline' : 'reconnecting');
         if (!this.manuallyClosed) {
           this.scheduleReconnect();
         }
@@ -102,6 +119,7 @@ class WebSocketClient {
       };
     } catch (e) {
       this.connecting = false;
+      this.emitStatus('offline');
       console.error('[WebSocket] 创建连接失败:', e);
       if (!this.manuallyClosed) {
         this.scheduleReconnect();
@@ -116,7 +134,6 @@ class WebSocketClient {
     if (this.manuallyClosed || this.reconnectTimer) {
       return;
     }
-    console.log(`[WebSocket] ${this.RECONNECT_DELAY / 1000}秒后自动重连...`);
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = null;
       this.connect();
@@ -131,6 +148,15 @@ class WebSocketClient {
       case 'STATE_UPDATE':
         const state = message.payload as QueueState;
         eventBus.emit(EVENTS.QUEUE_STATE_UPDATED, state);
+        break;
+      case 'OPERATION_RESULT':
+        const result = message.payload as OperationResultPayload;
+        eventBus.emit(EVENTS.OPERATION_RESULT, result);
+        this.emitToast({
+          type: result.success ? 'success' : 'error',
+          title: result.success ? '操作成功' : '操作失败',
+          message: result.message,
+        });
         break;
       default:
         console.log('[WebSocket] 收到未知消息:', message);
@@ -163,7 +189,6 @@ class WebSocketClient {
     if (this.pendingQueue.length === 0) {
       return;
     }
-    console.log(`[WebSocket] 刷新待发送队列，共 ${this.pendingQueue.length} 条`);
     while (this.pendingQueue.length > 0) {
       const msg = this.pendingQueue.shift();
       if (msg && this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -195,7 +220,7 @@ class WebSocketClient {
     }
     this.connecting = false;
     this.pendingQueue.length = 0;
-    console.log('[WebSocket] 已手动关闭连接');
+    this.emitStatus('offline');
   }
 }
 

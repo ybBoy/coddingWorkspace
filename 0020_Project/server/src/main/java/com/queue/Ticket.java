@@ -1,6 +1,7 @@
 /**
  * Ticket 号票实体类
  * 职责：表示用户取的号票，包含号码、业务类型、状态、创建时间等信息
+ * 迭代新增：completedAt 完成时间字段
  */
 package com.queue;
 
@@ -27,6 +28,9 @@ public class Ticket implements Serializable {
     private Long calledAt;
 
     private String counterId;
+
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
+    private Long completedAt;
 
     public Ticket() {
     }
@@ -93,5 +97,13 @@ public class Ticket implements Serializable {
 
     public void setCounterId(String counterId) {
         this.counterId = counterId;
+    }
+
+    public Long getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(Long completedAt) {
+        this.completedAt = completedAt;
     }
 }

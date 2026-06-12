@@ -1,7 +1,8 @@
 /**
  * 全局样式文件
- * 职责：定义全局样式、颜色变量、布局样式
+ * 职责：定义全局样式、颜色变量、布局样式、所有组件样式
  * 浅色背景，主色蓝色，过号橙色，完成绿色
+ * 迭代新增：连接状态、Toast、过号列表、今日统计、窗口配置等组件样式
  */
 * {
   margin: 0;
@@ -14,6 +15,9 @@
   --primary-light: #3b82f6;
   --success-color: #16a34a;
   --warning-color: #f97316;
+  --danger-color: #dc2626;
+  --cyan-color: #0891b2;
+  --purple-color: #7c3aed;
   --bg-color: #f8fafc;
   --card-bg: #ffffff;
   --text-primary: #1e293b;
@@ -40,12 +44,17 @@ body {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
   color: white;
   padding: 24px;
-  text-align: center;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .header h1 {
   font-size: 1.5rem;
-  margin-bottom: 16px;
   font-weight: 600;
 }
 
@@ -107,6 +116,125 @@ body {
   opacity: 0.9;
 }
 
+/* 连接状态 */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot-green {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse 2s infinite;
+}
+
+.status-dot-orange {
+  background: #f97316;
+  animation: blink 1s infinite;
+}
+
+.status-dot-red {
+  background: #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Toast 提示 */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  min-width: 280px;
+  max-width: 400px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.7s forwards;
+}
+
+@keyframes toastIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast-success {
+  background: #dcfce7;
+  border-left: 4px solid var(--success-color);
+  color: #14532d;
+}
+
+.toast-error {
+  background: #fee2e2;
+  border-left: 4px solid var(--danger-color);
+  color: #7f1d1d;
+}
+
+.toast-warning {
+  background: #ffedd5;
+  border-left: 4px solid var(--warning-color);
+  color: #7c2d12;
+}
+
+.toast-info {
+  background: #dbeafe;
+  border-left: 4px solid var(--primary-color);
+  color: #1e3a8a;
+}
+
+.toast-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.toast-message {
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
 /* 主内容区域：左侧等待队列 + 右侧操作面板 */
 .main-content {
   display: flex;
@@ -120,6 +248,8 @@ body {
   flex: 1;
   min-width: 280px;
   display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .content-right {
@@ -129,9 +259,8 @@ body {
   gap: 16px;
 }
 
-/* 左侧等待队列 */
-.waiting-queue {
-  flex: 1;
+/* 通用卡片样式 */
+.card {
   background: var(--card-bg);
   border-radius: 12px;
   padding: 16px;
@@ -145,6 +274,69 @@ body {
   padding-bottom: 8px;
   border-bottom: 2px solid var(--border-color);
   color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-sub {
+  font-size: 0.875rem;
+  font-weight: normal;
+  color: var(--text-secondary);
+}
+
+.subsection-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 16px 0 12px;
+  color: var(--text-primary);
+}
+
+/* 今日统计 */
+.today-stats {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-card .stat-label {
+  font-size: 0.75rem;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+.stat-blue { background: #dbeafe; color: #1e40af; }
+.stat-green { background: #dcfce7; color: #166534; }
+.stat-orange { background: #fed7aa; color: #9a3412; }
+.stat-cyan { background: #cffafe; color: #155e75; }
+.stat-purple { background: #ede9fe; color: #6d28d9; }
+.stat-gray { background: #f1f5f9; color: #334155; }
+
+/* 左侧等待队列 */
+.waiting-queue {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .queue-list {
@@ -196,12 +388,96 @@ body {
   padding: 32px 0;
 }
 
-/* 旧版右侧面板容器（兼容保留） */
-.right-panel {
-  width: 360px;
+/* 过号列表 */
+.missed-tickets {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.missed-item {
+  border-color: var(--warning-color);
+  background: #fff7ed;
+}
+
+.missed-actions {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-light);
+}
+
+.btn-primary-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.btn-primary-outline:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+.btn-success {
+  background: var(--success-color);
+  color: white;
+}
+
+.btn-warning {
+  background: var(--warning-color);
+  color: white;
+}
+
+.btn-mini {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  width: auto;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-group .btn {
+  flex: 1;
 }
 
 /* 取号表单 */
@@ -223,17 +499,21 @@ body {
   color: var(--text-primary);
 }
 
-.form-group select {
+.form-group select,
+.form-group input,
+.input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
   background: white;
-  cursor: pointer;
+  font-family: inherit;
 }
 
-.form-group select:focus {
+.form-group select:focus,
+.form-group input:focus,
+.input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -319,59 +599,78 @@ body {
   margin-top: 4px;
 }
 
-/* 按钮样式 */
-.btn {
-  padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
+/* 窗口配置 */
+.counter-config {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.config-list {
+  margin-bottom: 16px;
 }
 
-.btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--primary-light);
-}
-
-.btn-success {
-  background: var(--success-color);
-  color: white;
-}
-
-.btn-warning {
-  background: var(--warning-color);
-  color: white;
-}
-
-.btn-group {
+.config-item {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: white;
 }
 
-.btn-group .btn {
+.config-item.disabled {
+  opacity: 0.5;
+  background: #f1f5f9;
+}
+
+.counter-info {
   flex: 1;
+}
+
+.counter-info .counter-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.counter-types {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.config-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+.type-checkboxes {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.edit-form {
+  width: 100%;
 }
 
 /* 底部叫号记录 */
@@ -431,6 +730,16 @@ body {
   color: #4f46e5;
 }
 
+.record-action.requeue {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.record-action.finished {
+  background: #e5e7eb;
+  color: #374151;
+}
+
 .record-item .record-counter {
   color: var(--text-secondary);
   font-size: 0.75rem;
@@ -450,9 +759,14 @@ body {
   }
 
   .ticket-form,
-  .counter-panel {
+  .counter-panel,
+  .counter-config {
     flex: 1;
     min-width: 300px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -468,7 +782,8 @@ body {
   }
 
   .ticket-form,
-  .counter-panel {
+  .counter-panel,
+  .counter-config {
     width: 100%;
   }
 
@@ -483,5 +798,20 @@ body {
 
   .records-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .toast {
+    min-width: auto;
+    max-width: none;
   }
 }

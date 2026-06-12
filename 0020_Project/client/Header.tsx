@@ -1,11 +1,13 @@
 /**
  * Header 顶部叫号展示组件
  * 职责：显示系统标题、当前正在叫号的号码、窗口、业务类型、等待人数
+ * 右上角显示 WebSocket 连接状态（在线/重连中/离线）
  * 订阅 EventBus 的 QUEUE_STATE_UPDATED 事件获取最新状态
  */
 import React, { useEffect, useState } from 'react';
 import { eventBus, EVENTS } from './EventBus';
 import { QueueState, Counter } from './types';
+import ConnectionStatus from './ConnectionStatus';
 
 const getCounterName = (counters: Counter[], counterId?: string): string => {
   if (!counterId) return '';
@@ -26,7 +28,10 @@ const Header: React.FC = () => {
   if (!state) {
     return (
       <header className="header">
-        <h1>正在连接服务器...</h1>
+        <div className="header-top">
+          <h1>正在连接服务器...</h1>
+          <ConnectionStatus />
+        </div>
       </header>
     );
   }
@@ -35,7 +40,10 @@ const Header: React.FC = () => {
 
   return (
     <header className="header">
-      <h1>实时排队叫号系统</h1>
+      <div className="header-top">
+        <h1>实时排队叫号系统</h1>
+        <ConnectionStatus />
+      </div>
       <div className="current-calling">
         <div className="current-ticket">
           <span className="label">当前叫号</span>

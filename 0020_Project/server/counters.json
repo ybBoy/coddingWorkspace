@@ -1,0 +1,26 @@
+[
+  {
+    "id": "counter-1",
+    "name": "1号窗口",
+    "status": "idle",
+    "enabled": true,
+    "supportedBusinessTypes": ["咨询", "办理", "售后"],
+    "currentTicket": null
+  },
+  {
+    "id": "counter-2",
+    "name": "2号窗口",
+    "status": "idle",
+    "enabled": true,
+    "supportedBusinessTypes": ["咨询", "办理"],
+    "currentTicket": null
+  },
+  {
+    "id": "counter-3",
+    "name": "3号窗口",
+    "status": "idle",
+    "enabled": true,
+    "supportedBusinessTypes": ["售后"],
+    "currentTicket": null
+  }
+]

@@ -6,8 +6,11 @@ import com.booking.service.BookingService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.security.CodeSource;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,10 +22,17 @@ import java.util.concurrent.TimeUnit;
  *       服务启动时从 JSON 文件恢复数据
  * 存储格式：JSON，包含 sessions、bookings、waitlistQueues 三部分
  * 定时保存：每 30 秒自动保存一次，同时在关键操作后立即保存
+ *
+ * 存储路径：基于 JAR/class 文件所在目录的绝对路径（server/data/booking-data.json），
+ *          避免从不同工作目录启动时读写到不同位置。
  */
 public class FileStore {
-    private static final String DATA_FILE = "data/booking-data.json";
+    private static final String DATA_DIR_NAME = "data";
+    private static final String DATA_FILE_NAME = "booking-data.json";
     private static final long SAVE_INTERVAL_SECONDS = 30;
+
+    private final Path dataFilePath;   // 数据文件的绝对路径
+    private final Path tempFilePath;   // 临时写入文件的绝对路径
 
     private final Gson gson;
     private final ScheduledExecutorService scheduler;
@@ -32,6 +42,38 @@ public class FileStore {
         this.bookingService = bookingService;
         this.gson = new GsonBuilder().setPrettyPrinting().create();
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        // 解析数据文件的绝对路径
+        Path baseDir = resolveBaseDir();
+        Path dataDir = baseDir.resolve(DATA_DIR_NAME);
+        this.dataFilePath = dataDir.resolve(DATA_FILE_NAME);
+        this.tempFilePath = dataDir.resolve(DATA_FILE_NAME + ".tmp");
+        System.out.println("[FileStore] 数据存储路径: " + dataFilePath.toAbsolutePath());
+    }
+
+    /**
+     * 解析基础目录：优先使用 JAR 或 class 所在目录，兜底使用 user.dir
+     */
+    private Path resolveBaseDir() {
+        try {
+            CodeSource codeSource = FileStore.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null && codeSource.getLocation() != null) {
+                File codeFile = new File(codeSource.getLocation().toURI());
+                // 如果是 jar，取其父目录；如果是 classes 目录，也取其父目录（到 server/）
+                File parent = codeFile.isFile() ? codeFile.getParentFile() : codeFile;
+                // 如果在 target/classes 或 target 下，回到项目根（server/）
+                String parentName = parent.getName();
+                if ("classes".equals(parentName) || "target".equals(parentName)) {
+                    parent = parent.getParentFile();
+                }
+                if (parent != null && parent.exists()) {
+                    return parent.toPath();
+                }
+            }
+        } catch (URISyntaxException | SecurityException e) {
+            System.err.println("[FileStore] 无法解析代码目录，使用 user.dir: " + e.getMessage());
+        }
+        return Paths.get(System.getProperty("user.dir"));
     }
 
     /**
@@ -75,8 +117,7 @@ public class FileStore {
      */
     public synchronized void save() {
         try {
-            Path dataPath = Paths.get(DATA_FILE);
-            Path parentDir = dataPath.getParent();
+            Path parentDir = dataFilePath.getParent();
             if (parentDir != null && !Files.exists(parentDir)) {
                 Files.createDirectories(parentDir);
             }
@@ -89,13 +130,13 @@ public class FileStore {
             String json = gson.toJson(data);
 
             // 先写入临时文件，再原子替换，防止损坏
-            Path tempPath = Paths.get(DATA_FILE + ".tmp");
-            Files.write(tempPath, json.getBytes(StandardCharsets.UTF_8),
+            Files.write(tempFilePath, json.getBytes(StandardCharsets.UTF_8),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-            Files.move(tempPath, dataPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tempFilePath, dataFilePath,
+                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 
-            System.out.println("[FileStore] 数据已保存: " + dataPath.toAbsolutePath());
+            System.out.println("[FileStore] 数据已保存: " + dataFilePath.toAbsolutePath());
         } catch (Exception e) {
             System.err.println("[FileStore] 保存数据失败: " + e.getMessage());
             e.printStackTrace();
@@ -108,13 +149,12 @@ public class FileStore {
      */
     public synchronized boolean load() {
         try {
-            Path dataPath = Paths.get(DATA_FILE);
-            if (!Files.exists(dataPath)) {
+            if (!Files.exists(dataFilePath)) {
                 System.out.println("[FileStore] 未找到数据文件，将使用初始数据");
                 return false;
             }
 
-            String json = new String(Files.readAllBytes(dataPath), StandardCharsets.UTF_8);
+            String json = new String(Files.readAllBytes(dataFilePath), StandardCharsets.UTF_8);
             StoreData data = gson.fromJson(json, StoreData.class);
 
             if (data != null) {

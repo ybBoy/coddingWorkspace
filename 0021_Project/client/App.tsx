@@ -7,13 +7,14 @@ import { eventBus, EVENTS } from './EventBus';
 
 // App 主应用组件
 // 职责：
-//   1. 管理 WebSocket 连接状态
+//   1. 管理 WebSocket 连接状态（兼容 React StrictMode 开发模式下的双重 mount）
 //   2. 管理全局状态：场次列表、预约列表、活动动态
 //   3. 订阅 EventBus 事件，将用户操作通过 WebSocket 发送给后端
 //   4. 接收后端 WebSocket 消息，更新状态并通过 EventBus 通知组件
 //   5. 整体页面布局
+//
 // 数据流：
-//   用户操作 → 子组件 emit 事件 → App 订阅 → WebSocket 发送 → Java 后端
+//   用户操作 → 子组件 emit EventBus 事件 → App 订阅 → WebSocket 发送 → Java 后端
 //   Java 后端 → WebSocket 推送 → App 接收 → 更新 state → 子组件渲染
 //   同时通过 EventBus 发出 SESSIONS_UPDATED / ACTIVITY_RECEIVED 事件
 
@@ -23,15 +24,129 @@ const App: React.FC = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
 
-  // 选中的场次对象
+  // React 18 StrictMode 在开发模式下会：mount → cleanup → mount
+  // 用 mountCount 记录实际挂载次数，第 2 次 mount 时才真正建连接，避免双重连接
+  const mountCountRef = useRef(0);
+  // 保存最新的 handleMessage，避免闭包陈旧
+  const messageHandlerRef = useRef<((msg: WSMessage) => void) | null>(null);
+
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) || null;
 
-  // 连接 WebSocket
+  // ============ 消息处理 ============
+  const handleMessage = useCallback((msg: WSMessage) => {
+    switch (msg.type) {
+      case 'init':
+      case 'sessions':
+        if (msg.payload.sessions) {
+          setSessions(msg.payload.sessions);
+          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+        }
+        if (msg.payload.bookings) {
+          setBookings(msg.payload.bookings);
+        }
+        if (msg.type === 'init' && msg.payload.sessions && msg.payload.sessions.length > 0) {
+          setSelectedSessionId(msg.payload.sessions[0].id);
+        }
+        break;
+
+      case 'bookingOk':
+        if (msg.payload.booking) {
+          setBookings((prev) => {
+            const index = prev.findIndex((b) => b.id === msg.payload.booking.id);
+            if (index >= 0) {
+              const next = [...prev];
+              next[index] = msg.payload.booking;
+              return next;
+            }
+            return [...prev, msg.payload.booking];
+          });
+        }
+        if (msg.payload.sessions) {
+          setSessions(msg.payload.sessions);
+          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+        }
+        break;
+
+      case 'bookingFail':
+        alert(msg.payload?.message || '预约失败');
+        break;
+
+      case 'cancelOk':
+        if (msg.payload.bookingId) {
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === msg.payload.bookingId
+                ? { ...b, status: 'cancelled' as const }
+                : b
+            )
+          );
+        }
+        if (msg.payload.sessions) {
+          setSessions(msg.payload.sessions);
+          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+        }
+        break;
+
+      case 'checkInOk':
+        if (msg.payload.bookingId) {
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === msg.payload.bookingId
+                ? { ...b, status: 'checkedIn' as const }
+                : b
+            )
+          );
+        }
+        if (msg.payload.sessions) {
+          setSessions(msg.payload.sessions);
+          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+        }
+        break;
+
+      case 'activity':
+        if (msg.payload.activity) {
+          setActivities((prev) => {
+            const next = [msg.payload.activity, ...prev];
+            return next.slice(0, 10);
+          });
+          eventBus.emit(EVENTS.ACTIVITY_RECEIVED, msg.payload.activity);
+        }
+        if (msg.payload.sessions) {
+          setSessions(msg.payload.sessions);
+          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+        }
+        if (msg.payload.bookings) {
+          setBookings(msg.payload.bookings);
+        }
+        break;
+
+      case 'error':
+        alert(msg.payload?.message || '操作失败');
+        break;
+    }
+  }, []);
+
+  // 始终把最新的 handleMessage 挂到 ref 上
+  useEffect(() => {
+    messageHandlerRef.current = handleMessage;
+  }, [handleMessage]);
+
+  // ============ 连接逻辑 ============
   const connectWebSocket = useCallback(() => {
-    // 根据页面协议决定 ws 还是 wss
+    // 如果已经存在活跃连接，先关闭再建，避免多连接
+    if (wsRef.current) {
+      try {
+        wsRef.current.close();
+      } catch (e) {
+        // ignore
+      }
+      wsRef.current = null;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
 
@@ -43,14 +158,15 @@ const App: React.FC = () => {
         console.log('WebSocket 连接成功');
         setConnected(true);
         eventBus.emit(EVENTS.CONNECTION_CHANGED, true);
-        // 连接成功后请求初始数据
         ws.send(JSON.stringify({ type: 'init', payload: {} }));
       };
 
       ws.onmessage = (event) => {
         try {
           const data: WSMessage = JSON.parse(event.data);
-          handleMessage(data);
+          if (messageHandlerRef.current) {
+            messageHandlerRef.current(data);
+          }
         } catch (e) {
           console.error('解析 WebSocket 消息失败:', e);
         }
@@ -60,7 +176,6 @@ const App: React.FC = () => {
         console.log('WebSocket 连接断开');
         setConnected(false);
         eventBus.emit(EVENTS.CONNECTION_CHANGED, false);
-        // 自动重连
         if (reconnectTimerRef.current) {
           clearTimeout(reconnectTimerRef.current);
         }
@@ -78,112 +193,23 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // 处理后端发来的消息
-  const handleMessage = (msg: WSMessage) => {
-    switch (msg.type) {
-      case 'init':
-      case 'sessions':
-        // 更新场次列表
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        // 更新预约列表
-        if (msg.payload.bookings) {
-          setBookings(msg.payload.bookings);
-        }
-        // 默认选中第一个场次
-        if (msg.type === 'init' && msg.payload.sessions && msg.payload.sessions.length > 0) {
-          setSelectedSessionId(msg.payload.sessions[0].id);
-        }
-        break;
-
-      case 'bookingOk':
-        // 预约成功，更新预约列表
-        if (msg.payload.booking) {
-          setBookings((prev) => {
-            const index = prev.findIndex((b) => b.id === msg.payload.booking.id);
-            if (index >= 0) {
-              const next = [...prev];
-              next[index] = msg.payload.booking;
-              return next;
-            }
-            return [...prev, msg.payload.booking];
-          });
-        }
-        // 更新场次统计
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        break;
-
-      case 'bookingFail':
-        alert(msg.payload?.message || '预约失败');
-        break;
-
-      case 'cancelOk':
-        // 更新预约状态
-        if (msg.payload.bookingId) {
-          setBookings((prev) =>
-            prev.map((b) =>
-              b.id === msg.payload.bookingId
-                ? { ...b, status: 'cancelled' as const }
-                : b
-            )
-          );
-        }
-        // 更新场次统计
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        break;
-
-      case 'checkInOk':
-        // 更新签到状态
-        if (msg.payload.bookingId) {
-          setBookings((prev) =>
-            prev.map((b) =>
-              b.id === msg.payload.bookingId
-                ? { ...b, status: 'checkedIn' as const }
-                : b
-            )
-          );
-        }
-        // 更新场次统计
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        break;
-
-      case 'activity':
-        // 添加活动动态
-        if (msg.payload.activity) {
-          setActivities((prev) => {
-            const next = [msg.payload.activity, ...prev];
-            return next.slice(0, 10); // 只保留最近 10 条
-          });
-          eventBus.emit(EVENTS.ACTIVITY_RECEIVED, msg.payload.activity);
-        }
-        // 活动动态也可能伴随场次更新
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        if (msg.payload.bookings) {
-          setBookings(msg.payload.bookings);
-        }
-        break;
-
-      case 'error':
-        alert(msg.payload?.message || '操作失败');
-        break;
+  // 清理 WebSocket 与重连定时器
+  const cleanupWebSocket = useCallback(() => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
-  };
+    if (wsRef.current) {
+      try {
+        wsRef.current.close();
+      } catch (e) {
+        // ignore
+      }
+      wsRef.current = null;
+    }
+  }, []);
 
-  // 发送消息
+  // ============ 发送消息 ============
   const sendMessage = useCallback((type: string, payload: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type, payload }));
@@ -192,51 +218,51 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // 初始化：连接 WebSocket + 订阅 EventBus 事件
+  // ============ 初始化 / 清理（兼容 StrictMode）============
   useEffect(() => {
-    connectWebSocket();
+    mountCountRef.current += 1;
 
-    // 订阅预约请求
+    // 只有在第二次 mount 时（即 StrictMode 双调用的第二次）或生产模式下，才建立连接
+    // 这样既不影响生产，也避免了开发模式下 StrictMode 导致的双连接
+    if (mountCountRef.current >= 2 || !import.meta.env.DEV) {
+      connectWebSocket();
+    }
+
+    // EventBus 订阅
     const handleBookingRequest = (data: { sessionId: string; userName: string }) => {
       sendMessage('booking', data);
     };
-    eventBus.on(EVENTS.BOOKING_REQUEST, handleBookingRequest);
-
-    // 订阅取消请求
     const handleCancelRequest = (data: { bookingId: string; userName: string }) => {
       sendMessage('cancel', data);
     };
-    eventBus.on(EVENTS.CANCEL_REQUEST, handleCancelRequest);
-
-    // 订阅签到请求
     const handleCheckInRequest = (data: { bookingId: string }) => {
       sendMessage('checkin', data);
     };
-    eventBus.on(EVENTS.CHECKIN_REQUEST, handleCheckInRequest);
-
-    // 订阅场次选择
     const handleSessionSelected = (id: string) => {
       setSelectedSessionId(id);
     };
+
+    eventBus.on(EVENTS.BOOKING_REQUEST, handleBookingRequest);
+    eventBus.on(EVENTS.CANCEL_REQUEST, handleCancelRequest);
+    eventBus.on(EVENTS.CHECKIN_REQUEST, handleCheckInRequest);
     eventBus.on(EVENTS.SESSION_SELECTED, handleSessionSelected);
 
     return () => {
-      // 清理
       eventBus.off(EVENTS.BOOKING_REQUEST, handleBookingRequest);
       eventBus.off(EVENTS.CANCEL_REQUEST, handleCancelRequest);
       eventBus.off(EVENTS.CHECKIN_REQUEST, handleCheckInRequest);
       eventBus.off(EVENTS.SESSION_SELECTED, handleSessionSelected);
 
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current);
-      }
+      // 开发模式下，第一次 cleanup（StrictMode 模拟卸载）不真正关闭连接，
+      // 否则会导致第二次 mount 又重建连接引发不必要的重连日志。
+      // 只有当非 StrictMode（只执行一次 cleanup）时才关闭；或通过计数判断。
+      // 这里简单处理：始终 cleanup；在第二次 mount 时 connectWebSocket 会先关闭旧连接。
+      cleanupWebSocket();
     };
-  }, [connectWebSocket, sendMessage]);
+    // 依赖 connectWebSocket/sendMessage 都是 useCallback，空依赖，所以这里只跑一次
+  }, [connectWebSocket, sendMessage, cleanupWebSocket]);
 
-  // 获取活动动态的样式
+  // ============ 样式相关 ============
   const getActivityStyle = (type: string) => {
     switch (type) {
       case 'booking':
@@ -254,12 +280,21 @@ const App: React.FC = () => {
     }
   };
 
+  // 获取今天日期用于标题
+  const todayLabel = new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'long',
+  });
+
   return (
     <div className="app-container">
       {/* 顶部标题栏 */}
       <header className="app-header">
         <div className="header-left">
           <h1>🏋️ 实时预约签到系统</h1>
+          <span className="today-label">{todayLabel}</span>
         </div>
         <div className="header-right">
           <span className={`connection-status ${connected ? 'online' : 'offline'}`}>
@@ -326,10 +361,22 @@ const App: React.FC = () => {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
           flex-shrink: 0;
         }
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
         .app-header h1 {
           font-size: 20px;
           color: #1a73e8;
           margin: 0;
+        }
+        .today-label {
+          font-size: 13px;
+          color: #5f6368;
+          background: #e8f0fe;
+          padding: 3px 10px;
+          border-radius: 4px;
         }
         .connection-status {
           display: flex;

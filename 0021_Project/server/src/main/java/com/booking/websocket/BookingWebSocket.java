@@ -1,7 +1,6 @@
 package com.booking.websocket;
 
 import com.booking.model.Booking;
-import com.booking.model.Session;
 import com.booking.service.BookingService;
 import com.booking.store.FileStore;
 import com.google.gson.Gson;
@@ -22,6 +21,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *   4. 将结果和更新广播给所有连接的客户端
  *   5. 生成活动动态并推送
  *
+ * 注意：这里的 Session 是 javax.websocket.Session（WebSocket 连接会话），
+ *      业务场次模型 com.booking.model.Session 使用全限定名以避免命名冲突。
+ *
  * 消息格式（JSON）：
  *   { type: "booking", payload: { sessionId, userName } }
  *   { type: "cancel", payload: { bookingId, userName } }
@@ -35,8 +37,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @ServerEndpoint("/ws")
 public class BookingWebSocket {
 
-    // 所有连接的会话（javax.websocket.Session）
-    private static final Set<Session> sessions = new CopyOnWriteArraySet<>();
+    // 所有连接的 WebSocket 会话（javax.websocket.Session）
+    private static final Set<Session> wsSessions = new CopyOnWriteArraySet<>();
 
     // 业务服务（由 AppServer 注入）
     private static BookingService bookingService;
@@ -55,8 +57,8 @@ public class BookingWebSocket {
      */
     @OnOpen
     public void onOpen(Session session) {
-        sessions.add(session);
-        System.out.println("[WebSocket] 新连接: " + session.getId() + "，当前连接数: " + sessions.size());
+        wsSessions.add(session);
+        System.out.println("[WebSocket] 新连接: " + session.getId() + "，当前连接数: " + wsSessions.size());
     }
 
     /**
@@ -64,8 +66,8 @@ public class BookingWebSocket {
      */
     @OnClose
     public void onClose(Session session, CloseReason reason) {
-        sessions.remove(session);
-        System.out.println("[WebSocket] 连接断开: " + session.getId() + "，当前连接数: " + sessions.size());
+        wsSessions.remove(session);
+        System.out.println("[WebSocket] 连接断开: " + session.getId() + "，当前连接数: " + wsSessions.size());
     }
 
     /**
@@ -163,11 +165,13 @@ public class BookingWebSocket {
 
     /**
      * 处理取消预约
+     * 安全校验：必须提供与 booking 记录一致的 userName
      */
     private void handleCancel(Session session, Map<String, Object> payload) {
         String bookingId = (String) payload.get("bookingId");
+        String userName = (String) payload.get("userName");
 
-        if (bookingId == null) {
+        if (bookingId == null || userName == null || userName.trim().isEmpty()) {
             sendMessage(session, "error", Collections.singletonMap("message", "参数不完整"));
             return;
         }
@@ -178,8 +182,13 @@ public class BookingWebSocket {
             return;
         }
 
-        String userName = booking.getUserName();
-        SessionInfo sessionInfo = getSessionInfo(booking.getSessionId());
+        // 安全校验：userName 必须匹配
+        if (!booking.getUserName().equals(userName.trim())) {
+            sendMessage(session, "error", Collections.singletonMap("message", "无权取消他人的预约"));
+            return;
+        }
+
+        String sessionName = getSessionInfo(booking.getSessionId()).name;
 
         BookingService.CancelResult result = bookingService.cancelBooking(bookingId);
 
@@ -195,18 +204,18 @@ public class BookingWebSocket {
         sendMessage(session, "cancelOk", okPayload);
 
         // 广播取消活动
-        String cancelMsg = userName + " 取消了「" + sessionInfo.name + "」的预约";
-        broadcastActivity("cancel", userName, sessionInfo.name, cancelMsg);
+        String cancelMsg = userName + " 取消了「" + sessionName + "」的预约";
+        broadcastActivity("cancel", userName, sessionName, cancelMsg);
 
         // 如果有候补转正，也广播
         if (result.promotedBooking != null) {
             String promoteMsg = result.promotedBooking.getUserName()
-                    + " 从候补转为「" + sessionInfo.name + "」的正式预约";
+                    + " 从候补转为「" + sessionName + "」的正式预约";
             broadcastActivity("autoPromote", result.promotedBooking.getUserName(),
-                    sessionInfo.name, promoteMsg);
+                    sessionName, promoteMsg);
         }
 
-        // 广播场次和预约更新
+        // 广播场次更新
         broadcastSessionsUpdate();
 
         // 保存数据
@@ -289,7 +298,7 @@ public class BookingWebSocket {
      */
     private void broadcast(String type, Object payload) {
         String json = gson.toJson(buildMessage(type, payload));
-        for (Session s : sessions) {
+        for (Session s : wsSessions) {
             if (s.isOpen()) {
                 try {
                     s.getBasicRemote().sendText(json);
@@ -346,13 +355,13 @@ public class BookingWebSocket {
     // ========== 辅助方法 ==========
 
     /**
-     * 获取场次简要信息
+     * 获取场次简要信息（使用全限定名避免命名冲突）
      */
     private SessionInfo getSessionInfo(String sessionId) {
         SessionInfo info = new SessionInfo();
         info.id = sessionId;
         info.name = sessionId;
-        Session s = bookingService.getSession(sessionId);
+        com.booking.model.Session s = bookingService.getSession(sessionId);
         if (s != null) {
             info.name = s.getName();
         }

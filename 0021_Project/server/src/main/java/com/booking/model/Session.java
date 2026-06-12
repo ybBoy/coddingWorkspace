@@ -1,13 +1,18 @@
 package com.booking.model;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Session 活动场次实体类
  * 职责：表示一个活动场次的基本信息和实时统计数据
- * 包含：场次 ID、名称、起止时间、容量、已预约数、已签到数、候补数
+ * 包含：场次 ID、名称、日期、起止时间、容量、已预约数、已签到数、候补数
+ * date 字段格式：yyyy-MM-dd（如 2026-06-12），用于按当天过滤
  */
 public class Session {
     private String id;
     private String name;
+    private String date;        // 场次日期 yyyy-MM-dd
     private String startTime;
     private String endTime;
     private int capacity;
@@ -18,15 +23,30 @@ public class Session {
     public Session() {
     }
 
-    public Session(String id, String name, String startTime, String endTime, int capacity) {
+    public Session(String id, String name, String date, String startTime, String endTime, int capacity) {
         this.id = id;
         this.name = name;
+        this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
         this.capacity = capacity;
         this.bookedCount = 0;
         this.checkedInCount = 0;
         this.waitlistCount = 0;
+    }
+
+    // 判断是否是今天的场次
+    public boolean isToday() {
+        if (date == null) return true;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String today = sdf.format(new Date());
+        return date.equals(today);
+    }
+
+    // 获取今天日期字符串（工具方法）
+    public static String todayString() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(new Date());
     }
 
     // 是否还有名额
@@ -53,6 +73,14 @@ public class Session {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public String getStartTime() {

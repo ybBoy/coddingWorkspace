@@ -5,6 +5,7 @@
 export interface Session {
   id: string;
   name: string;
+  date: string;       // yyyy-MM-dd
   startTime: string;
   endTime: string;
   capacity: number;

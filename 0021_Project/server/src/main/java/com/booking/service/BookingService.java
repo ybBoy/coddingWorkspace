@@ -39,21 +39,27 @@ public class BookingService {
     }
 
     /**
-     * 初始化默认场次数据
+     * 初始化默认场次数据（今天的场次）
      */
     public void initDefaultSessions() {
-        addSession(new Session("s1", "晨间瑜伽课", "08:00", "09:00", 10));
-        addSession(new Session("s2", "动感单车课", "10:00", "11:00", 15));
-        addSession(new Session("s3", "力量训练", "14:00", "15:30", 12));
-        addSession(new Session("s4", "普拉提", "16:00", "17:00", 8));
-        addSession(new Session("s5", "有氧搏击", "19:00", "20:00", 20));
+        String today = Session.todayString();
+        addSession(new Session("s1", "晨间瑜伽课", today, "08:00", "09:00", 10));
+        addSession(new Session("s2", "动感单车课", today, "10:00", "11:00", 15));
+        addSession(new Session("s3", "力量训练", today, "14:00", "15:30", 12));
+        addSession(new Session("s4", "普拉提", today, "16:00", "17:00", 8));
+        addSession(new Session("s5", "有氧搏击", today, "19:00", "20:00", 20));
     }
 
     /**
-     * 获取所有场次（按开始时间排序）
+     * 获取今天的场次（按开始时间排序）
      */
     public List<Session> getAllSessions() {
-        List<Session> list = new ArrayList<>(sessions.values());
+        List<Session> list = new ArrayList<>();
+        for (Session s : sessions.values()) {
+            if (s.isToday()) {
+                list.add(s);
+            }
+        }
         Collections.sort(list, new Comparator<Session>() {
             @Override
             public int compare(Session s1, Session s2) {
@@ -61,6 +67,13 @@ public class BookingService {
             }
         });
         return list;
+    }
+
+    /**
+     * 获取所有场次（含非今天，用于管理或调试）
+     */
+    public List<Session> getAllSessionsRaw() {
+        return new ArrayList<>(sessions.values());
     }
 
     /**

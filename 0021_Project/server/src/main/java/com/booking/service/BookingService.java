@@ -77,6 +77,25 @@ public class BookingService {
     }
 
     /**
+     * 确保今天的默认场次存在（用于从持久化文件加载后补齐今天场次）
+     * 如果今天已经有任何场次则不覆盖（保留已经存在的自定义场次及其预约）
+     */
+    public void ensureTodaySessions() {
+        String today = Session.todayString();
+        boolean hasToday = false;
+        for (Session s : sessions.values()) {
+            if (today.equals(s.getDate())) {
+                hasToday = true;
+                break;
+            }
+        }
+        if (!hasToday) {
+            System.out.println("[BookingService] 未检测到今日场次，自动生成 " + today + " 的默认场次");
+            initDefaultSessions();
+        }
+    }
+
+    /**
      * 获取所有预约
      */
     public List<Booking> getAllBookings() {

@@ -28,9 +28,8 @@ const App: React.FC = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
 
-  // React 18 StrictMode 在开发模式下会：mount → cleanup → mount
-  // 用 mountCount 记录实际挂载次数，第 2 次 mount 时才真正建连接，避免双重连接
-  const mountCountRef = useRef(0);
+  // 组件正常在线时，连接异常断开允许重连；真正卸载时置为 false，避免 close() 触发的 onclose 再安排重连
+  const shouldReconnectRef = useRef(true);
   // 保存最新的 handleMessage，避免闭包陈旧
   const messageHandlerRef = useRef<((msg: WSMessage) => void) | null>(null);
 
@@ -137,9 +136,14 @@ const App: React.FC = () => {
 
   // ============ 连接逻辑 ============
   const connectWebSocket = useCallback(() => {
+    // 每次建立新连接前重置"允许重连"标志（StrictMode 下第一次 cleanup 会把它置 false，第二次 mount 要恢复）
+    shouldReconnectRef.current = true;
+
     // 如果已经存在活跃连接，先关闭再建，避免多连接
     if (wsRef.current) {
       try {
+        // 先清掉 onclose，防止手动 close 触发重连逻辑
+        wsRef.current.onclose = null as any;
         wsRef.current.close();
       } catch (e) {
         // ignore
@@ -178,11 +182,15 @@ const App: React.FC = () => {
         eventBus.emit(EVENTS.CONNECTION_CHANGED, false);
         if (reconnectTimerRef.current) {
           clearTimeout(reconnectTimerRef.current);
+          reconnectTimerRef.current = null;
         }
-        reconnectTimerRef.current = window.setTimeout(() => {
-          console.log('尝试重连 WebSocket...');
-          connectWebSocket();
-        }, 3000);
+        // 仅在组件仍"活着"时安排重连；真正卸载（shouldReconnectRef=false）时不再重连
+        if (shouldReconnectRef.current) {
+          reconnectTimerRef.current = window.setTimeout(() => {
+            console.log('尝试重连 WebSocket...');
+            connectWebSocket();
+          }, 3000);
+        }
       };
 
       ws.onerror = (error) => {
@@ -194,13 +202,17 @@ const App: React.FC = () => {
   }, []);
 
   // 清理 WebSocket 与重连定时器
+  // 注意：必须先置 shouldReconnectRef=false，再关闭连接，否则 onclose 里仍会安排重连
   const cleanupWebSocket = useCallback(() => {
+    shouldReconnectRef.current = false;
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
     if (wsRef.current) {
       try {
+        // 先清掉 onclose，防止手动 close 触发重连逻辑
+        wsRef.current.onclose = null as any;
         wsRef.current.close();
       } catch (e) {
         // ignore
@@ -220,13 +232,10 @@ const App: React.FC = () => {
 
   // ============ 初始化 / 清理（兼容 StrictMode）============
   useEffect(() => {
-    mountCountRef.current += 1;
-
-    // 只有在第二次 mount 时（即 StrictMode 双调用的第二次）或生产模式下，才建立连接
-    // 这样既不影响生产，也避免了开发模式下 StrictMode 导致的双连接
-    if (mountCountRef.current >= 2 || !import.meta.env.DEV) {
-      connectWebSocket();
-    }
+    // 无论 StrictMode 是否启用，首次 mount 都建连接；
+    // connectWebSocket 内部会先关闭旧连接再建新的，保证单连接；
+    // cleanupWebSocket 会置 shouldReconnectRef=false，防止 onclose 触发额外重连。
+    connectWebSocket();
 
     // EventBus 订阅
     const handleBookingRequest = (data: { sessionId: string; userName: string }) => {
@@ -253,10 +262,8 @@ const App: React.FC = () => {
       eventBus.off(EVENTS.CHECKIN_REQUEST, handleCheckInRequest);
       eventBus.off(EVENTS.SESSION_SELECTED, handleSessionSelected);
 
-      // 开发模式下，第一次 cleanup（StrictMode 模拟卸载）不真正关闭连接，
-      // 否则会导致第二次 mount 又重建连接引发不必要的重连日志。
-      // 只有当非 StrictMode（只执行一次 cleanup）时才关闭；或通过计数判断。
-      // 这里简单处理：始终 cleanup；在第二次 mount 时 connectWebSocket 会先关闭旧连接。
+      // 真正卸载或 StrictMode 模拟卸载时统一清理；
+      // 注意内部先 shouldReconnectRef=false 再 close，避免 onclose 再安排重连
       cleanupWebSocket();
     };
     // 依赖 connectWebSocket/sendMessage 都是 useCallback，空依赖，所以这里只跑一次

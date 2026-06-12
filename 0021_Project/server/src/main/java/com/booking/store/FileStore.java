@@ -123,7 +123,7 @@ public class FileStore {
             }
 
             StoreData data = new StoreData();
-            data.sessions = bookingService.getAllSessions();
+            data.sessions = bookingService.getAllSessionsRaw();
             data.bookings = bookingService.getAllBookings();
             data.waitlistQueues = bookingService.getAllWaitlistQueues();
 
@@ -167,6 +167,8 @@ public class FileStore {
                 if (data.waitlistQueues != null) {
                     bookingService.setWaitlistQueues(data.waitlistQueues);
                 }
+                // 从持久化恢复后补齐今天的默认场次（跨天重启场景）
+                bookingService.ensureTodaySessions();
                 System.out.println("[FileStore] 数据已加载: " + data.sessions.size() + " 个场次, "
                         + data.bookings.size() + " 条预约");
                 return true;

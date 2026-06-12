@@ -450,12 +450,13 @@ public class QueueService {
 
     /**
      * 按今日日期过滤，准确计算今日统计
+     * 取号总数使用 ticketId Set 去重，避免同一张票在等待/过号/完成/记录中被重复统计
      */
     private TodayStats calculateTodayStats() {
         checkDayChange();
-        long startOfToday = getStartOfTodayMillis();
 
-        int totalTakenToday = 0;
+        Set<String> takenTicketIds = new HashSet<>();
+
         int waiting = 0;
         int inProgress = 0;
         int completed = 0;
@@ -466,14 +467,14 @@ public class QueueService {
         for (Ticket t : waitingQueue) {
             if (isToday(t.getCreatedAt())) {
                 waiting++;
-                totalTakenToday++;
+                takenTicketIds.add(t.getId());
             }
         }
 
         for (Ticket t : missedQueue) {
             if (isToday(t.getCreatedAt())) {
                 missed++;
-                totalTakenToday++;
+                takenTicketIds.add(t.getId());
             }
         }
 
@@ -482,7 +483,7 @@ public class QueueService {
                 Ticket t = c.getCurrentTicket();
                 if (isToday(t.getCreatedAt())) {
                     inProgress++;
-                    totalTakenToday++;
+                    takenTicketIds.add(t.getId());
                 }
             }
         }
@@ -491,39 +492,30 @@ public class QueueService {
             if (!isToday(record.getTimestamp())) {
                 continue;
             }
+            Ticket t = record.getTicket();
             String action = record.getAction();
+            if (t == null) {
+                continue;
+            }
+            if (!isToday(t.getCreatedAt())) {
+                continue;
+            }
+            takenTicketIds.add(t.getId());
             if ("completed".equals(action)) {
                 completed++;
-                Ticket t = record.getTicket();
-                if (t != null && t.getCreatedAt() > 0 && !isToday(t.getCreatedAt())) {
-                    continue;
-                }
-                totalTakenToday++;
-                if (t != null && t.getCalledAt() != null && t.getCreatedAt() > 0) {
+                if (t.getCalledAt() != null && t.getCreatedAt() > 0) {
                     long waitMs = t.getCalledAt() - t.getCreatedAt();
                     if (waitMs >= 0) {
                         totalWaitSeconds += waitMs / 1000;
                         completedWithWait++;
                     }
                 }
-            } else if ("missed".equals(action)) {
-                Ticket t = record.getTicket();
-                if (t != null && t.getCreatedAt() > 0 && !isToday(t.getCreatedAt())) {
-                    continue;
-                }
-                totalTakenToday++;
-            } else if ("finished".equals(action)) {
-                Ticket t = record.getTicket();
-                if (t != null && t.getCreatedAt() > 0 && !isToday(t.getCreatedAt())) {
-                    continue;
-                }
-                totalTakenToday++;
             }
         }
 
         long avgWait = completedWithWait > 0 ? totalWaitSeconds / completedWithWait : 0;
 
-        return new TodayStats(totalTakenToday, waiting, inProgress, completed, missed, avgWait);
+        return new TodayStats(takenTicketIds.size(), waiting, inProgress, completed, missed, avgWait);
     }
 
     /**

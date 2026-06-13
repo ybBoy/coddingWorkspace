@@ -330,6 +330,10 @@ const App: React.FC = () => {
       socket.reorderQueue(order);
     }));
 
+    unsubs.push(eventBus.on('REQUEST_CLEAR_NOTES_PARAGRAPH', payload => {
+      socket.clearNotesByParagraph(payload.paragraphId);
+    }));
+
     unsubs.push(eventBus.on('REQUEST_IMPORT_ARTICLE', payload => {
       socket.importArticle(payload.title, payload.author, payload.text);
     }));

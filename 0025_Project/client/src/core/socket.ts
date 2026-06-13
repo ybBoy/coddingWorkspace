@@ -256,6 +256,14 @@ class SocketClient {
     });
   }
 
+  clearNotesByParagraph(paragraphId: string): void {
+    this.sendRaw({
+      type: 'CLEAR_NOTES_PARAGRAPH',
+      payload: { paragraphId },
+      sender: this.userName
+    });
+  }
+
   exportMarkdown(): void {
     this.sendRaw({ type: 'EXPORT_MARKDOWN', payload: null, sender: this.userName });
   }

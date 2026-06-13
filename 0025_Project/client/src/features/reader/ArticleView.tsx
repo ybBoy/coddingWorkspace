@@ -36,6 +36,7 @@ const ArticleView: React.FC<Props> = ({
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
   const [replyForNote, setReplyForNote] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentParagraphId && paragraphRefs.current[currentParagraphId]) {
@@ -84,6 +85,17 @@ const ArticleView: React.FC<Props> = ({
     eventBus.emit('REQUEST_ADD_REPLY', { noteId, content: replyText.trim() });
     setReplyText('');
     setReplyForNote(null);
+  };
+
+  const handleCopyInline = async (note: Note) => {
+    const text = `[${note.type === 'THOUGHT' ? '想法' : note.type === 'QUESTION' ? '问题' : '补充'}] ${note.author}：${note.content}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(note.id);
+      setTimeout(() => setCopiedId(null), 1500);
+    } catch (e) {
+      console.warn('复制失败', e);
+    }
   };
 
   if (!article) {
@@ -232,6 +244,13 @@ const ArticleView: React.FC<Props> = ({
                             <div className="inline-note__head">
                               <strong className="inline-note__author">{note.author || '匿名'}</strong>
                               <span className="inline-note__type">{meta.icon}</span>
+                              <button
+                                className={['inline-note__copy', copiedId === note.id ? 'inline-note__copy--on' : ''].filter(Boolean).join(' ')}
+                                onClick={(e) => { e.stopPropagation(); handleCopyInline(note); }}
+                                title="复制批注内容"
+                              >
+                                {copiedId === note.id ? '✓' : '📋'}
+                              </button>
                             </div>
                             <p className="inline-note__content">{note.content}</p>
 

@@ -422,6 +422,18 @@ public class ReadingSocket extends WebSocketServer {
                 }
                 break;
             }
+            case "CLEAR_NOTES_PARAGRAPH": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "CLEAR_NOTES_PARAGRAPH", "未加入房间"); break; }
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String paragraphId = p.get("paragraphId") != null ? p.get("paragraphId").toString() : null;
+                if (service.clearNotesByParagraph(roomId, paragraphId, userName)) {
+                    broadcastRoomState(roomId);
+                } else {
+                    sendError(conn, "CLEAR_NOTES_PARAGRAPH", "仅主持人或房主可清空");
+                }
+                break;
+            }
             case "IMPORT_ARTICLE": {
                 String roomId = connRoomMap.get(conn);
                 if (roomId == null) { sendError(conn, "IMPORT_ARTICLE", "未加入房间"); break; }

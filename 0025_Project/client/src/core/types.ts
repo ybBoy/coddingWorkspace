@@ -3,7 +3,7 @@ export type NoteType = 'THOUGHT' | 'QUESTION' | 'SUPPLEMENT';
 export type TimelineEventType =
   | 'JOIN' | 'LEAVE' | 'NOTE_ADDED' | 'REPLY_ADDED' | 'LIKE'
   | 'HIGHLIGHT' | 'PARAGRAPH_SWITCH' | 'DISCUSSION_QUEUE_UPDATED'
-  | 'TYPING_START' | 'TYPING_END' | 'ARTICLE_UPDATED' | 'USER_RENAMED';
+  | 'TYPING_START' | 'TYPING_END' | 'ARTICLE_UPDATED' | 'USER_RENAMED' | 'NOTES_CLEARED';
 
 export interface Paragraph {
   id: string;
@@ -186,6 +186,7 @@ export interface EventMap {
   REQUEST_ADD_TO_QUEUE: string;
   REQUEST_REMOVE_FROM_QUEUE: string;
   REQUEST_REORDER_QUEUE: string[];
+  REQUEST_CLEAR_NOTES_PARAGRAPH: { paragraphId: string };
   REQUEST_IMPORT_ARTICLE: { title?: string; author?: string; text: string };
   REQUEST_EXPORT_MD: void;
   REQUEST_EXPORT_JSON: void;

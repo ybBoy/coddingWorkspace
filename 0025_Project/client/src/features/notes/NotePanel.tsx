@@ -38,6 +38,8 @@ const NotePanel: React.FC<Props> = ({
   const [importAuthor, setImportAuthor] = useState('');
   const [importText, setImportText] = useState('');
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [onlyQuestions, setOnlyQuestions] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const targetParagraph = selectedParagraph || currentParagraph;
 
@@ -45,13 +47,14 @@ const NotePanel: React.FC<Props> = ({
     if (!targetParagraph) return [];
     return notes
       .filter(n => n.paragraphId === targetParagraph.id)
+      .filter(n => !onlyQuestions || n.type === 'QUESTION')
       .sort((a, b) => {
         if (a.highlighted !== b.highlighted) return a.highlighted ? -1 : 1;
         const lc = (b.likes?.length || 0) - (a.likes?.length || 0);
         if (lc !== 0) return lc;
         return a.createdAt - b.createdAt;
       });
-  }, [notes, targetParagraph]);
+  }, [notes, targetParagraph, onlyQuestions]);
 
   const queueNotes = useMemo(() => {
     return discussionQueue
@@ -140,6 +143,25 @@ const NotePanel: React.FC<Props> = ({
     newOrder.splice(from, 1);
     newOrder.splice(to, 0, draggedId);
     eventBus.emit('REQUEST_REORDER_QUEUE', newOrder);
+  };
+
+  const handleCopyContent = async (note: Note) => {
+    const text = `[${TYPE_LABEL[note.type].label}] ${note.author}：${note.content}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(note.id);
+      setTimeout(() => setCopiedId(null), 1500);
+    } catch (e) {
+      console.warn('复制失败', e);
+    }
+  };
+
+  const handleClearNotes = () => {
+    if (!targetParagraph) return;
+    const count = paraNotes.length;
+    if (count === 0) return;
+    if (!confirm(`确定要清空第 ${targetParagraph.index + 1} 段的 ${count} 条批注吗？（同时会清空关联的回复和队列）`)) return;
+    eventBus.emit('REQUEST_CLEAR_NOTES_PARAGRAPH', { paragraphId: targetParagraph.id });
   };
 
   const canSubmit = targetParagraph && content.trim() && userName.trim() && !submitting;
@@ -234,6 +256,22 @@ const NotePanel: React.FC<Props> = ({
             </div>
           </form>
 
+          <div className="notes__filters">
+            <label className="filter-checkbox">
+              <input
+                type="checkbox"
+                checked={onlyQuestions}
+                onChange={e => setOnlyQuestions(e.target.checked)}
+              />
+              <span>❓ 只看问题</span>
+            </label>
+            {(isModerator || isOwner) && paraNotes.length > 0 && (
+              <button className="btn btn--ghost btn--xs btn--warn" onClick={handleClearNotes}>
+                🗑 清空本段批注
+              </button>
+            )}
+          </div>
+
           <div className="notes__list">
             {paraNotes.length === 0 ? (
               <div className="notes__empty">
@@ -270,6 +308,13 @@ const NotePanel: React.FC<Props> = ({
                         </div>
                       </div>
                       <div className="note__actions">
+                        <button
+                          className={['btn', 'btn--ghost', 'btn--xs', copiedId === note.id ? 'btn--primary' : ''].filter(Boolean).join(' ')}
+                          onClick={() => handleCopyContent(note)}
+                          title="复制批注内容"
+                        >
+                          {copiedId === note.id ? '✓ 已复制' : '📋 复制'}
+                        </button>
                         {isModerator && (
                           <>
                             {!inQueue ? (

@@ -445,6 +445,49 @@ public class RoomService {
         return newArticle;
     }
 
+    public synchronized boolean clearNotesByParagraph(String roomId, String paragraphId, String userName) {
+        Room room = rooms.get(roomId);
+        if (room == null) return false;
+        Presence p = room.getPresence(userName);
+        if (p == null || !p.isModerator() && !p.isOwner()) return false;
+        if (paragraphId == null) return false;
+
+        List<String> removedNoteIds = new ArrayList<>();
+        Iterator<Note> noteIt = room.getNotes().iterator();
+        while (noteIt.hasNext()) {
+            Note note = noteIt.next();
+            if (paragraphId.equals(note.getParagraphId())) {
+                removedNoteIds.add(note.getId());
+                noteIt.remove();
+            }
+        }
+
+        if (!removedNoteIds.isEmpty()) {
+            Iterator<Reply> replyIt = room.getReplies().iterator();
+            while (replyIt.hasNext()) {
+                Reply reply = replyIt.next();
+                if (removedNoteIds.contains(reply.getNoteId())) {
+                    replyIt.remove();
+                }
+            }
+
+            room.getDiscussionQueue().removeIf(removedNoteIds::contains);
+
+            Paragraph para = null;
+            for (Paragraph pp : room.getArticle().getParagraphs()) {
+                if (paragraphId.equals(pp.getId())) { para = pp; break; }
+            }
+            Map<String, Object> data = new HashMap<>();
+            data.put("paragraphId", paragraphId);
+            data.put("paragraphIndex", para != null ? para.getIndex() : -1);
+            data.put("removedNoteCount", removedNoteIds.size());
+            addTimelineEvent(room, TimelineEvent.EventType.NOTES_CLEARED, userName, data);
+            persist();
+            return true;
+        }
+        return false;
+    }
+
     public String exportMarkdown(String roomId) {
         Room room = rooms.get(roomId);
         if (room == null) return null;

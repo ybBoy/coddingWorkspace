@@ -1,0 +1,227 @@
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(45, 106, 79, 0.15);
+}
+
+.selectedCard {
+  border: 2px solid #2d6a4f;
+  box-shadow: 0 4px 16px rgba(45, 106, 79, 0.2);
+}
+
+.waterAlert {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #f4a261, #e76f51);
+  color: #ffffff;
+  padding: 6px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.alertIcon {
+  font-size: 14px;
+}
+
+.alertText {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-top: 8px;
+}
+
+.plantName {
+  color: #1b4332;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusHealthy {
+  background: #d8f3dc;
+  color: #2d6a4f;
+}
+
+.statusGrowing {
+  background: #b7e4c7;
+  color: #1b4332;
+}
+
+.statusWarning {
+  background: #ffe5d9;
+  color: #e76f51;
+}
+
+.statusSick {
+  background: #ffccd5;
+  color: #c9184a;
+}
+
+.statusDormant {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+.statusDefault {
+  background: #f0f7f0;
+  color: #2d6a4f;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.infoLabel {
+  color: #52796f;
+  font-weight: 400;
+}
+
+.infoValue {
+  color: #1b4332;
+  font-weight: 500;
+}
+
+.daysAgo {
+  color: #52796f;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f7f0;
+}
+
+.actionBtn {
+  flex: 1;
+  padding: 8px 10px;
+  background: #f0f7f0;
+  color: #2d6a4f;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover {
+  background: #d8f3dc;
+  transform: translateY(-1px);
+}
+
+.cardFooter {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn {
+  flex: 1;
+  padding: 8px;
+  background: #ffffff;
+  color: #2d6a4f;
+  border: 1px solid #b7e4c7;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.editBtn:hover {
+  background: #f0f7f0;
+}
+
+.deleteBtn {
+  flex: 1;
+  padding: 8px;
+  background: #ffffff;
+  color: #e76f51;
+  border: 1px solid #ffccd5;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background: #fff8f6;
+  border-color: #e76f51;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.emptyText {
+  color: #2d6a4f;
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.emptySubText {
+  color: #52796f;
+  font-size: 14px;
+}

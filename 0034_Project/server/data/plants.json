@@ -1,0 +1,16 @@
+[ {
+  "id" : "65a121bb-f756-466b-9b00-1771085dc4f8",
+  "name" : "绿萝",
+  "location" : "客厅阳台",
+  "lightRequirement" : "散射光",
+  "status" : "健康",
+  "wateringIntervalDays" : 7,
+  "lastWateredTime" : "2026-06-14T01:19:48.578",
+  "createdAt" : "2026-06-14T00:59:31.657",
+  "careLogs" : [ {
+    "id" : "cc78d8c3-abdc-4346-a1f4-01fadc3a4ca5",
+    "type" : "WATERING",
+    "note" : "浇透了，土壤湿润",
+    "timestamp" : "2026-06-14T01:19:48.578"
+  } ]
+} ]

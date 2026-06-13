@@ -7,16 +7,18 @@ public class Seat {
     private String status;
     private String nickname;
     private long awaySince;
+    private String zone;
 
     public Seat() {}
 
-    public Seat(int id, int row, int col) {
+    public Seat(int id, int row, int col, String zone) {
         this.id = id;
         this.row = row;
         this.col = col;
         this.status = "free";
         this.nickname = null;
         this.awaySince = 0;
+        this.zone = zone;
     }
 
     public int getId() { return id; }
@@ -37,11 +39,20 @@ public class Seat {
     public long getAwaySince() { return awaySince; }
     public void setAwaySince(long awaySince) { this.awaySince = awaySince; }
 
+    public String getZone() { return zone; }
+    public void setZone(String zone) { this.zone = zone; }
+
     public boolean isReleasable() {
         if ("away".equals(status) && awaySince > 0) {
             long elapsed = System.currentTimeMillis() - awaySince;
             return elapsed >= 15 * 60 * 1000;
         }
         return false;
+    }
+
+    public long getAwayRemainingMs() {
+        if (awaySince <= 0) return 0;
+        long elapsed = System.currentTimeMillis() - awaySince;
+        return Math.max(0, 15 * 60 * 1000 - elapsed);
     }
 }

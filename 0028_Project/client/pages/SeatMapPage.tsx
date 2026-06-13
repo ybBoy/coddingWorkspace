@@ -1,9 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { eventBus, SeatData, SeatActionData } from '../core/EventBus';
-import { initSocket, sendAction, getConnected } from '../core/socket';
+import { Link } from 'react-router-dom';
+import { eventBus, SeatData, SeatActionData, ZoneType } from '../core/EventBus';
+import { initSocket } from '../core/socket';
 import SeatGrid from '../components/SeatGrid';
 import SeatInfoPanel from '../components/SeatInfoPanel';
 import ActivityFeed from '../components/ActivityFeed';
+import Toast from '../components/Toast';
+import BroadcastBanner from '../components/BroadcastBanner';
+import ZoneFilter from '../components/ZoneFilter';
 
 const NICKNAME_KEY = 'studyroom_nickname';
 
@@ -14,6 +18,8 @@ const SeatMapPage: React.FC = () => {
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem(NICKNAME_KEY) || '');
   const [connected, setConnected] = useState<boolean>(false);
   const [mySeatId, setMySeatId] = useState<number | null>(null);
+  const [activeZone, setActiveZone] = useState<ZoneType | 'all'>('all');
+  const [wasDisconnected, setWasDisconnected] = useState(false);
 
   const handleInit = useCallback((data: { seats: SeatData[]; actions: SeatActionData[] }) => {
     setSeats(data.seats);
@@ -25,11 +31,17 @@ const SeatMapPage: React.FC = () => {
     setActions(data.actions);
   }, []);
 
-  const handleConnected = useCallback(() => setConnected(true), []);
-  const handleDisconnected = useCallback(() => setConnected(false), []);
+  const handleConnected = useCallback(() => {
+    setConnected(true);
+    if (wasDisconnected) {
+      eventBus.emit('toast:show', { message: '已重新连接', type: 'success', duration: 2000 });
+      setWasDisconnected(false);
+    }
+  }, [wasDisconnected]);
 
-  const handleError = useCallback((msg: string) => {
-    alert(msg);
+  const handleDisconnected = useCallback(() => {
+    setConnected(false);
+    setWasDisconnected(true);
   }, []);
 
   useEffect(() => {
@@ -37,7 +49,6 @@ const SeatMapPage: React.FC = () => {
     const unsubUpdate = eventBus.on('state:update', handleUpdate);
     const unsubConn = eventBus.on('ws:connected', handleConnected);
     const unsubDisconn = eventBus.on('ws:disconnected', handleDisconnected);
-    const unsubErr = eventBus.on('ws:error', handleError);
 
     initSocket();
 
@@ -46,9 +57,8 @@ const SeatMapPage: React.FC = () => {
       unsubUpdate();
       unsubConn();
       unsubDisconn();
-      unsubErr();
     };
-  }, [handleInit, handleUpdate, handleConnected, handleDisconnected, handleError]);
+  }, [handleInit, handleUpdate, handleConnected, handleDisconnected]);
 
   useEffect(() => {
     if (nickname) {
@@ -62,19 +72,17 @@ const SeatMapPage: React.FC = () => {
         (s) => (s.status === 'occupied' || s.status === 'away') && s.nickname === nickname
       );
       setMySeatId(found ? found.id : null);
+    } else {
+      setMySeatId(null);
     }
   }, [seats, nickname]);
 
   const selectedSeat = selectedId !== null ? seats.find((s) => s.id === selectedId) || null : null;
 
-  const handleNicknameConfirm = () => {
-    if (!nickname.trim()) {
-      alert('请输入昵称');
-    }
-  };
-
   return (
     <div className="seat-map-page">
+      <Toast />
+      <BroadcastBanner />
       <header className="app-header">
         <div className="header-left">
           <h1 className="room-title">📚 自习室座位看板</h1>
@@ -83,6 +91,9 @@ const SeatMapPage: React.FC = () => {
           <span className={`conn-status ${connected ? 'online' : 'offline'}`}>
             {connected ? '● 已连接' : '○ 未连接'}
           </span>
+          {!connected && (
+            <span className="reconnect-hint">正在重连...</span>
+          )}
         </div>
         <div className="header-right">
           <label className="nickname-label">昵称：</label>
@@ -92,7 +103,6 @@ const SeatMapPage: React.FC = () => {
             placeholder="输入昵称"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            onBlur={handleNicknameConfirm}
             maxLength={10}
           />
           {mySeatId !== null && (() => {
@@ -103,8 +113,13 @@ const SeatMapPage: React.FC = () => {
               </span>
             ) : null;
           })()}
+          <Link to="/admin" className="admin-link">管理员</Link>
         </div>
       </header>
+
+      <div className="page-subheader">
+        <ZoneFilter activeZone={activeZone} onChange={setActiveZone} />
+      </div>
 
       <div className="main-content">
         <div className="left-panel">
@@ -113,6 +128,7 @@ const SeatMapPage: React.FC = () => {
             selectedId={selectedId}
             onSelect={setSelectedId}
             mySeatId={mySeatId}
+            activeZone={activeZone}
           />
           <ActivityFeed actions={actions} />
         </div>
@@ -121,6 +137,7 @@ const SeatMapPage: React.FC = () => {
             seat={selectedSeat}
             nickname={nickname}
             mySeatId={mySeatId}
+            isAdmin={false}
           />
         </div>
       </div>

@@ -1,6 +1,7 @@
 package com.studyroom.ws;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.studyroom.model.Seat;
@@ -12,11 +13,15 @@ import org.java_websocket.server.WebSocketServer;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SeatSocket extends WebSocketServer {
     private static final String ADMIN_TOKEN = "studyroom-admin-2026";
     private final SeatService seatService;
-    private final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder().create();
+    private final Set<WebSocket> adminConnections = ConcurrentHashMap.newKeySet();
 
     public SeatSocket(InetSocketAddress address, SeatService seatService) {
         super(address);
@@ -29,7 +34,9 @@ public class SeatSocket extends WebSocketServer {
     }
 
     @Override
-    public void onClose(WebSocket conn, int code, String reason, boolean remote) {}
+    public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+        adminConnections.remove(conn);
+    }
 
     @Override
     public void onMessage(WebSocket conn, String message) {
@@ -71,18 +78,71 @@ public class SeatSocket extends WebSocketServer {
                     break;
                 }
                 case "forceRelease": {
-                    int seatId = msg.get("seatId").getAsInt();
                     String token = msg.has("token") ? msg.get("token").getAsString() : null;
                     if (!ADMIN_TOKEN.equals(token)) {
                         sendError(conn, "无管理员权限，无法强制释放");
                         break;
                     }
+                    int seatId = msg.get("seatId").getAsInt();
                     Seat result = seatService.forceRelease(seatId);
                     if (result != null) {
                         broadcastUpdate();
                     } else {
                         sendError(conn, "无法释放座位");
                     }
+                    break;
+                }
+                case "adminLogin": {
+                    String token = msg.has("token") ? msg.get("token").getAsString() : "";
+                    if (ADMIN_TOKEN.equals(token)) {
+                        adminConnections.add(conn);
+                        JsonObject resp = new JsonObject();
+                        resp.addProperty("type", "adminLoginResult");
+                        resp.addProperty("success", true);
+                        conn.send(gson.toJson(resp));
+                    } else {
+                        JsonObject resp = new JsonObject();
+                        resp.addProperty("type", "adminLoginResult");
+                        resp.addProperty("success", false);
+                        conn.send(gson.toJson(resp));
+                    }
+                    break;
+                }
+                case "broadcast": {
+                    String token = msg.has("token") ? msg.get("token").getAsString() : "";
+                    if (!ADMIN_TOKEN.equals(token)) {
+                        sendError(conn, "无管理员权限，无法广播");
+                        break;
+                    }
+                    String text = msg.has("message") ? msg.get("message").getAsString() : "";
+                    seatService.setBroadcast(text);
+                    broadcastBroadcastMessage();
+                    break;
+                }
+                case "getStats": {
+                    String token = msg.has("token") ? msg.get("token").getAsString() : "";
+                    if (!ADMIN_TOKEN.equals(token)) {
+                        sendError(conn, "无管理员权限");
+                        break;
+                    }
+                    Map<String, Object> stats = seatService.getStats();
+                    JsonObject resp = new JsonObject();
+                    resp.addProperty("type", "stats");
+                    resp.add("data", gson.toJsonTree(stats));
+                    conn.send(gson.toJson(resp));
+                    break;
+                }
+                case "exportActions": {
+                    String token = msg.has("token") ? msg.get("token").getAsString() : "";
+                    if (!ADMIN_TOKEN.equals(token)) {
+                        sendError(conn, "无管理员权限");
+                        break;
+                    }
+                    List<SeatAction> all = seatService.getAllActions();
+                    JsonObject resp = new JsonObject();
+                    resp.addProperty("type", "exportActions");
+                    resp.add("actions", gson.toJsonTree(all));
+                    conn.send(gson.toJson(resp));
                     break;
                 }
                 default:
@@ -108,6 +168,8 @@ public class SeatSocket extends WebSocketServer {
         state.addProperty("type", "init");
         state.add("seats", gson.toJsonTree(seatService.getAllSeats()));
         state.add("actions", gson.toJsonTree(seatService.getRecentActions(10)));
+        state.addProperty("broadcast", seatService.getBroadcastMessage());
+        state.addProperty("broadcastTimestamp", seatService.getBroadcastTimestamp());
         conn.send(gson.toJson(state));
     }
 
@@ -117,6 +179,15 @@ public class SeatSocket extends WebSocketServer {
         state.add("seats", gson.toJsonTree(seatService.getAllSeats()));
         state.add("actions", gson.toJsonTree(seatService.getRecentActions(10)));
         String json = gson.toJson(state);
+        broadcast(json);
+    }
+
+    private void broadcastBroadcastMessage() {
+        JsonObject msg = new JsonObject();
+        msg.addProperty("type", "broadcast");
+        msg.addProperty("message", seatService.getBroadcastMessage());
+        msg.addProperty("timestamp", seatService.getBroadcastTimestamp());
+        String json = gson.toJson(msg);
         broadcast(json);
     }
 

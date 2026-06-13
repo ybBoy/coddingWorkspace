@@ -1,5 +1,5 @@
-import React from 'react';
-import { SeatData, eventBus } from '../core/EventBus';
+import React, { useState, useEffect } from 'react';
+import { SeatData, eventBus, ZONE_LABELS, ZoneType } from '../core/EventBus';
 
 interface SeatInfoPanelProps {
   seat: SeatData | null;
@@ -15,7 +15,16 @@ const STATUS_TEXT: Record<string, string> = {
   releasable: '可释放',
 };
 
+const AWAY_TIMEOUT_MS = 15 * 60 * 1000;
+
 const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId, isAdmin = false }) => {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (!seat) {
     return (
       <div className="seat-info-panel">
@@ -28,12 +37,30 @@ const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId,
   const isMine = seat.id === mySeatId;
   const isFree = seat.status === 'free';
   const isReleasable = seat.status === 'releasable';
-  const awayMinutes = seat.awaySince > 0
-    ? Math.floor((Date.now() - seat.awaySince) / 60000)
-    : 0;
+
+  const getAwayRemaining = () => {
+    if (seat.status !== 'away' && seat.status !== 'releasable') return null;
+    if (seat.awaySince <= 0) return null;
+    const elapsed = Date.now() - seat.awaySince;
+    const remaining = AWAY_TIMEOUT_MS - elapsed;
+    return Math.max(0, Math.floor(remaining / 1000));
+  };
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}分${s.toString().padStart(2, '0')}秒`;
+  };
+
+  const remaining = getAwayRemaining();
+  const isWarning = remaining !== null && remaining < 60 && remaining > 0;
 
   const handleSit = () => {
-    eventBus.emit('seat:sit', { seatId: seat.id, nickname });
+    if (!nickname.trim()) {
+      eventBus.emit('toast:show', { message: '请先输入昵称', type: 'warning' });
+      return;
+    }
+    eventBus.emit('seat:sit', { seatId: seat.id, nickname: nickname.trim() });
   };
 
   const handleAway = () => {
@@ -45,9 +72,8 @@ const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId,
   };
 
   const handleForceRelease = () => {
-    if (window.confirm(`确认强制释放 ${seat.row + 1}排${seat.col + 1}座？`)) {
-      eventBus.emit('seat:forceRelease', { seatId: seat.id });
-    }
+    eventBus.emit('seat:forceRelease', { seatId: seat.id, isAdmin: true });
+    eventBus.emit('toast:show', { message: `已释放 ${seat.row + 1}排${seat.col + 1}座`, type: 'success' });
   };
 
   return (
@@ -56,6 +82,12 @@ const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId,
       <div className="info-row">
         <span className="info-label">位置</span>
         <span className="info-value">{seat.row + 1}排 {seat.col + 1}座</span>
+      </div>
+      <div className="info-row">
+        <span className="info-label">区域</span>
+        <span className={`info-value zone-badge zone-${seat.zone}`}>
+          {ZONE_LABELS[seat.zone as ZoneType] || '普通区'}
+        </span>
       </div>
       <div className="info-row">
         <span className="info-label">状态</span>
@@ -69,21 +101,33 @@ const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId,
           <span className="info-value">{seat.nickname}</span>
         </div>
       )}
-      {seat.status === 'away' && (
-        <div className="info-row">
-          <span className="info-label">暂离时长</span>
-          <span className="info-value">{awayMinutes} 分钟</span>
+      {remaining !== null && (
+        <div className={`info-row ${isWarning ? 'warning' : ''} ${isReleasable ? 'danger' : ''}`}>
+          <span className="info-label">{isReleasable ? '超时情况' : '暂离剩余'}</span>
+          <span className="info-value">
+            {isReleasable ? '已超过15分钟' : formatTime(remaining)}
+            {isWarning && !isReleasable && ' ⚠即将超时'}
+          </span>
         </div>
       )}
       {isReleasable && (
-        <div className="info-row warning">
+        <div className="info-row danger">
           <span>⚠ 该座位暂离超过15分钟，管理员可强制释放</span>
+        </div>
+      )}
+      {isMine && !isFree && (
+        <div className="info-row mine-hint">
+          <span>👤 这是你当前的座位</span>
         </div>
       )}
 
       <div className="info-actions">
         {isFree && nickname && (
-          <button className="btn btn-sit" onClick={handleSit} disabled={!nickname.trim()}>
+          <button
+            className="btn btn-sit"
+            onClick={handleSit}
+            disabled={!nickname.trim()}
+          >
             入座
           </button>
         )}

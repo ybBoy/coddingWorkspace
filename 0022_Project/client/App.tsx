@@ -3,13 +3,13 @@ import EventBus from './EventBus';
 import TaskBoard from './TaskBoard';
 import TaskForm from './TaskForm';
 import ActivityLog from './ActivityLog';
-import { Task, TaskLog as TLog, WsMessage, PriorityFilter } from './types';
+import { PriorityFilter } from './types';
 
-const WS_URL = `ws://localhost:8080/ws`;
+const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const WS_PORT = 8080;
+const WS_URL = `${WS_PROTOCOL}//${window.location.hostname}:${WS_PORT}/ws`;
 
 function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [logs, setLogs] = useState<TLog[]>([]);
   const [nickname, setNickname] = useState<string>('');
   const [nicknameInput, setNicknameInput] = useState<string>('');
   const [connected, setConnected] = useState<boolean>(false);
@@ -23,6 +23,14 @@ function App() {
   }, []);
 
   useEffect(() => {
+    EventBus.emit('set-nickname', nickname);
+  }, [nickname]);
+
+  useEffect(() => {
+    EventBus.emit('set-priority-filter', priorityFilter);
+  }, [priorityFilter]);
+
+  useEffect(() => {
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
@@ -32,9 +40,7 @@ function App() {
 
     ws.onmessage = (event) => {
       try {
-        const msg: WsMessage = JSON.parse(event.data);
-        setTasks(msg.tasks);
-        setLogs(msg.logs);
+        const msg = JSON.parse(event.data);
         EventBus.emit('tasks-updated', msg.tasks);
         EventBus.emit('logs-updated', msg.logs);
       } catch (e) {
@@ -56,6 +62,10 @@ function App() {
 
   const handleClaim = (taskId: string) => {
     sendWs({ action: 'claimTask', taskId, nickname });
+  };
+
+  const handleStart = (taskId: string) => {
+    sendWs({ action: 'startTask', taskId, nickname });
   };
 
   const handleRelease = (taskId: string) => {
@@ -96,10 +106,6 @@ function App() {
     );
   }
 
-  const filteredTasks = priorityFilter === 'all'
-    ? tasks
-    : tasks.filter(t => t.priority === priorityFilter);
-
   return (
     <div className="app">
       <header className="app-header">
@@ -130,16 +136,15 @@ function App() {
             ))}
           </div>
           <TaskBoard
-            tasks={filteredTasks}
-            nickname={nickname}
             onClaim={handleClaim}
+            onStart={handleStart}
             onRelease={handleRelease}
             onComplete={handleComplete}
           />
         </div>
         <aside className="sidebar">
           <TaskForm onAdd={handleAddTask} />
-          <ActivityLog logs={logs} />
+          <ActivityLog />
         </aside>
       </div>
     </div>

@@ -13,11 +13,18 @@ public class AppServer {
         });
 
         app.ws("/ws", ws -> {
-            TaskWebSocket tws = new TaskWebSocket(taskService);
-            ws.onConnect(tws::onConnect);
-            ws.onClose(tws::onClose);
-            ws.onMessage((WsMessageContext ctx) -> {
-                tws.onMessage(ctx.message());
+            ws.onConnect(ctx -> {
+                TaskWebSocket tws = new TaskWebSocket(taskService, ctx);
+                ctx.attribute("tws", tws);
+                tws.onConnect();
+            });
+            ws.onClose(ctx -> {
+                TaskWebSocket tws = ctx.attribute("tws");
+                if (tws != null) tws.onClose();
+            });
+            ws.onMessage(ctx -> {
+                TaskWebSocket tws = ctx.attribute("tws");
+                if (tws != null) tws.onMessage(ctx.message());
             });
         });
 

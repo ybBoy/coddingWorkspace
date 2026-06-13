@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TaskService {
     private final ConcurrentHashMap<String, Task> tasks = new ConcurrentHashMap<>();
     private final CopyOnWriteArrayList<TaskLog> logs = new CopyOnWriteArrayList<>();
-    private final List<TaskWebSocket> connections = new ArrayList<>();
+    private final List<TaskWebSocket> connections = new CopyOnWriteArrayList<>();
 
     public ConcurrentHashMap<String, Task> getTasks() {
         return tasks;
@@ -36,18 +36,32 @@ public class TaskService {
         return task;
     }
 
-    public Task claimTask(String taskId, String nickname) {
+    public synchronized Task claimTask(String taskId, String nickname) {
         Task task = tasks.get(taskId);
         if (task == null) return null;
-        if (task.getAssignee() != null && !task.getAssignee().isEmpty()) return null;
+        // 原子检查：双重确认负责人为空
+        if (task.getAssignee() != null && !task.getAssignee().isEmpty()) {
+            return null;
+        }
         task.setAssignee(nickname);
-        task.setStatus("in_progress");
+        task.setStatus("claimed");
         task.setClaimedAt(System.currentTimeMillis());
         addLog("claimed", task.getTitle(), nickname);
         return task;
     }
 
-    public Task releaseTask(String taskId, String nickname) {
+    public synchronized Task startTask(String taskId, String nickname) {
+        Task task = tasks.get(taskId);
+        if (task == null) return null;
+        if (!nickname.equals(task.getAssignee())) return null;
+        if (!"claimed".equals(task.getStatus())) return null;
+        task.setStatus("in_progress");
+        task.setClaimedAt(System.currentTimeMillis());
+        addLog("started", task.getTitle(), nickname);
+        return task;
+    }
+
+    public synchronized Task releaseTask(String taskId, String nickname) {
         Task task = tasks.get(taskId);
         if (task == null) return null;
         if (!nickname.equals(task.getAssignee())) return null;
@@ -58,7 +72,7 @@ public class TaskService {
         return task;
     }
 
-    public Task completeTask(String taskId, String nickname) {
+    public synchronized Task completeTask(String taskId, String nickname) {
         Task task = tasks.get(taskId);
         if (task == null) return null;
         if (!nickname.equals(task.getAssignee())) return null;

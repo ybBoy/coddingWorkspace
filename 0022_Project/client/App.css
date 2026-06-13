@@ -274,6 +274,10 @@ body {
   border-left-color: #90a4ae;
 }
 
+.task-card.status-claimed {
+  border-left-color: #ab47bc;
+}
+
 .task-card.status-in_progress {
   border-left-color: #4a90d9;
 }

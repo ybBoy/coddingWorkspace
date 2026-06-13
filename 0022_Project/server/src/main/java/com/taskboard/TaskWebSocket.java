@@ -9,19 +9,19 @@ import java.util.*;
 public class TaskWebSocket {
     private static final Gson gson = new Gson();
     private final TaskService taskService;
-    private WsContext ctx;
+    private final WsContext ctx;
 
-    public TaskWebSocket(TaskService taskService) {
+    public TaskWebSocket(TaskService taskService, WsContext ctx) {
         this.taskService = taskService;
+        this.ctx = ctx;
     }
 
-    public void onConnect(WsContext ctx) {
-        this.ctx = ctx;
+    public void onConnect() {
         taskService.addConnection(this);
         sendInitialState();
     }
 
-    public void onClose(WsContext ctx) {
+    public void onClose() {
         taskService.removeConnection(this);
     }
 
@@ -41,6 +41,15 @@ public class TaskWebSocket {
                     String taskId = json.get("taskId").getAsString();
                     String nickname = json.get("nickname").getAsString();
                     Task result = taskService.claimTask(taskId, nickname);
+                    if (result != null) {
+                        broadcastUpdate();
+                    }
+                    break;
+                }
+                case "startTask": {
+                    String taskId = json.get("taskId").getAsString();
+                    String nickname = json.get("nickname").getAsString();
+                    Task result = taskService.startTask(taskId, nickname);
                     if (result != null) {
                         broadcastUpdate();
                     }

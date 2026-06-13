@@ -1,11 +1,12 @@
 [
   {
-    "id": "4d3e58c3",
-    "title": "布置场地",
-    "description": "提前2小时到现场布置桌椅、讲台、指示牌",
+    "id": "53860c02",
+    "title": "布置活动场地",
+    "description": "",
     "priority": "high",
-    "status": "pending",
-    "createdAt": 1781280837979,
-    "claimedAt": 0
+    "status": "completed",
+    "assignee": "测试用户A",
+    "createdAt": 1781325985194,
+    "claimedAt": 1781326030839
   }
 ]

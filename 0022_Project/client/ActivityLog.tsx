@@ -1,13 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import EventBus from './EventBus';
 import { TaskLog as TLog } from './types';
-
-interface ActivityLogProps {
-  logs: TLog[];
-}
 
 const actionLabels: Record<string, string> = {
   created: '🆕 创建了',
   claimed: '🙋 认领了',
+  started: '▶️ 开始进行',
   released: '↩️ 释放了',
   completed: '🎉 完成了',
 };
@@ -20,7 +18,14 @@ function formatTime(ts: number): string {
   return `${h}:${m}:${s}`;
 }
 
-function ActivityLog({ logs }: ActivityLogProps) {
+function ActivityLog() {
+  const [logs, setLogs] = useState<TLog[]>([]);
+
+  useEffect(() => {
+    const off = EventBus.on('logs-updated', (newLogs: TLog[]) => setLogs(newLogs));
+    return off;
+  }, []);
+
   return (
     <div className="activity-log-panel">
       <h3>📜 动态日志</h3>

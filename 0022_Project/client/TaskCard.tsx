@@ -7,11 +7,12 @@ interface TaskCardProps {
   task: Task;
   nickname: string;
   onClaim: (id: string) => void;
+  onStart: (id: string) => void;
   onRelease: (id: string) => void;
   onComplete: (id: string) => void;
 }
 
-function TaskCard({ task, nickname, onClaim, onRelease, onComplete }: TaskCardProps) {
+function TaskCard({ task, nickname, onClaim, onStart, onRelease, onComplete }: TaskCardProps) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -30,6 +31,8 @@ function TaskCard({ task, nickname, onClaim, onRelease, onComplete }: TaskCardPr
 
   const statusLabel = task.status === 'pending'
     ? '待认领'
+    : task.status === 'claimed'
+    ? '已认领'
     : task.status === 'in_progress'
     ? '进行中'
     : '已完成';
@@ -51,6 +54,16 @@ function TaskCard({ task, nickname, onClaim, onRelease, onComplete }: TaskCardPr
           <button className="btn btn-primary btn-sm" onClick={() => onClaim(task.id)}>
             认领任务
           </button>
+        )}
+        {isAssignee && task.status === 'claimed' && (
+          <>
+            <button className="btn btn-warning btn-sm" onClick={() => onRelease(task.id)}>
+              释放
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => onStart(task.id)}>
+              开始进行
+            </button>
+          </>
         )}
         {isAssignee && task.status === 'in_progress' && (
           <>

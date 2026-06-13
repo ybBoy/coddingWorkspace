@@ -415,6 +415,7 @@ public class BookingWebSocket {
 
         String sessionId = (String) payload.get("sessionId");
         String name = (String) payload.get("name");
+        String date = (String) payload.get("date");
         String startTime = (String) payload.get("startTime");
         String endTime = (String) payload.get("endTime");
         Object capObj = payload.get("capacity");
@@ -431,7 +432,7 @@ public class BookingWebSocket {
         try {
             String operator = admin.getUserName() + "（" + admin.getEmployeeId() + "）";
             com.booking.model.Session s = bookingService.updateSessionAdmin(
-                    sessionId, name, startTime, endTime,
+                    sessionId, name, date, startTime, endTime,
                     capacity != null ? capacity : 0, operator);
 
             Map<String, Object> okPayload = new HashMap<>();
@@ -455,18 +456,24 @@ public class BookingWebSocket {
         User admin = requireAdmin(session);
 
         String sessionId = (String) payload.get("sessionId");
-        Boolean close = (Boolean) payload.get("close");
-        if (close == null) close = true;
-
         if (sessionId == null) {
             sendError(session, "场次ID不能为空");
             return;
         }
 
+        String status;
+        Object statusObj = payload.get("status");
+        if (statusObj instanceof String) {
+            status = (String) statusObj;
+        } else {
+            Boolean close = (Boolean) payload.get("close");
+            status = (close == null || close)
+                    ? com.booking.model.Session.STATUS_CLOSED
+                    : com.booking.model.Session.STATUS_ACTIVE;
+        }
+
         try {
             String operator = admin.getUserName() + "（" + admin.getEmployeeId() + "）";
-            String status = close ? com.booking.model.Session.STATUS_CLOSED
-                                  : com.booking.model.Session.STATUS_ACTIVE;
             com.booking.model.Session s = bookingService.setSessionStatus(
                     sessionId, status, operator);
 
@@ -475,7 +482,8 @@ public class BookingWebSocket {
             okPayload.put("sessions", bookingService.getAllSessions());
             sendMessage(session, "sessionOk", okPayload);
 
-            String activityMsg = operator + (close ? " 关闭了 " : " 开放了 ")
+            boolean isClose = com.booking.model.Session.STATUS_CLOSED.equals(status);
+            String activityMsg = operator + (isClose ? " 关闭了 " : " 开放了 ")
                     + "场次「" + s.getName() + "」";
             broadcastActivity("sessionStatus", operator, s.getName(), activityMsg);
             broadcastSessionsUpdate();
@@ -508,10 +516,10 @@ public class BookingWebSocket {
             okPayload.put("sessionId", sessionId);
             okPayload.put("filename", filename);
             try {
-                okPayload.put("csvBase64", Base64.getEncoder().encodeToString(
+                okPayload.put("base64Content", Base64.getEncoder().encodeToString(
                         csv.getBytes("UTF-8")));
             } catch (UnsupportedEncodingException e) {
-                okPayload.put("csvBase64", Base64.getEncoder().encodeToString(
+                okPayload.put("base64Content", Base64.getEncoder().encodeToString(
                         csv.getBytes()));
             }
             sendMessage(session, "exportCsvOk", okPayload);

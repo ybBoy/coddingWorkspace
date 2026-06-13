@@ -141,11 +141,21 @@ public class BookingService {
     // ============ 持久化辅助 ============
     public void setSessions(List<Session> sessionList) {
         sessions.clear();
+        int maxId = 0;
         for (Session s : sessionList) {
             sessions.put(s.getId(), s);
             if (!waitlistQueues.containsKey(s.getId())) {
                 waitlistQueues.put(s.getId(), Collections.synchronizedList(new ArrayList<String>()));
             }
+            try {
+                String numStr = s.getId().replaceAll("\\D", "");
+                int num = Integer.parseInt(numStr);
+                if (num > maxId) maxId = num;
+            } catch (Exception ignored) {
+            }
+        }
+        if (maxId > sessionIdCounter.get()) {
+            sessionIdCounter.set(maxId);
         }
     }
 
@@ -224,16 +234,15 @@ public class BookingService {
     /**
      * 修改场次基本信息
      */
-    public synchronized Session updateSessionAdmin(String sessionId, String name, String startTime,
-                                                   String endTime, int capacity, String operator) {
+    public synchronized Session updateSessionAdmin(String sessionId, String name, String date,
+                                                   String startTime, String endTime,
+                                                   int capacity, String operator) {
         Session session = sessions.get(sessionId);
         if (session == null) {
             throw new IllegalArgumentException("场次不存在");
         }
-        if (!session.isToday()) {
-            throw new IllegalArgumentException("只能修改今天的场次");
-        }
         if (name != null && !name.trim().isEmpty()) session.setName(name.trim());
+        if (date != null && !date.trim().isEmpty()) session.setDate(date.trim());
         if (startTime != null && !startTime.trim().isEmpty()) session.setStartTime(startTime.trim());
         if (endTime != null && !endTime.trim().isEmpty()) session.setEndTime(endTime.trim());
         if (capacity > 0) session.setCapacity(capacity);

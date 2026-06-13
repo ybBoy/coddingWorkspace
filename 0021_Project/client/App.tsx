@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const reconnectTimerRef = useRef<number | null>(null);
   const shouldReconnectRef = useRef(true);
   const messageHandlerRef = useRef<((msg: WSMessage) => void) | null>(null);
+  const currentUserRef = useRef<User | null>(null);
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) || null;
 
@@ -35,6 +36,10 @@ const App: React.FC = () => {
   const myBookings = currentUser
     ? bookings.filter((b) => b.employeeId === currentUser.employeeId && b.status !== 'cancelled')
     : [];
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   const showToast = useCallback((message: string, type: 'success' | 'info' | 'warning' = 'info') => {
     const div = document.createElement('div');
@@ -253,13 +258,14 @@ const App: React.FC = () => {
         console.log('WebSocket 连接成功');
         setConnected(true);
         eventBus.emit(EVENTS.CONNECTION_CHANGED, true);
-        if (currentUser) {
+        const user = currentUserRef.current;
+        if (user) {
           ws.send(
             JSON.stringify({
               type: 'login',
               payload: {
-                employeeId: currentUser.employeeId,
-                userName: currentUser.userName,
+                employeeId: user.employeeId,
+                userName: user.userName,
               },
             })
           );
@@ -301,7 +307,7 @@ const App: React.FC = () => {
     } catch (e) {
       console.error('创建 WebSocket 失败:', e);
     }
-  }, [currentUser]);
+  }, []);
 
   const cleanupWebSocket = useCallback(() => {
     shouldReconnectRef.current = false;

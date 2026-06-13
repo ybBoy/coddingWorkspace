@@ -45,6 +45,7 @@ const CareLogPanel: React.FC<CareLogPanelProps> = ({ records }) => {
                 <div className="log-pet-name">{record.petName}</div>
                 <div className="log-action">{getActionLabel(record.action)}</div>
                 {record.note && <div className="log-note">{record.note}</div>}
+                {record.staffName && <div className="log-staff">👤 {record.staffName}</div>}
               </div>
             </div>
           ))

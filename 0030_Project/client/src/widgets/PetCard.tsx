@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
-import { Pet, PetStatus, CARE_ACTIONS } from '../types';
+import { Pet, PetStatus, CARE_ACTIONS, STATUS_LABELS } from '../types';
 import { petSocket } from '../core/socket';
 
 interface PetCardProps {
   pet: Pet;
   lastCareTime: string | null;
   needsAttention: boolean;
+  staffName: string;
+  isAdmin: boolean;
+  onOpenDetail: (petId: string) => void;
 }
 
-const statusLabels: Record<PetStatus, string> = {
-  NORMAL: '正常',
-  NEED_ATTENTION: '需要关注',
-  PICKED_UP: '已接走',
-};
-
-const PetCard: React.FC<PetCardProps> = ({ pet, lastCareTime, needsAttention }) => {
+const PetCard: React.FC<PetCardProps> = ({ pet, lastCareTime, needsAttention, staffName, isAdmin, onOpenDetail }) => {
   const [showActions, setShowActions] = useState(false);
 
   const formatTime = (timeStr: string) => {
@@ -27,12 +24,12 @@ const PetCard: React.FC<PetCardProps> = ({ pet, lastCareTime, needsAttention }) 
   };
 
   const handleStatusChange = (status: PetStatus) => {
-    petSocket.updateStatus(pet.id, status);
+    petSocket.updateStatus(pet.id, status, staffName);
     setShowActions(false);
   };
 
   const handleCareAction = (action: string) => {
-    petSocket.addCareRecord(pet.id, action);
+    petSocket.addCareRecord(pet.id, action, '', staffName);
     setShowActions(false);
   };
 
@@ -44,9 +41,9 @@ const PetCard: React.FC<PetCardProps> = ({ pet, lastCareTime, needsAttention }) 
 
   return (
     <div className={`pet-card ${getStatusClass()}`}>
-      <div className="pet-card-header">
+      <div className="pet-card-header" onClick={() => onOpenDetail(pet.id)} style={{ cursor: 'pointer' }}>
         <div className="pet-name">{pet.name}</div>
-        <div className="pet-status-badge">{statusLabels[pet.status]}</div>
+        <div className="pet-status-badge">{STATUS_LABELS[pet.status]}</div>
       </div>
 
       <div className="pet-breed">{pet.breed}</div>
@@ -71,11 +68,12 @@ const PetCard: React.FC<PetCardProps> = ({ pet, lastCareTime, needsAttention }) 
       {needsAttention && pet.status !== 'PICKED_UP' && (
         <div className="attention-warning">
           <span className="warning-icon">⚠️</span>
-          <span>超过6小时未护理</span>
+          <span>超时未护理，请关注</span>
         </div>
       )}
 
       <div className="pet-card-actions">
+        <button className="btn-link" onClick={() => onOpenDetail(pet.id)}>查看详情</button>
         <button className="btn-primary" onClick={() => setShowActions(!showActions)}>
           {showActions ? '收起' : '操作'}
         </button>

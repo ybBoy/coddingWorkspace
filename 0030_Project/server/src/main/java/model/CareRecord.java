@@ -10,18 +10,20 @@ public class CareRecord {
     private String petName;
     private String action;
     private String note;
+    private String staffName;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date time;
 
     public CareRecord() {}
 
-    public CareRecord(String id, String petId, String petName, String action, String note, Date time) {
+    public CareRecord(String id, String petId, String petName, String action, String note, String staffName, Date time) {
         this.id = id;
         this.petId = petId;
         this.petName = petName;
         this.action = action;
         this.note = note;
+        this.staffName = staffName;
         this.time = time;
     }
 
@@ -71,5 +73,13 @@ public class CareRecord {
 
     public void setTime(Date time) {
         this.time = time;
+    }
+
+    public String getStaffName() {
+        return staffName;
+    }
+
+    public void setStaffName(String staffName) {
+        this.staffName = staffName;
     }
 }

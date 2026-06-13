@@ -25,6 +25,15 @@ class SocketClient {
     }
   }
 
+  private buildConnectUrl(): string {
+    let url = this.url;
+    if (this.userName) {
+      const sep = url.includes('?') ? '&' : '?';
+      url += `${sep}name=${encodeURIComponent(this.userName)}`;
+    }
+    return url;
+  }
+
   connect(): void {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
@@ -33,7 +42,7 @@ class SocketClient {
     this.setStatus('connecting');
 
     try {
-      this.ws = new WebSocket(this.url);
+      this.ws = new WebSocket(this.buildConnectUrl());
     } catch (e) {
       this.setStatus('error');
       this.scheduleReconnect();
@@ -101,6 +110,14 @@ class SocketClient {
     return this.userName;
   }
 
+  setModerator(moderator: boolean, token?: string): void {
+    this.sendRaw({
+      type: 'SET_MODERATOR',
+      payload: { moderator, token },
+      sender: this.userName
+    });
+  }
+
   addNote(paragraphId: string, content: string, type: NoteType): void {
     this.sendRaw({
       type: 'ADD_NOTE',
@@ -164,6 +181,21 @@ class SocketClient {
         break;
       case 'PARAGRAPH_SWITCHED':
         eventBus.emit('PARAGRAPH_SWITCHED', msg.payload as any);
+        break;
+      case 'ONLINE_COUNT':
+        eventBus.emit('ONLINE_COUNT', msg.payload as any);
+        break;
+      case 'MODERATOR_LIST':
+        eventBus.emit('MODERATOR_LIST', msg.payload as any);
+        break;
+      case 'MODERATOR_GRANTED':
+        eventBus.emit('MODERATOR_GRANTED', msg.payload as any);
+        break;
+      case 'MODERATOR_DENIED':
+        eventBus.emit('MODERATOR_DENIED', msg.payload as any);
+        break;
+      case 'ERROR':
+        eventBus.emit('ERROR', msg.payload as any);
         break;
       case 'HEARTBEAT_ACK':
         break;

@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import type { Note, NoteType, Paragraph } from '../../core/types';
+import type { Note, NoteType, Paragraph, Article } from '../../core/types';
 import eventBus from '../../core/EventBus';
 
 interface Props {
+  article: Article | null;
   currentParagraph: Paragraph | null;
+  selectedParagraph: Paragraph | null;
+  setSelectedParagraphId: (id: string) => void;
   notes: Note[];
   userName: string;
   isModerator: boolean;
@@ -18,30 +21,33 @@ const TYPE_LABEL: Record<NoteType, { label: string; icon: string; cls: string }>
 };
 
 const NotePanel: React.FC<Props> = ({
-  currentParagraph, notes, userName, isModerator, mobileOpen, onMobileClose
+  article, currentParagraph, selectedParagraph, setSelectedParagraphId,
+  notes, userName, isModerator, mobileOpen, onMobileClose
 }) => {
   const [content, setContent] = useState('');
   const [type, setType] = useState<NoteType>('THOUGHT');
   const [submitting, setSubmitting] = useState(false);
 
+  const targetParagraph = selectedParagraph || currentParagraph;
+
   const paraNotes = useMemo(() => {
-    if (!currentParagraph) return [];
+    if (!targetParagraph) return [];
     return notes
-      .filter(n => n.paragraphId === currentParagraph.id)
+      .filter(n => n.paragraphId === targetParagraph.id)
       .sort((a, b) => {
         if (a.highlighted !== b.highlighted) return a.highlighted ? -1 : 1;
         const lc = (b.likes?.length || 0) - (a.likes?.length || 0);
         if (lc !== 0) return lc;
         return a.createdAt - b.createdAt;
       });
-  }, [notes, currentParagraph]);
+  }, [notes, targetParagraph]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!currentParagraph || !content.trim() || !userName.trim()) return;
+    if (!targetParagraph || !content.trim() || !userName.trim()) return;
     setSubmitting(true);
     eventBus.emit('REQUEST_ADD_NOTE', {
-      paragraphId: currentParagraph.id,
+      paragraphId: targetParagraph.id,
       content: content.trim(),
       type
     });
@@ -51,16 +57,16 @@ const NotePanel: React.FC<Props> = ({
     }, 200);
   };
 
-  const canSubmit = currentParagraph && content.trim() && userName.trim() && !submitting;
+  const canSubmit = targetParagraph && content.trim() && userName.trim() && !submitting;
 
   return (
     <aside className={['notes', mobileOpen ? 'notes--mobile-open' : ''].filter(Boolean).join(' ')}>
       <div className="notes__header">
         <div>
           <h2 className="notes__title">批注 · 共议</h2>
-          {currentParagraph && (
+          {targetParagraph && (
             <p className="notes__subtitle">
-              第 {currentParagraph.index + 1} 段 · {paraNotes.length} 条
+              第 {targetParagraph.index + 1} 段 · {paraNotes.length} 条
             </p>
           )}
         </div>
@@ -71,11 +77,30 @@ const NotePanel: React.FC<Props> = ({
         )}
       </div>
 
-      {currentParagraph ? (
+      {targetParagraph && article ? (
         <>
-          <div className="notes__current-para">
-            <span className="notes__current-label">当前共读</span>
-            <p className="notes__current-text">「{currentParagraph.content}」</p>
+          <div className="notes__selector">
+            <label className="notes__selector-label">批注段落</label>
+            <select
+              className="notes__selector-select"
+              value={targetParagraph.id}
+              onChange={e => setSelectedParagraphId(e.target.value)}
+            >
+              {article.paragraphs.map(p => (
+                <option key={p.id} value={p.id}>
+                  第 {p.index + 1} 段
+                  {p.id === article.currentParagraphId ? '（共读中）' : ''}
+                  ：{p.content.slice(0, 24)}{p.content.length > 24 ? '…' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={['notes__current-para', targetParagraph.id !== article.currentParagraphId ? 'notes__current-para--noncurrent' : ''].join(' ')}>
+            <span className="notes__current-label">
+              {targetParagraph.id === article.currentParagraphId ? '当前共读' : '已选段落'}
+            </span>
+            <p className="notes__current-text">「{targetParagraph.content}」</p>
           </div>
 
           <form className="notes__form" onSubmit={handleSubmit}>
@@ -98,7 +123,7 @@ const NotePanel: React.FC<Props> = ({
             </div>
             <textarea
               className="notes__textarea"
-              placeholder={userName ? '写下你的批注…' : '请先在上方输入昵称'}
+              placeholder={userName ? `给第 ${targetParagraph.index + 1} 段写下你的批注…` : '请先在上方输入昵称'}
               value={content}
               onChange={e => setContent(e.target.value)}
               rows={3}
@@ -120,7 +145,7 @@ const NotePanel: React.FC<Props> = ({
             {paraNotes.length === 0 ? (
               <div className="notes__empty">
                 <span className="notes__empty-icon">✨</span>
-                <p>还没有批注，来发布第一条吧</p>
+                <p>这段还没有批注，来发布第一条吧</p>
               </div>
             ) : (
               paraNotes.map(note => {

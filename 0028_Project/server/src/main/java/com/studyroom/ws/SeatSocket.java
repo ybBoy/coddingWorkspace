@@ -14,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 public class SeatSocket extends WebSocketServer {
+    private static final String ADMIN_TOKEN = "studyroom-admin-2026";
     private final SeatService seatService;
     private final Gson gson = new Gson();
 
@@ -71,6 +72,11 @@ public class SeatSocket extends WebSocketServer {
                 }
                 case "forceRelease": {
                     int seatId = msg.get("seatId").getAsInt();
+                    String token = msg.has("token") ? msg.get("token").getAsString() : null;
+                    if (!ADMIN_TOKEN.equals(token)) {
+                        sendError(conn, "无管理员权限，无法强制释放");
+                        break;
+                    }
                     Seat result = seatService.forceRelease(seatId);
                     if (result != null) {
                         broadcastUpdate();

@@ -1,6 +1,7 @@
 import { eventBus, SeatData, SeatActionData } from './EventBus';
 
 const WS_URL = `ws://${window.location.hostname}:8081`;
+const ADMIN_TOKEN = 'studyroom-admin-2026';
 
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -58,8 +59,28 @@ function scheduleReconnect(): void {
   }, 3000);
 }
 
+function setupEventBusForwarding(): void {
+  eventBus.on<{ seatId: number; nickname: string }>('seat:sit', (data) => {
+    sendAction('sit', { seatId: data.seatId, nickname: data.nickname });
+  });
+  eventBus.on<{ seatId: number; nickname: string }>('seat:away', (data) => {
+    sendAction('away', { seatId: data.seatId, nickname: data.nickname });
+  });
+  eventBus.on<{ seatId: number; nickname: string }>('seat:leave', (data) => {
+    sendAction('leave', { seatId: data.seatId, nickname: data.nickname });
+  });
+  eventBus.on<{ seatId: number; isAdmin?: boolean }>('seat:forceRelease', (data) => {
+    const payload: Record<string, any> = { seatId: data.seatId };
+    if (data.isAdmin) {
+      payload.token = ADMIN_TOKEN;
+    }
+    sendAction('forceRelease', payload);
+  });
+}
+
 export function initSocket(): void {
   connect();
+  setupEventBusForwarding();
 }
 
 export function sendAction(type: string, payload: Record<string, any>): void {

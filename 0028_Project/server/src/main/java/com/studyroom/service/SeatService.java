@@ -59,6 +59,14 @@ public class SeatService {
     public synchronized Seat sit(int seatId, String nickname) {
         Seat seat = findSeat(seatId);
         if (seat == null || !"free".equals(seat.getStatus())) return null;
+        for (Seat s : seats) {
+            if (!s.equals(seat) && nickname.equals(s.getNickname()) && !"free".equals(s.getStatus())) {
+                s.setStatus("free");
+                s.setNickname(null);
+                s.setAwaySince(0);
+                addAction(s.getId(), "leave", nickname);
+            }
+        }
         seat.setStatus("occupied");
         seat.setNickname(nickname);
         seat.setAwaySince(0);

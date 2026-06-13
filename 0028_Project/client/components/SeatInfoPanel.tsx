@@ -1,11 +1,11 @@
 import React from 'react';
-import { SeatData } from '../core/EventBus';
-import { sendAction } from '../core/socket';
+import { SeatData, eventBus } from '../core/EventBus';
 
 interface SeatInfoPanelProps {
   seat: SeatData | null;
   nickname: string;
   mySeatId: number | null;
+  isAdmin?: boolean;
 }
 
 const STATUS_TEXT: Record<string, string> = {
@@ -15,7 +15,7 @@ const STATUS_TEXT: Record<string, string> = {
   releasable: '可释放',
 };
 
-const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId }) => {
+const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId, isAdmin = false }) => {
   if (!seat) {
     return (
       <div className="seat-info-panel">
@@ -33,20 +33,20 @@ const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId 
     : 0;
 
   const handleSit = () => {
-    sendAction('sit', { seatId: seat.id, nickname });
+    eventBus.emit('seat:sit', { seatId: seat.id, nickname });
   };
 
   const handleAway = () => {
-    sendAction('away', { seatId: seat.id, nickname });
+    eventBus.emit('seat:away', { seatId: seat.id, nickname });
   };
 
   const handleLeave = () => {
-    sendAction('leave', { seatId: seat.id, nickname });
+    eventBus.emit('seat:leave', { seatId: seat.id, nickname });
   };
 
   const handleForceRelease = () => {
     if (window.confirm(`确认强制释放 ${seat.row + 1}排${seat.col + 1}座？`)) {
-      sendAction('forceRelease', { seatId: seat.id });
+      eventBus.emit('seat:forceRelease', { seatId: seat.id });
     }
   };
 
@@ -97,7 +97,7 @@ const SeatInfoPanel: React.FC<SeatInfoPanelProps> = ({ seat, nickname, mySeatId 
             离开
           </button>
         )}
-        {(isReleasable || (seat.status !== 'free' && !isMine)) && (
+        {isAdmin && seat.status !== 'free' && (
           <button className="btn btn-force" onClick={handleForceRelease}>
             强制释放
           </button>

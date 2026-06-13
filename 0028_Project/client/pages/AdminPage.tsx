@@ -44,7 +44,7 @@ const AdminPage: React.FC = () => {
 
   const handleForceRelease = (seatId: number) => {
     if (window.confirm('确认强制释放该座位？')) {
-      sendAction('forceRelease', { seatId });
+      eventBus.emit('seat:forceRelease', { seatId, isAdmin: true });
     }
   };
 
@@ -52,7 +52,7 @@ const AdminPage: React.FC = () => {
     if (releasableSeats.length === 0) return;
     if (window.confirm(`确认释放全部 ${releasableSeats.length} 个可释放座位？`)) {
       releasableSeats.forEach((s) => {
-        sendAction('forceRelease', { seatId: s.id });
+        eventBus.emit('seat:forceRelease', { seatId: s.id, isAdmin: true });
       });
     }
   };

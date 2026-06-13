@@ -8,16 +8,18 @@ public class Room {
     private String type;
     private StayRecord currentStay;
     private boolean overdue;
+    private double defaultPrice;
 
     public Room() {
     }
 
-    public Room(String id, String roomNo, int floor, RoomStatus status, String type) {
+    public Room(String id, String roomNo, int floor, RoomStatus status, String type, double defaultPrice) {
         this.id = id;
         this.roomNo = roomNo;
         this.floor = floor;
         this.status = status;
         this.type = type;
+        this.defaultPrice = defaultPrice;
     }
 
     public String getId() {
@@ -74,5 +76,13 @@ public class Room {
 
     public void setOverdue(boolean overdue) {
         this.overdue = overdue;
+    }
+
+    public double getDefaultPrice() {
+        return defaultPrice;
+    }
+
+    public void setDefaultPrice(double defaultPrice) {
+        this.defaultPrice = defaultPrice;
     }
 }

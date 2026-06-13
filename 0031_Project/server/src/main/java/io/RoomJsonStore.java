@@ -3,6 +3,7 @@ package io;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import entity.Operator;
 import entity.Room;
 import entity.RoomLog;
 import entity.StayRecord;
@@ -21,6 +22,7 @@ public class RoomJsonStore {
     private static final String ROOMS_FILE = DATA_DIR + File.separator + "rooms.json";
     private static final String STAY_RECORDS_FILE = DATA_DIR + File.separator + "stay_records.json";
     private static final String LOGS_FILE = DATA_DIR + File.separator + "logs.json";
+    private static final String OPERATORS_FILE = DATA_DIR + File.separator + "operators.json";
 
     private final Gson gson;
     private final ScheduledExecutorService scheduler;
@@ -28,6 +30,7 @@ public class RoomJsonStore {
     private List<Room> rooms = new ArrayList<>();
     private List<StayRecord> stayRecords = new ArrayList<>();
     private List<RoomLog> logs = new ArrayList<>();
+    private List<Operator> operators = new ArrayList<>();
 
     public RoomJsonStore() {
         this.gson = new GsonBuilder().setPrettyPrinting().create();
@@ -64,6 +67,7 @@ public class RoomJsonStore {
             rooms = readList(ROOMS_FILE, new TypeToken<List<Room>>() {}.getType());
             stayRecords = readList(STAY_RECORDS_FILE, new TypeToken<List<StayRecord>>() {}.getType());
             logs = readList(LOGS_FILE, new TypeToken<List<RoomLog>>() {}.getType());
+            operators = readList(OPERATORS_FILE, new TypeToken<List<Operator>>() {}.getType());
 
             if (rooms.isEmpty()) {
                 initDefaultData();
@@ -71,9 +75,14 @@ public class RoomJsonStore {
             } else {
                 rebuildCurrentStay();
             }
+            if (operators.isEmpty()) {
+                initDefaultOperators();
+                saveToDisk();
+            }
         } catch (Exception e) {
             System.err.println("[RoomJsonStore] Load failed, using defaults: " + e.getMessage());
             initDefaultData();
+            initDefaultOperators();
             saveToDisk();
         }
     }
@@ -101,6 +110,7 @@ public class RoomJsonStore {
             writeList(ROOMS_FILE, rooms);
             writeList(STAY_RECORDS_FILE, stayRecords);
             writeList(LOGS_FILE, logs);
+            writeList(OPERATORS_FILE, operators);
         } catch (Exception e) {
             System.err.println("[RoomJsonStore] Save failed: " + e.getMessage());
         }
@@ -133,17 +143,26 @@ public class RoomJsonStore {
         logs.clear();
 
         String[] types = {"标准间", "大床房", "豪华间"};
+        double[] prices = {198.0, 228.0, 368.0};
         int idCounter = 1;
 
         for (int floor = 1; floor <= 3; floor++) {
             for (int roomNum = 1; roomNum <= 5; roomNum++) {
                 String roomNo = String.format("%d%02d", floor, roomNum);
                 String id = "room-" + idCounter++;
-                String type = types[(roomNum - 1) % types.length];
-                Room room = new Room(id, roomNo, floor, entity.RoomStatus.VACANT, type);
+                int typeIndex = (roomNum - 1) % types.length;
+                Room room = new Room(id, roomNo, floor, entity.RoomStatus.VACANT,
+                        types[typeIndex], prices[typeIndex]);
                 rooms.add(room);
             }
         }
+    }
+
+    private void initDefaultOperators() {
+        operators.clear();
+        operators.add(new Operator("op-1", "admin", "张经理", "manager"));
+        operators.add(new Operator("op-2", "lisi", "李四", "reception"));
+        operators.add(new Operator("op-3", "wangwu", "王五", "reception"));
     }
 
     public void forceSave() {
@@ -172,5 +191,13 @@ public class RoomJsonStore {
 
     public void setLogs(List<RoomLog> logs) {
         this.logs = logs;
+    }
+
+    public List<Operator> getOperators() {
+        return operators;
+    }
+
+    public void setOperators(List<Operator> operators) {
+        this.operators = operators;
     }
 }

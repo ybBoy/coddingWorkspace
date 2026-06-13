@@ -71,6 +71,17 @@
   background: linear-gradient(135deg, #ff7875 0%, #f5222d 100%);
 }
 
+.room-card.status-disabled {
+  background: linear-gradient(135deg, #8c8c8c 0%, #595959 100%);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.room-card.status-disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .room-no {
   font-size: 20px;
   font-weight: 700;
@@ -80,7 +91,14 @@
 .room-type {
   font-size: 12px;
   opacity: 0.9;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
+}
+
+.room-price {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.95;
+  margin-bottom: 4px;
 }
 
 .room-status {

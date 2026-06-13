@@ -5,7 +5,11 @@ import { FilterPanel } from '../panels/FilterPanel';
 import { RoomGridPanel } from '../panels/RoomGridPanel';
 import { CheckInPanel } from '../panels/CheckInPanel';
 import { LogPanel } from '../panels/LogPanel';
-import type { Room, RoomLog, RoomStatus } from '../base/types';
+import { AlertPanel } from '../panels/AlertPanel';
+import { BatchPanel } from '../panels/BatchPanel';
+import { ExportPanel } from '../panels/ExportPanel';
+import { RoomDetailPanel } from '../panels/RoomDetailPanel';
+import type { Room, RoomLog, RoomStatus, Operator, AlertItem } from '../base/types';
 import './RoomStatusPage.css';
 
 interface FilterState {
@@ -13,12 +17,18 @@ interface FilterState {
   status: RoomStatus | 'all';
 }
 
+type SidePanelTab = 'action' | 'detail' | 'batch' | 'export';
+
 export function RoomStatusPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [logs, setLogs] = useState<RoomLog[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [filter, setFilter] = useState<FilterState>({ floor: 'all', status: 'all' });
   const [wsConnected, setWsConnected] = useState(false);
+  const [currentOperator, setCurrentOperator] = useState('前台');
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [sideTab, setSideTab] = useState<SidePanelTab>('action');
 
   useEffect(() => {
     wsClient.connect();
@@ -36,8 +46,13 @@ export function RoomStatusPage() {
       setLogs(updatedLogs);
     };
 
+    const handleAlertsUpdated = (updatedAlerts: AlertItem[]) => {
+      setAlerts(updatedAlerts);
+    };
+
     const handleRoomSelected = (room: Room) => {
       setSelectedRoom(room);
+      setSideTab('action');
     };
 
     const handleFilterChanged = (f: FilterState) => {
@@ -47,20 +62,29 @@ export function RoomStatusPage() {
     const handleWsConnected = () => setWsConnected(true);
     const handleWsDisconnected = () => setWsConnected(false);
 
-    eventBus.on('rooms:updated', handleRoomsUpdated);
+    const handleOperatorsUpdated = (ops: Operator[]) => setOperators(ops);
+    const handleOperatorChanged = (name: string) => setCurrentOperator(name);
+
+    eventBus.on(Events.ROOMS_UPDATED, handleRoomsUpdated);
     eventBus.on('logs:updated', handleLogsUpdated);
+    eventBus.on(Events.ALERTS_UPDATED, handleAlertsUpdated);
     eventBus.on(Events.ROOM_SELECTED, handleRoomSelected);
     eventBus.on(Events.FILTER_CHANGED, handleFilterChanged);
     eventBus.on(Events.WS_CONNECTED, handleWsConnected);
     eventBus.on(Events.WS_DISCONNECTED, handleWsDisconnected);
+    eventBus.on(Events.OPERATORS_UPDATED, handleOperatorsUpdated);
+    eventBus.on(Events.OPERATOR_CHANGED, handleOperatorChanged);
 
     return () => {
-      eventBus.off('rooms:updated', handleRoomsUpdated);
+      eventBus.off(Events.ROOMS_UPDATED, handleRoomsUpdated);
       eventBus.off('logs:updated', handleLogsUpdated);
+      eventBus.off(Events.ALERTS_UPDATED, handleAlertsUpdated);
       eventBus.off(Events.ROOM_SELECTED, handleRoomSelected);
       eventBus.off(Events.FILTER_CHANGED, handleFilterChanged);
       eventBus.off(Events.WS_CONNECTED, handleWsConnected);
       eventBus.off(Events.WS_DISCONNECTED, handleWsDisconnected);
+      eventBus.off(Events.OPERATORS_UPDATED, handleOperatorsUpdated);
+      eventBus.off(Events.OPERATOR_CHANGED, handleOperatorChanged);
       wsClient.disconnect();
     };
   }, []);
@@ -84,10 +108,18 @@ export function RoomStatusPage() {
     );
   }).length;
 
+  const handleOperatorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const name = e.target.value;
+    setCurrentOperator(name);
+    wsClient.setCurrentOperator(name);
+  };
+
   return (
     <div className="room-status-page">
       <header className="app-header">
-        <div className="hotel-name">悦享民宿 · 房态管理</div>
+        <div className="header-left">
+          <div className="hotel-name">悦享民宿 · 房态管理</div>
+        </div>
         <div className="header-stats">
           <div className="stat-item">
             <span className={`conn-dot ${wsConnected ? 'conn-online' : 'conn-offline'}`}></span>
@@ -101,8 +133,30 @@ export function RoomStatusPage() {
             <span className="stat-label">房间总数</span>
             <span className="stat-value">{rooms.length}</span>
           </div>
+          {alerts.length > 0 && (
+            <div className="stat-item alert-stat">
+              <span className="stat-label">⚠️ 异常</span>
+              <span className="stat-value alert-value">{alerts.length}</span>
+            </div>
+          )}
+          <div className="stat-item operator-item">
+            <span className="stat-label">操作人</span>
+            <select className="operator-select" value={currentOperator} onChange={handleOperatorChange}>
+              {operators.map((op) => (
+                <option key={op.id} value={op.name}>
+                  {op.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </header>
+
+      {alerts.length > 0 && (
+        <div className="alert-bar">
+          <AlertPanel />
+        </div>
+      )}
 
       <main className="app-main">
         <section className="main-content">
@@ -115,7 +169,38 @@ export function RoomStatusPage() {
         </section>
 
         <aside className="side-panel">
-          <CheckInPanel selectedRoom={selectedRoom} />
+          <div className="side-tabs">
+            <button
+              className={`side-tab ${sideTab === 'action' ? 'active' : ''}`}
+              onClick={() => setSideTab('action')}
+            >
+              📋 操作
+            </button>
+            <button
+              className={`side-tab ${sideTab === 'detail' ? 'active' : ''}`}
+              onClick={() => setSideTab('detail')}
+            >
+              📄 详情
+            </button>
+            <button
+              className={`side-tab ${sideTab === 'batch' ? 'active' : ''}`}
+              onClick={() => setSideTab('batch')}
+            >
+              📦 批量
+            </button>
+            <button
+              className={`side-tab ${sideTab === 'export' ? 'active' : ''}`}
+              onClick={() => setSideTab('export')}
+            >
+              📊 导出
+            </button>
+          </div>
+          <div className="side-content">
+            {sideTab === 'action' && <CheckInPanel selectedRoom={selectedRoom} />}
+            {sideTab === 'detail' && <RoomDetailPanel roomId={selectedRoom?.id || null} />}
+            {sideTab === 'batch' && <BatchPanel rooms={rooms} />}
+            {sideTab === 'export' && <ExportPanel />}
+          </div>
         </aside>
       </main>
 

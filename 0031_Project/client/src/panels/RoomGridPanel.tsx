@@ -89,12 +89,16 @@ export function RoomGridPanel({ rooms, selectedRoomId }: RoomGridPanelProps) {
                   >
                     <div className="room-no">{room.roomNo}</div>
                     <div className="room-type">{room.type}</div>
+                    <div className="room-price">¥{room.defaultPrice}</div>
                     <div className="room-status">{RoomStatusText[room.status]}</div>
                     {room.currentStay && (
                       <div className="room-guest">
                         <div className="guest-name">{room.currentStay.guestName}</div>
                         <div className="checkout-time">
                           预计：{formatTime(room.currentStay.expectedCheckOutTime)}
+                        </div>
+                        <div className={`settle-status ${room.currentStay.settled ? 'settled' : 'unsettled'}`}>
+                          {room.currentStay.settled ? '已结清' : '未结清'}
                         </div>
                       </div>
                     )}

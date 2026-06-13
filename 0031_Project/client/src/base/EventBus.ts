@@ -40,6 +40,7 @@ export const eventBus = new EventBus();
 
 export const Events = {
   ROOM_SELECTED: 'room:selected',
+  ROOM_DETAIL: 'room:detail',
   CHECK_IN: 'action:checkIn',
   CHECK_OUT: 'action:checkOut',
   CLEAN: 'action:clean',
@@ -48,4 +49,11 @@ export const Events = {
   FILTER_CHANGED: 'filter:changed',
   WS_CONNECTED: 'ws:connected',
   WS_DISCONNECTED: 'ws:disconnected',
+  ALERTS_UPDATED: 'alerts:updated',
+  OPERATORS_UPDATED: 'operators:updated',
+  OPERATOR_CHANGED: 'operator:changed',
+  PAGE_CHANGED: 'page:changed',
+  BATCH_OPERATION: 'action:batch',
+  EXPORT_DATA: 'action:export',
+  ROOMS_UPDATED: 'rooms:updated',
 };

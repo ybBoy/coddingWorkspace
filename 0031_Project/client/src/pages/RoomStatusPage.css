@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -14,6 +14,12 @@
   background: linear-gradient(135deg, #001529 0%, #003a8c 100%);
   color: #fff;
   flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .hotel-name {
@@ -62,6 +68,36 @@
   color: #fff;
 }
 
+.alert-stat .alert-value {
+  color: #ff4d4f;
+  animation: blink 1.5s infinite;
+}
+
+.operator-item {
+  gap: 8px;
+}
+
+.operator-select {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.operator-select option {
+  background: #001529;
+  color: #fff;
+}
+
+.alert-bar {
+  flex-shrink: 0;
+  padding: 0 12px;
+}
+
 .app-main {
   display: flex;
   flex: 1;
@@ -92,8 +128,49 @@
 }
 
 .side-panel {
-  width: 320px;
+  width: 340px;
   flex-shrink: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.side-tabs {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.side-tab {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.side-tab:hover {
+  color: #1890ff;
+  background: #f0f5ff;
+}
+
+.side-tab.active {
+  color: #1890ff;
+  border-bottom-color: #1890ff;
+  font-weight: 600;
+}
+
+.side-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
 }
 
 .app-footer {
@@ -130,7 +207,7 @@
   }
 
   .side-panel {
-    width: 280px;
+    width: 300px;
   }
 
   .app-footer {

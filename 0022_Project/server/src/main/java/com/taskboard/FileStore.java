@@ -34,7 +34,7 @@ public class FileStore {
         try {
             File tf = new File(TASKS_FILE);
             if (tf.exists()) {
-                Reader r = new FileReader(tf);
+                Reader r = new InputStreamReader(new FileInputStream(tf), "UTF-8");
                 Type listType = new TypeToken<ArrayList<Task>>(){}.getType();
                 List<Task> tasks = gson.fromJson(r, listType);
                 r.close();
@@ -50,7 +50,7 @@ public class FileStore {
         try {
             File lf = new File(LOGS_FILE);
             if (lf.exists()) {
-                Reader r = new FileReader(lf);
+                Reader r = new InputStreamReader(new FileInputStream(lf), "UTF-8");
                 Type listType = new TypeToken<ArrayList<TaskLog>>(){}.getType();
                 List<TaskLog> logs = gson.fromJson(r, listType);
                 r.close();
@@ -67,14 +67,14 @@ public class FileStore {
 
     public void saveToDisk() {
         try {
-            Writer w = new FileWriter(TASKS_FILE);
+            Writer w = new OutputStreamWriter(new FileOutputStream(TASKS_FILE), "UTF-8");
             gson.toJson(new ArrayList<Task>(taskService.getTasks().values()), w);
             w.close();
         } catch (Exception e) {
             System.err.println("Failed to save tasks: " + e.getMessage());
         }
         try {
-            Writer w = new FileWriter(LOGS_FILE);
+            Writer w = new OutputStreamWriter(new FileOutputStream(LOGS_FILE), "UTF-8");
             gson.toJson(taskService.getLogs(), w);
             w.close();
         } catch (Exception e) {

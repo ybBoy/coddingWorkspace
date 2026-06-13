@@ -56,7 +56,6 @@ public class TaskService {
         if (!nickname.equals(task.getAssignee())) return null;
         if (!"claimed".equals(task.getStatus())) return null;
         task.setStatus("in_progress");
-        task.setClaimedAt(System.currentTimeMillis());
         addLog("started", task.getTitle(), nickname);
         return task;
     }

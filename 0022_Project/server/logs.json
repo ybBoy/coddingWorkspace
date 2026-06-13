@@ -1,30 +1,16 @@
 [
   {
-    "id": "4cdd3220",
-    "action": "completed",
-    "taskTitle": "布置活动场地",
-    "nickname": "测试用户A",
-    "timestamp": 1781326055082
-  },
-  {
-    "id": "7dc8373d",
-    "action": "started",
-    "taskTitle": "布置活动场地",
-    "nickname": "测试用户A",
-    "timestamp": 1781326030839
-  },
-  {
-    "id": "30ea77bb",
+    "id": "856427b8",
     "action": "claimed",
-    "taskTitle": "布置活动场地",
-    "nickname": "测试用户A",
-    "timestamp": 1781326005435
+    "taskTitle": "甯冪疆娲诲姩鍦哄湴",
+    "nickname": "寮犱笁",
+    "timestamp": 1781328958986
   },
   {
-    "id": "ab5946db",
+    "id": "eec9d16a",
     "action": "created",
-    "taskTitle": "布置活动场地",
+    "taskTitle": "甯冪疆娲诲姩鍦哄湴",
     "nickname": "",
-    "timestamp": 1781325985195
+    "timestamp": 1781328947913
   }
 ]

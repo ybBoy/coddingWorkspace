@@ -26,8 +26,7 @@ function TaskBoard({ onClaim, onStart, onRelease, onComplete }: TaskBoardProps) 
     ? tasks
     : tasks.filter(t => t.priority === priorityFilter);
 
-  const pending = filtered.filter(t => t.status === 'pending');
-  const claimed = filtered.filter(t => t.status === 'claimed');
+  const pending = filtered.filter(t => t.status === 'pending' || t.status === 'claimed');
   const inProgress = filtered.filter(t => t.status === 'in_progress');
   const completed = filtered.filter(t => t.status === 'completed');
 
@@ -61,7 +60,6 @@ function TaskBoard({ onClaim, onStart, onRelease, onComplete }: TaskBoardProps) 
   return (
     <div className="task-board">
       {renderColumn('待认领', '📌', pending)}
-      {renderColumn('已认领', '🙋', claimed)}
       {renderColumn('进行中', '🔄', inProgress)}
       {renderColumn('已完成', '✅', completed)}
     </div>

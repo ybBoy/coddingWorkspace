@@ -20,7 +20,7 @@ function TaskCard({ task, nickname, onClaim, onStart, onRelease, onComplete }: T
     return () => clearInterval(timer);
   }, []);
 
-  const isTimeout = task.status === 'in_progress'
+  const isTimeout = (task.status === 'claimed' || task.status === 'in_progress')
     && task.claimedAt > 0
     && now - task.claimedAt > TIMEOUT_MS;
 

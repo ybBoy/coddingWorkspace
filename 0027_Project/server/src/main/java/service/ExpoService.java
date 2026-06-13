@@ -160,6 +160,92 @@ public class ExpoService {
         return all.subList(0, limit);
     }
 
+    public List<CheckInRecord> getRecordsByTimeRange(long startTime, long endTime) {
+        List<CheckInRecord> filtered = new ArrayList<>();
+        synchronized (records) {
+            for (CheckInRecord record : records) {
+                if (record.getTimestamp() >= startTime && record.getTimestamp() <= endTime) {
+                    filtered.add(record);
+                }
+            }
+        }
+        Collections.sort(filtered, new Comparator<CheckInRecord>() {
+            @Override
+            public int compare(CheckInRecord r1, CheckInRecord r2) {
+                return Long.compare(r2.getTimestamp(), r1.getTimestamp());
+            }
+        });
+        return filtered;
+    }
+
+    private long getTodayStart() {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
+        return cal.getTimeInMillis();
+    }
+
+    public Map<String, Long> getTodayBoothStats() {
+        long todayStart = getTodayStart();
+        long now = System.currentTimeMillis();
+        Map<String, Long> stats = new HashMap<>();
+        synchronized (booths) {
+            for (Booth booth : booths) {
+                stats.put(booth.getId(), 0L);
+            }
+        }
+        synchronized (records) {
+            for (CheckInRecord record : records) {
+                if (record.getTimestamp() >= todayStart && record.getTimestamp() <= now) {
+                    String id = record.getBoothId();
+                    if (stats.containsKey(id)) {
+                        stats.put(id, stats.get(id) + 1);
+                    }
+                }
+            }
+        }
+        return stats;
+    }
+
+    public Map<String, Long> getTodayProjectStats() {
+        long todayStart = getTodayStart();
+        long now = System.currentTimeMillis();
+        Map<String, Long> stats = new HashMap<>();
+        synchronized (records) {
+            for (CheckInRecord record : records) {
+                if (record.getTimestamp() >= todayStart && record.getTimestamp() <= now) {
+                    List<String> projects = record.getInterestedProjects();
+                    if (projects != null) {
+                        for (String project : projects) {
+                            if (stats.containsKey(project)) {
+                                stats.put(project, stats.get(project) + 1);
+                            } else {
+                                stats.put(project, 1L);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return stats;
+    }
+
+    public long getTodayTotal() {
+        long todayStart = getTodayStart();
+        long now = System.currentTimeMillis();
+        long count = 0;
+        synchronized (records) {
+            for (CheckInRecord record : records) {
+                if (record.getTimestamp() >= todayStart && record.getTimestamp() <= now) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
     public Map<String, Long> getBoothStats() {
         Map<String, Long> stats = new HashMap<>();
         synchronized (booths) {

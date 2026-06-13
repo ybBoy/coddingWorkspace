@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { socket } from '../core/socket'
 import {
   eventBus,
-  EVENT_CHECKIN,
+  EVENT_CHECKIN_ACK,
   EVENT_CHECKIN_ERROR,
 } from '../core/EventBus'
 
@@ -28,14 +28,22 @@ function CheckInForm({ boothId }: CheckInFormProps) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const pendingRef = useRef(false)
+  const pendingRequestIdRef = useRef<string | null>(null)
   const successTimerRef = useRef<any>(null)
+  const timeoutTimerRef = useRef<any>(null)
 
   useEffect(() => {
-    const handleCheckInSuccess = () => {
-      if (pendingRef.current) {
-        pendingRef.current = false
+    const handleCheckInAck = (payload: any) => {
+      if (
+        pendingRequestIdRef.current &&
+        payload?.requestId === pendingRequestIdRef.current
+      ) {
+        pendingRequestIdRef.current = null
         setSubmitting(false)
+        if (timeoutTimerRef.current) {
+          clearTimeout(timeoutTimerRef.current)
+          timeoutTimerRef.current = null
+        }
         setSuccess('签到成功！')
         setName('')
         setPhoneSuffix('')
@@ -46,20 +54,28 @@ function CheckInForm({ boothId }: CheckInFormProps) {
     }
 
     const handleCheckInError = (payload: any) => {
-      if (pendingRef.current) {
-        pendingRef.current = false
+      if (
+        pendingRequestIdRef.current &&
+        payload?.requestId === pendingRequestIdRef.current
+      ) {
+        pendingRequestIdRef.current = null
         setSubmitting(false)
+        if (timeoutTimerRef.current) {
+          clearTimeout(timeoutTimerRef.current)
+          timeoutTimerRef.current = null
+        }
         setError(payload?.message || '签到失败，请重试')
       }
     }
 
-    const unsub1 = eventBus.on(EVENT_CHECKIN, handleCheckInSuccess)
+    const unsub1 = eventBus.on(EVENT_CHECKIN_ACK, handleCheckInAck)
     const unsub2 = eventBus.on(EVENT_CHECKIN_ERROR, handleCheckInError)
 
     return () => {
       unsub1()
       unsub2()
       if (successTimerRef.current) clearTimeout(successTimerRef.current)
+      if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current)
     }
   }, [])
 
@@ -99,10 +115,7 @@ function CheckInForm({ boothId }: CheckInFormProps) {
       return
     }
 
-    pendingRef.current = true
-    setSubmitting(true)
-
-    socket.sendCheckIn({
+    const requestId = socket.sendCheckIn({
       boothId,
       visitor: {
         name: name.trim(),
@@ -111,9 +124,13 @@ function CheckInForm({ boothId }: CheckInFormProps) {
       interestedProjects: [...selectedProjects],
     })
 
-    setTimeout(() => {
-      if (pendingRef.current) {
-        pendingRef.current = false
+    pendingRequestIdRef.current = requestId
+    setSubmitting(true)
+
+    if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current)
+    timeoutTimerRef.current = setTimeout(() => {
+      if (pendingRequestIdRef.current === requestId) {
+        pendingRequestIdRef.current = null
         setSubmitting(false)
         setError('服务器响应超时，请重试')
       }

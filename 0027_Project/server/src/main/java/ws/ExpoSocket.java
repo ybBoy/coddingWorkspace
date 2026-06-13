@@ -61,7 +61,7 @@ public class ExpoSocket extends WebSocketServer {
         try {
             JsonObject msgObj = JsonParser.parseString(message).getAsJsonObject();
             if (!msgObj.has("type")) {
-                sendError(conn, "缺少type字段");
+                sendError(conn, "缺少type字段", null);
                 return;
             }
             String type = msgObj.get("type").getAsString();
@@ -71,22 +71,26 @@ public class ExpoSocket extends WebSocketServer {
                 handleCheckIn(conn, payload);
             } else if ("getStats".equals(type)) {
                 sendSnapshot(conn);
+            } else if ("getRecordsByRange".equals(type)) {
+                handleGetRecordsByRange(conn, payload);
             } else {
-                sendError(conn, "未知的消息类型: " + type);
+                sendError(conn, "未知的消息类型: " + type, null);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(conn, "消息解析失败: " + e.getMessage());
+            sendError(conn, "消息解析失败: " + e.getMessage(), null);
         }
     }
 
     private void handleCheckIn(WebSocket conn, JsonElement payload) {
         if (payload == null || !payload.isJsonObject()) {
-            sendError(conn, "checkIn需要payload");
+            sendError(conn, "checkIn需要payload", null);
             return;
         }
+        String requestId = null;
         try {
             JsonObject pl = payload.getAsJsonObject();
+            requestId = pl.has("requestId") ? pl.get("requestId").getAsString() : null;
             String boothId = pl.has("boothId") ? pl.get("boothId").getAsString() : null;
             Visitor visitor = null;
             if (pl.has("visitor") && pl.get("visitor").isJsonObject()) {
@@ -103,14 +107,83 @@ public class ExpoSocket extends WebSocketServer {
             }
 
             CheckInRecord record = expoService.checkIn(boothId, visitor, interestedProjects);
+
+            sendCheckInAck(conn, requestId, record);
             broadcastCheckInSuccess(record);
         } catch (IllegalStateException e) {
-            sendError(conn, e.getMessage());
+            sendError(conn, e.getMessage(), requestId);
         } catch (IllegalArgumentException e) {
-            sendError(conn, e.getMessage());
+            sendError(conn, e.getMessage(), requestId);
         } catch (Exception e) {
             e.printStackTrace();
-            sendError(conn, "签到失败: " + e.getMessage());
+            sendError(conn, "签到失败: " + e.getMessage(), requestId);
+        }
+    }
+
+    private void sendCheckInAck(WebSocket conn, String requestId, CheckInRecord record) {
+        Map<String, Object> payload = new HashMap<>();
+        if (requestId != null) {
+            payload.put("requestId", requestId);
+        }
+        payload.put("record", record);
+
+        Map<String, Object> message = new HashMap<>();
+        message.put("type", "checkInAck");
+        message.put("payload", payload);
+        conn.send(gson.toJson(message));
+    }
+
+    private void handleGetRecordsByRange(WebSocket conn, JsonElement payload) {
+        if (payload == null || !payload.isJsonObject()) {
+            sendError(conn, "getRecordsByRange需要payload", null);
+            return;
+        }
+        try {
+            JsonObject pl = payload.getAsJsonObject();
+            String range = pl.has("range") ? pl.get("range").getAsString() : "all";
+            long startTime = 0;
+            long endTime = System.currentTimeMillis();
+
+            if ("10min".equals(range)) {
+                startTime = endTime - 10L * 60L * 1000L;
+            } else if ("today".equals(range)) {
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+                cal.set(java.util.Calendar.MINUTE, 0);
+                cal.set(java.util.Calendar.SECOND, 0);
+                cal.set(java.util.Calendar.MILLISECOND, 0);
+                startTime = cal.getTimeInMillis();
+            } else {
+                startTime = 0;
+            }
+
+            List<CheckInRecord> records = expoService.getRecordsByTimeRange(startTime, endTime);
+            Map<String, Long> boothStats = new HashMap<>();
+            Map<String, Long> projectStats = new HashMap<>();
+            for (CheckInRecord record : records) {
+                String bid = record.getBoothId();
+                boothStats.put(bid, boothStats.containsKey(bid) ? boothStats.get(bid) + 1 : 1L);
+                List<String> projects = record.getInterestedProjects();
+                if (projects != null) {
+                    for (String p : projects) {
+                        projectStats.put(p, projectStats.containsKey(p) ? projectStats.get(p) + 1 : 1L);
+                    }
+                }
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("records", records);
+            result.put("boothStats", boothStats);
+            result.put("projectStats", projectStats);
+            result.put("range", range);
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("type", "rangeStats");
+            message.put("payload", result);
+            conn.send(gson.toJson(message));
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "查询失败: " + e.getMessage(), null);
         }
     }
 
@@ -119,6 +192,9 @@ public class ExpoSocket extends WebSocketServer {
         payload.put("record", record);
         payload.put("boothStats", expoService.getBoothStats());
         payload.put("projectStats", expoService.getProjectStats());
+        payload.put("todayBoothStats", expoService.getTodayBoothStats());
+        payload.put("todayProjectStats", expoService.getTodayProjectStats());
+        payload.put("todayTotal", expoService.getTodayTotal());
         payload.put("peakBooths", expoService.getPeakBooths());
         payload.put("recentRecords", expoService.getRecentRecords(SNAPSHOT_RECORD_LIMIT));
 
@@ -135,6 +211,9 @@ public class ExpoSocket extends WebSocketServer {
         payload.put("records", expoService.getRecentRecords(SNAPSHOT_RECORD_LIMIT));
         payload.put("boothStats", expoService.getBoothStats());
         payload.put("projectStats", expoService.getProjectStats());
+        payload.put("todayBoothStats", expoService.getTodayBoothStats());
+        payload.put("todayProjectStats", expoService.getTodayProjectStats());
+        payload.put("todayTotal", expoService.getTodayTotal());
         payload.put("peakBooths", expoService.getPeakBooths());
         payload.put("availableProjects", ExpoService.DEFAULT_PROJECTS);
 
@@ -145,11 +224,14 @@ public class ExpoSocket extends WebSocketServer {
         conn.send(gson.toJson(message));
     }
 
-    private void sendError(WebSocket conn, String errorMsg) {
+    private void sendError(WebSocket conn, String errorMsg, String requestId) {
         Map<String, Object> message = new HashMap<>();
         message.put("type", "error");
         Map<String, Object> payload = new HashMap<>();
         payload.put("message", errorMsg);
+        if (requestId != null) {
+            payload.put("requestId", requestId);
+        }
         message.put("payload", payload);
         conn.send(gson.toJson(message));
     }

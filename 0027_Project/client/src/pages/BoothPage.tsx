@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import QRCode from 'qrcode'
 import CheckInForm from '../components/CheckInForm'
 import type { Booth, CheckInRecord, SnapshotData } from '../core/socket'
 import { socket } from '../core/socket'
@@ -20,11 +21,26 @@ function BoothPage() {
   )
   const [booths, setBooths] = useState<Booth[]>(DEFAULT_BOOTHS)
   const [records, setRecords] = useState<CheckInRecord[]>([])
+  const [todayBoothStats, setTodayBoothStats] = useState<Record<string, number>>({})
+  const [showQR, setShowQR] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const qrGeneratedRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const boothFromUrl = params.get('booth')
+    if (boothFromUrl) {
+      setSelectedBoothId(boothFromUrl)
+    }
+  }, [])
 
   useEffect(() => {
     const handleStatsRefresh = (data: SnapshotData) => {
       if (data.booths && data.booths.length > 0) {
         setBooths(data.booths)
+      }
+      if (data.todayBoothStats) {
+        setTodayBoothStats(data.todayBoothStats)
       }
     }
 
@@ -43,18 +59,29 @@ function BoothPage() {
     }
   }, [selectedBoothId])
 
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const todayStartTs = todayStart.getTime()
-
-  const todayCount = records
-    .filter((r) => r.boothId === selectedBoothId && r.timestamp >= todayStartTs)
-    .length
-
   useEffect(() => {
     socket.connect()
     socket.requestStats()
   }, [])
+
+  useEffect(() => {
+    if (showQR && selectedBoothId) {
+      if (qrGeneratedRef.current.has(selectedBoothId) && qrDataUrl) {
+        return
+      }
+      const url = `${window.location.origin}${window.location.pathname}?booth=${selectedBoothId}`
+      QRCode.toDataURL(url, { width: 200, margin: 2 })
+        .then((dataUrl) => {
+          setQrDataUrl(dataUrl)
+          qrGeneratedRef.current.add(selectedBoothId)
+        })
+        .catch((err) => {
+          console.error('QRCode generation failed:', err)
+        })
+    }
+  }, [showQR, selectedBoothId, qrDataUrl])
+
+  const todayCount = todayBoothStats[selectedBoothId] || 0
 
   const maskName = (name: string): string => {
     if (!name) return '***'
@@ -77,7 +104,15 @@ function BoothPage() {
   return (
     <div>
       <div className="booth-header">
-        <h1 className="page-title">展位签到系统</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <h1 className="page-title">展位签到系统</h1>
+          <button
+            className="btn-secondary"
+            onClick={() => setShowQR(!showQR)}
+          >
+            {showQR ? '隐藏二维码' : '显示展位二维码'}
+          </button>
+        </div>
         <p className="page-subtitle">请先选择您负责的展位，然后为到访的访客完成签到</p>
         <div className="booth-select-wrapper">
           <label className="form-label">选择展位</label>
@@ -93,6 +128,22 @@ function BoothPage() {
             ))}
           </select>
         </div>
+
+        {showQR && qrDataUrl && (
+          <div className="qr-popup">
+            <div className="qr-card">
+              <h3 style={{ marginBottom: '12px' }}>{selectedBoothName} 签到二维码</h3>
+              <img
+                src={qrDataUrl}
+                alt="展位签到二维码"
+                style={{ width: '200px', height: '200px' }}
+              />
+              <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                扫码后直接进入 {selectedBoothName} 签到页
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="booth-page-layout">

@@ -5,6 +5,7 @@ interface StatsCardsProps {
   projectStats: Record<string, number>
   booths: Booth[]
   peakBooths: string[]
+  todayTotal?: number
 }
 
 function StatsCards({
@@ -12,6 +13,7 @@ function StatsCards({
   projectStats,
   booths,
   peakBooths,
+  todayTotal = 0,
 }: StatsCardsProps) {
   const totalCheckins = Object.values(boothStats).reduce(
     (sum, count) => sum + count,
@@ -29,9 +31,14 @@ function StatsCards({
 
   const cards = [
     {
+      icon: '📅',
+      value: todayTotal,
+      label: '今日签到数',
+    },
+    {
       icon: '👥',
       value: totalCheckins,
-      label: '总签到人数',
+      label: '累计签到人数',
     },
     {
       icon: '🏢',

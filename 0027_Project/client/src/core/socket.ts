@@ -1,9 +1,11 @@
 import {
   eventBus,
   EVENT_CHECKIN,
+  EVENT_CHECKIN_ACK,
   EVENT_CHECKIN_ERROR,
   EVENT_STATS_REFRESH,
   EVENT_RECORDS_UPDATE,
+  EVENT_RANGE_STATS,
 } from './EventBus'
 
 export interface Booth {
@@ -30,10 +32,27 @@ export interface SnapshotData {
   records: CheckInRecord[]
   boothStats: Record<string, number>
   projectStats: Record<string, number>
+  todayBoothStats: Record<string, number>
+  todayProjectStats: Record<string, number>
+  todayTotal: number
   peakBooths: string[]
+  availableProjects: string[]
 }
 
-type WSMessageType = 'init' | 'checkIn' | 'statsUpdate' | 'error'
+export interface RangeStatsData {
+  records: CheckInRecord[]
+  boothStats: Record<string, number>
+  projectStats: Record<string, number>
+  range: string
+}
+
+type WSMessageType =
+  | 'init'
+  | 'checkIn'
+  | 'checkInAck'
+  | 'statsUpdate'
+  | 'rangeStats'
+  | 'error'
 
 interface WSMessage {
   type: WSMessageType
@@ -49,6 +68,7 @@ class WSocket {
   private reconnectTimer: any = null
   private reconnectCount: number = 0
   private url: string = 'ws://localhost:8887'
+  private requestCounter: number = 0
 
   private constructor() {}
 
@@ -120,8 +140,14 @@ class WSocket {
         eventBus.emit(EVENT_STATS_REFRESH, payload)
         eventBus.emit(EVENT_RECORDS_UPDATE, payload.recentRecords)
         break
+      case 'checkInAck':
+        eventBus.emit(EVENT_CHECKIN_ACK, payload)
+        break
       case 'statsUpdate':
         eventBus.emit(EVENT_STATS_REFRESH, payload)
+        break
+      case 'rangeStats':
+        eventBus.emit(EVENT_RANGE_STATS, payload)
         break
       case 'error':
         eventBus.emit(EVENT_CHECKIN_ERROR, payload)
@@ -130,6 +156,11 @@ class WSocket {
       default:
         console.warn('[WSocket] Unknown message type:', type)
     }
+  }
+
+  private genRequestId(): string {
+    this.requestCounter++
+    return `req_${Date.now()}_${this.requestCounter}`
   }
 
   private scheduleReconnect(): void {
@@ -160,18 +191,25 @@ class WSocket {
     boothId: string
     visitor: Visitor
     interestedProjects: string[]
-  }): void {
+  }): string {
+    const requestId = this.genRequestId()
+
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       console.warn('[WSocket] Cannot send: not connected')
-      return
+      return requestId
     }
 
     this.ws.send(
       JSON.stringify({
         type: 'checkIn',
-        payload: data,
+        payload: {
+          requestId,
+          ...data,
+        },
       })
     )
+
+    return requestId
   }
 
   requestStats(): void {
@@ -183,6 +221,20 @@ class WSocket {
     this.ws.send(
       JSON.stringify({
         type: 'getStats',
+      })
+    )
+  }
+
+  requestRecordsByRange(range: '10min' | 'today' | 'all'): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('[WSocket] Cannot send: not connected')
+      return
+    }
+
+    this.ws.send(
+      JSON.stringify({
+        type: 'getRecordsByRange',
+        payload: { range },
       })
     )
   }

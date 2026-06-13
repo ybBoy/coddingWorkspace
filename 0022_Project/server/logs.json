@@ -1,5 +1,19 @@
 [
   {
+    "id": "81ac74f8",
+    "action": "completed",
+    "taskTitle": "布置活动场地",
+    "nickname": "张三",
+    "timestamp": 1781329052048
+  },
+  {
+    "id": "e68afeb7",
+    "action": "started",
+    "taskTitle": "布置活动场地",
+    "nickname": "张三",
+    "timestamp": 1781329043327
+  },
+  {
     "id": "856427b8",
     "action": "claimed",
     "taskTitle": "布置活动场地",

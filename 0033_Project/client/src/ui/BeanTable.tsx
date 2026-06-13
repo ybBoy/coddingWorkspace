@@ -1,11 +1,11 @@
 import React from 'react';
 import { CoffeeBean, StockRecord } from '../types';
+import { getRoastLabel } from '../constants/roastLevels';
 
 interface BeanTableProps {
   beans: CoffeeBean[];
   selectedBeanId: string | null;
   onSelectBean: (bean: CoffeeBean) => void;
-  onAdjustStock: (bean: CoffeeBean) => void;
   onDelete: (id: string) => void;
   recentRecords: StockRecord[];
 }
@@ -14,7 +14,6 @@ const BeanTable: React.FC<BeanTableProps> = ({
   beans,
   selectedBeanId,
   onSelectBean,
-  onAdjustStock,
   onDelete,
   recentRecords,
 }) => {
@@ -63,8 +62,8 @@ const BeanTable: React.FC<BeanTableProps> = ({
                 <td className="bean-name">{bean.name}</td>
                 <td>{bean.origin}</td>
                 <td>
-                  <span className={`roast-badge roast-${bean.roastLevel}`}>
-                    {bean.roastLevel}
+                  <span className={`roast-badge roast-${bean.roastLevel.toLowerCase()}`}>
+                    {getRoastLabel(bean.roastLevel)}
                   </span>
                 </td>
                 <td className={`stock-amount ${isLow ? 'low' : ''}`}>
@@ -79,12 +78,6 @@ const BeanTable: React.FC<BeanTableProps> = ({
                   )}
                 </td>
                 <td className="action-cell">
-                  <button
-                    className="btn btn-small btn-secondary"
-                    onClick={(e) => { e.stopPropagation(); onAdjustStock(bean); }}
-                  >
-                    库存调整
-                  </button>
                   <button
                     className="btn btn-small btn-danger"
                     onClick={(e) => { e.stopPropagation(); onDelete(bean.id); }}

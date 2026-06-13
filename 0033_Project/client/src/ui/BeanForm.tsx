@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { AddBeanRequest } from '../types';
+import { ROAST_LEVELS } from '../constants/roastLevels';
 
 interface BeanFormProps {
   onSubmit: (bean: AddBeanRequest) => void;
 }
 
-const ROAST_LEVELS = ['浅烘焙', '中烘焙', '中深烘焙', '深烘焙'];
-
 const BeanForm: React.FC<BeanFormProps> = ({ onSubmit }) => {
   const [name, setName] = useState('');
   const [origin, setOrigin] = useState('');
-  const [roastLevel, setRoastLevel] = useState('中烘焙');
+  const [roastLevel, setRoastLevel] = useState('MEDIUM');
   const [stockGrams, setStockGrams] = useState(0);
   const [minStockLevel, setMinStockLevel] = useState(500);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !origin.trim()) return;
+    if (stockGrams < 0 || minStockLevel < 0) {
+      alert('库存和最低库存线不能为负数');
+      return;
+    }
     onSubmit({
       name: name.trim(),
       origin: origin.trim(),
@@ -26,7 +29,7 @@ const BeanForm: React.FC<BeanFormProps> = ({ onSubmit }) => {
     });
     setName('');
     setOrigin('');
-    setRoastLevel('中烘焙');
+    setRoastLevel('MEDIUM');
     setStockGrams(0);
     setMinStockLevel(500);
   };
@@ -59,7 +62,7 @@ const BeanForm: React.FC<BeanFormProps> = ({ onSubmit }) => {
           <label>烘焙程度</label>
           <select value={roastLevel} onChange={(e) => setRoastLevel(e.target.value)}>
             {ROAST_LEVELS.map((level) => (
-              <option key={level} value={level}>{level}</option>
+              <option key={level.code} value={level.code}>{level.label}</option>
             ))}
           </select>
         </div>

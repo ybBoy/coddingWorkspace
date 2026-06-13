@@ -85,8 +85,11 @@ body {
 }
 
 .right-panel {
-  width: 320px;
+  width: 360px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .filter-bar {
@@ -222,22 +225,22 @@ body {
   font-weight: 500;
 }
 
-.roast-浅烘焙 {
+.roast-light {
   background-color: #D7CCC8;
   color: #5D4037;
 }
 
-.roast-中烘焙 {
+.roast-medium {
   background-color: #A1887F;
   color: #FFF8E1;
 }
 
-.roast-中深烘焙 {
+.roast-medium_dark {
   background-color: #6D4C41;
   color: #FFF8E1;
 }
 
-.roast-深烘焙 {
+.roast-dark {
   background-color: #3E2723;
   color: #FFECB3;
 }
@@ -273,11 +276,18 @@ body {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .btn-small {
   padding: 6px 12px;
   font-size: 13px;
+}
+
+.btn-full {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
 }
 
 .btn-primary {
@@ -431,6 +441,7 @@ body {
   background-color: #FFF;
   color: #3E2723;
   transition: border-color 0.2s ease;
+  font-family: inherit;
 }
 
 .form-group input:focus,
@@ -449,88 +460,103 @@ body {
   flex: 1;
 }
 
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(62, 39, 35, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog {
+.stock-adjust-panel {
   background-color: #FFFEF9;
-  border-radius: 10px;
-  width: 420px;
-  max-width: 90%;
-  box-shadow: 0 8px 32px rgba(62, 39, 35, 0.3);
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #EFEBE9;
-}
-
-.dialog-header h3 {
-  color: #4E342E;
-  font-size: 18px;
-}
-
-.dialog-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #8D6E63;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.dialog-close:hover {
-  color: #4E342E;
-}
-
-.dialog-body {
+  border-radius: 8px;
   padding: 20px;
+  box-shadow: 0 1px 4px rgba(62, 39, 35, 0.1);
 }
 
-.stock-info {
+.stock-adjust-panel h3 {
+  color: #4E342E;
+  margin-bottom: 16px;
+  font-size: 18px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #D7CCC8;
+}
+
+.stock-adjust-panel.empty .empty-hint {
+  text-align: center;
+  color: #A1887F;
+  padding: 40px 20px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.selected-bean-info {
+  margin-bottom: 16px;
+}
+
+.bean-name-large {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4E342E;
+  margin-bottom: 8px;
+}
+
+.bean-meta {
   display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-label {
+  font-size: 11px;
+  color: #8D6E63;
+}
+
+.meta-value {
+  font-size: 14px;
+  color: #5D4037;
+  font-weight: 500;
+}
+
+.stock-display {
+  display: flex;
+  gap: 12px;
   padding: 12px;
   background-color: #FAF7F2;
   border-radius: 6px;
+  margin-bottom: 16px;
 }
 
-.info-item {
+.stock-item {
   flex: 1;
   text-align: center;
 }
 
-.info-label {
+.stock-label {
   display: block;
   font-size: 12px;
   color: #8D6E63;
   margin-bottom: 4px;
 }
 
-.info-value {
-  font-size: 18px;
-  font-weight: 600;
+.stock-value {
+  font-size: 20px;
+  font-weight: 700;
   color: #4E342E;
+}
+
+.stock-value.low {
+  color: #C62828;
+}
+
+.adjust-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .mode-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
 }
 
 .tab-btn {
@@ -544,6 +570,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .tab-btn.active {
@@ -552,15 +579,37 @@ body {
   border-color: #8D6E63;
 }
 
-.dialog-actions {
+.quick-amounts {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.dialog-actions .btn {
-  flex: 1;
-  padding: 10px;
+.quick-label {
+  font-size: 13px;
+  color: #8D6E63;
+}
+
+.quick-btn {
+  padding: 6px 12px;
+  border: 1px solid #D7CCC8;
+  background-color: #FAFAFA;
+  color: #5D4037;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.quick-btn:hover {
+  border-color: #8D6E63;
+}
+
+.quick-btn.active {
+  background-color: #D7CCC8;
+  border-color: #8D6E63;
 }
 
 .loading {

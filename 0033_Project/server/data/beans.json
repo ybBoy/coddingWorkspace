@@ -1,102 +1,121 @@
-[ {
-  "id" : "bean-001",
-  "name" : "埃塞俄比亚 耶加雪菲",
-  "origin" : "埃塞俄比亚",
-  "roastLevel" : "浅烘焙",
-  "stockGrams" : 1500,
-  "minStockLevel" : 500,
-  "createdAt" : "2024-01-15 09:00:00",
-  "stockRecords" : [ {
-    "id" : "rec-001",
-    "beanId" : "bean-001",
-    "type" : "INIT",
-    "quantity" : 2000,
-    "remainingStock" : 2000,
-    "timestamp" : "2024-01-15 09:00:00"
-  }, {
-    "id" : "rec-002",
-    "beanId" : "bean-001",
-    "type" : "CONSUME",
-    "quantity" : 500,
-    "remainingStock" : 1500,
-    "timestamp" : "2024-01-20 14:30:00"
-  } ]
-}, {
-  "id" : "bean-002",
-  "name" : "哥伦比亚 慧兰",
-  "origin" : "哥伦比亚",
-  "roastLevel" : "中烘焙",
-  "stockGrams" : 800,
-  "minStockLevel" : 1000,
-  "createdAt" : "2024-02-10 10:00:00",
-  "stockRecords" : [ {
-    "id" : "rec-003",
-    "beanId" : "bean-002",
-    "type" : "INIT",
-    "quantity" : 1500,
-    "remainingStock" : 1500,
-    "timestamp" : "2024-02-10 10:00:00"
-  }, {
-    "id" : "rec-004",
-    "beanId" : "bean-002",
-    "type" : "CONSUME",
-    "quantity" : 700,
-    "remainingStock" : 800,
-    "timestamp" : "2024-02-18 16:45:00"
-  } ]
-}, {
-  "id" : "bean-003",
-  "name" : "巴西 喜拉多",
-  "origin" : "巴西",
-  "roastLevel" : "深烘焙",
-  "stockGrams" : 2000,
-  "minStockLevel" : 800,
-  "createdAt" : "2024-03-05 08:30:00",
-  "stockRecords" : [ {
-    "id" : "rec-005",
-    "beanId" : "bean-003",
-    "type" : "INIT",
-    "quantity" : 2000,
-    "remainingStock" : 2000,
-    "timestamp" : "2024-03-05 08:30:00"
-  } ]
-}, {
-  "id" : "bean-004",
-  "name" : "肯尼亚 AA",
-  "origin" : "肯尼亚",
-  "roastLevel" : "中烘焙",
-  "stockGrams" : 300,
-  "minStockLevel" : 600,
-  "createdAt" : "2024-01-20 11:00:00",
-  "stockRecords" : [ {
-    "id" : "rec-006",
-    "beanId" : "bean-004",
-    "type" : "INIT",
-    "quantity" : 1000,
-    "remainingStock" : 1000,
-    "timestamp" : "2024-01-20 11:00:00"
-  }, {
-    "id" : "rec-007",
-    "beanId" : "bean-004",
-    "type" : "CONSUME",
-    "quantity" : 700,
-    "remainingStock" : 300,
-    "timestamp" : "2024-02-25 15:00:00"
-  } ]
-}, {
-  "id" : "bean-005",
-  "name" : "危地马拉 安提瓜",
-  "origin" : "危地马拉",
-  "roastLevel" : "中深烘焙",
-  "stockGrams" : 1200,
-  "minStockLevel" : 400,
-  "createdAt" : "2024-02-28 09:15:00",
-  "stockRecords" : [ {
-    "id" : "rec-008",
-    "beanId" : "bean-005",
-    "type" : "INIT",
-    "quantity" : 1200,
-    "remainingStock" : 1200,
-    "timestamp" : "2024-02-28 09:15:00"
-  } ]
-} ]
+[
+  {
+    "id": "bean-001",
+    "name": "Ethiopia Yirgacheffe",
+    "origin": "Ethiopia",
+    "roastLevel": "LIGHT",
+    "stockGrams": 1500,
+    "minStockLevel": 500,
+    "createdAt": "2024-01-15 09:00:00",
+    "stockRecords": [
+      {
+        "id": "rec-001",
+        "beanId": "bean-001",
+        "type": "INIT",
+        "quantity": 2000,
+        "remainingStock": 2000,
+        "timestamp": "2024-01-15 09:00:00"
+      },
+      {
+        "id": "rec-002",
+        "beanId": "bean-001",
+        "type": "CONSUME",
+        "quantity": 500,
+        "remainingStock": 1500,
+        "timestamp": "2024-01-20 14:30:00"
+      }
+    ]
+  },
+  {
+    "id": "bean-002",
+    "name": "Colombia Huila",
+    "origin": "Colombia",
+    "roastLevel": "MEDIUM",
+    "stockGrams": 800,
+    "minStockLevel": 1000,
+    "createdAt": "2024-02-10 10:00:00",
+    "stockRecords": [
+      {
+        "id": "rec-003",
+        "beanId": "bean-002",
+        "type": "INIT",
+        "quantity": 1500,
+        "remainingStock": 1500,
+        "timestamp": "2024-02-10 10:00:00"
+      },
+      {
+        "id": "rec-004",
+        "beanId": "bean-002",
+        "type": "CONSUME",
+        "quantity": 700,
+        "remainingStock": 800,
+        "timestamp": "2024-02-18 16:45:00"
+      }
+    ]
+  },
+  {
+    "id": "bean-003",
+    "name": "Brazil Cerrado",
+    "origin": "Brazil",
+    "roastLevel": "DARK",
+    "stockGrams": 2000,
+    "minStockLevel": 800,
+    "createdAt": "2024-03-05 08:30:00",
+    "stockRecords": [
+      {
+        "id": "rec-005",
+        "beanId": "bean-003",
+        "type": "INIT",
+        "quantity": 2000,
+        "remainingStock": 2000,
+        "timestamp": "2024-03-05 08:30:00"
+      }
+    ]
+  },
+  {
+    "id": "bean-004",
+    "name": "Kenya AA",
+    "origin": "Kenya",
+    "roastLevel": "MEDIUM",
+    "stockGrams": 300,
+    "minStockLevel": 600,
+    "createdAt": "2024-01-20 11:00:00",
+    "stockRecords": [
+      {
+        "id": "rec-006",
+        "beanId": "bean-004",
+        "type": "INIT",
+        "quantity": 1000,
+        "remainingStock": 1000,
+        "timestamp": "2024-01-20 11:00:00"
+      },
+      {
+        "id": "rec-007",
+        "beanId": "bean-004",
+        "type": "CONSUME",
+        "quantity": 700,
+        "remainingStock": 300,
+        "timestamp": "2024-02-25 15:00:00"
+      }
+    ]
+  },
+  {
+    "id": "bean-005",
+    "name": "Guatemala Antigua",
+    "origin": "Guatemala",
+    "roastLevel": "MEDIUM_DARK",
+    "stockGrams": 1200,
+    "minStockLevel": 400,
+    "createdAt": "2024-02-28 09:15:00",
+    "stockRecords": [
+      {
+        "id": "rec-008",
+        "beanId": "bean-005",
+        "type": "INIT",
+        "quantity": 1200,
+        "remainingStock": 1200,
+        "timestamp": "2024-02-28 09:15:00"
+      }
+    ]
+  }
+]

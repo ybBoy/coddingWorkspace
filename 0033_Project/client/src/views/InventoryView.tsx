@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CoffeeBean, StockRecord, AddBeanRequest } from '../types';
 import { beanService } from '../services/beanService';
+import { FILTER_OPTIONS } from '../constants/roastLevels';
 import LowStockBanner from '../ui/LowStockBanner';
 import BeanForm from '../ui/BeanForm';
 import BeanTable from '../ui/BeanTable';
-import StockAdjustDialog from '../ui/StockAdjustDialog';
-
-const ROAST_LEVELS = ['全部', '浅烘焙', '中烘焙', '中深烘焙', '深烘焙'];
+import StockAdjustPanel from '../ui/StockAdjustPanel';
 
 const InventoryView: React.FC = () => {
   const [beans, setBeans] = useState<CoffeeBean[]>([]);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [selectedBean, setSelectedBean] = useState<CoffeeBean | null>(null);
   const [recentRecords, setRecentRecords] = useState<StockRecord[]>([]);
-  const [adjustBean, setAdjustBean] = useState<CoffeeBean | null>(null);
   const [filterRoast, setFilterRoast] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,12 +23,18 @@ const InventoryView: React.FC = () => {
       setBeans(data);
       const count = await beanService.getLowStockCount();
       setLowStockCount(count);
+      if (selectedBean) {
+        const updated = data.find((b) => b.id === selectedBean.id);
+        if (updated) {
+          setSelectedBean(updated);
+        }
+      }
     } catch (err) {
       setError('加载数据失败，请确认后端服务是否启动');
     } finally {
       setLoading(false);
     }
-  }, [filterRoast]);
+  }, [filterRoast, selectedBean]);
 
   useEffect(() => {
     loadBeans();
@@ -62,10 +66,9 @@ const InventoryView: React.FC = () => {
 
   const handleRestock = async (id: string, amount: number) => {
     try {
-      const updated = await beanService.restockBean(id, amount);
+      await beanService.restockBean(id, amount);
       loadBeans();
       if (selectedBean?.id === id) {
-        setSelectedBean(updated);
         const records = await beanService.getRecentRecords(id, 5);
         setRecentRecords(records);
       }
@@ -76,10 +79,9 @@ const InventoryView: React.FC = () => {
 
   const handleConsume = async (id: string, amount: number) => {
     try {
-      const updated = await beanService.consumeBean(id, amount);
+      await beanService.consumeBean(id, amount);
       loadBeans();
       if (selectedBean?.id === id) {
-        setSelectedBean(updated);
         const records = await beanService.getRecentRecords(id, 5);
         setRecentRecords(records);
       }
@@ -123,15 +125,16 @@ const InventoryView: React.FC = () => {
             <div className="filter-group">
               <label>按烘焙程度筛选：</label>
               <div className="filter-tags">
-                {ROAST_LEVELS.map((level) => {
-                  const isActive = level === '全部' ? !filterRoast : filterRoast === level;
+                {FILTER_OPTIONS.map((option) => {
+                  const isActive =
+                    option.code === '' ? !filterRoast : filterRoast === option.code;
                   return (
                     <button
-                      key={level}
+                      key={option.code || 'all'}
                       className={`filter-tag ${isActive ? 'active' : ''}`}
-                      onClick={() => setFilterRoast(level === '全部' ? '' : level)}
+                      onClick={() => setFilterRoast(option.code)}
                     >
-                      {level}
+                      {option.label}
                     </button>
                   );
                 })}
@@ -149,7 +152,6 @@ const InventoryView: React.FC = () => {
               beans={beans}
               selectedBeanId={selectedBean?.id || null}
               onSelectBean={handleSelectBean}
-              onAdjustStock={setAdjustBean}
               onDelete={handleDelete}
               recentRecords={recentRecords}
             />
@@ -158,15 +160,13 @@ const InventoryView: React.FC = () => {
 
         <div className="right-panel">
           <BeanForm onSubmit={handleAddBean} />
+          <StockAdjustPanel
+            bean={selectedBean}
+            onRestock={handleRestock}
+            onConsume={handleConsume}
+          />
         </div>
       </div>
-
-      <StockAdjustDialog
-        bean={adjustBean}
-        onClose={() => setAdjustBean(null)}
-        onRestock={handleRestock}
-        onConsume={handleConsume}
-      />
     </div>
   );
 };

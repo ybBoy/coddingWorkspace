@@ -1,6 +1,7 @@
 package com.demo.service;
 
 import com.demo.model.CoffeeBean;
+import com.demo.model.RoastLevel;
 import com.demo.model.StockRecord;
 import com.demo.repository.FileBeanRepository;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,18 @@ public class BeanInventoryService {
     }
 
     public CoffeeBean addBean(CoffeeBean bean) {
+        if (bean.getStockGrams() < 0) {
+            throw new IllegalArgumentException("Stock grams cannot be negative");
+        }
+        if (bean.getMinStockLevel() < 0) {
+            throw new IllegalArgumentException("Min stock level cannot be negative");
+        }
+        if (bean.getName() == null || bean.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Bean name is required");
+        }
+        if (!RoastLevel.isValid(bean.getRoastLevel())) {
+            throw new IllegalArgumentException("Invalid roast level: " + bean.getRoastLevel());
+        }
         bean.setId(UUID.randomUUID().toString());
         bean.setCreatedAt(LocalDateTime.now());
         if (bean.getStockRecords() == null) {
@@ -57,6 +70,9 @@ public class BeanInventoryService {
     }
 
     public CoffeeBean restockBean(String id, int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Restock amount must be positive");
+        }
         Optional<CoffeeBean> beanOpt = repository.findById(id);
         if (!beanOpt.isPresent()) {
             throw new IllegalArgumentException("Bean not found: " + id);
@@ -79,6 +95,9 @@ public class BeanInventoryService {
     }
 
     public CoffeeBean consumeBean(String id, int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Consume amount must be positive");
+        }
         Optional<CoffeeBean> beanOpt = repository.findById(id);
         if (!beanOpt.isPresent()) {
             throw new IllegalArgumentException("Bean not found: " + id);

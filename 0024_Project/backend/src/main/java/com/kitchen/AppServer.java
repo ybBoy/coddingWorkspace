@@ -17,20 +17,21 @@ import java.nio.file.Paths;
  * 后端启动入口（main 方法在这里）
  * 职责：
  *  1. 启动一个嵌入式 Jetty（HTTP + WebSocket）
- *  2. 装配各个模块：FileStore -> OrderService -> KitchenSocket
- *  3. 启动时从 JSON 恢复未完成订单
+ *  2. 装配各个模块：FileStore -> OrderService/MenuService -> KitchenSocket
+ *  3. 启动时从 JSON 恢复未完成订单 + 菜单
  *  4. 提供静态资源（前端 build 后的 dist/ 目录）
  *  5. 暴露 WebSocket 端点 /ws
  *
  * 调用顺序:
  *   AppServer (main)
  *     ├─ new FileStore()
- *     ├─ new OrderService()      <── restoreFrom(fileStore.load())
- *     ├─ KitchenSocket.setOrderService()
- *     ├─ fileStore.startAutoSave(orderService)
+ *     ├─ new OrderService()  ←─ restoreFrom(fileStore.loadOrders())
+ *     ├─ new MenuService()   ←─ restoreFrom(fileStore.loadMenu())
+ *     ├─ KitchenSocket.setOrderService() / setMenuService()
+ *     ├─ fileStore.startAutoSave(orderService, menuService)
  *     └─ start Jetty:
  *         ├─ HTTP/8080 静态资源（前端页面）
- *         └─ WS /ws   （实时通信
+ *         └─ WS /ws   （实时通信）
  */
 public class AppServer {
     public static void main(String[] args) throws Exception {
@@ -58,11 +59,18 @@ public class AppServer {
 
         // ---- 2. 初始化业务层
         FileStore fileStore = new FileStore(basePath.toString());
+
         OrderService orderService = new OrderService();
-        orderService.restoreFrom(fileStore.load());
+        orderService.restoreFrom(fileStore.loadOrders());
+
+        MenuService menuService = new MenuService();
+        menuService.restoreFrom(fileStore.loadMenu());
+
         KitchenSocket.setOrderService(orderService);
+        KitchenSocket.setMenuService(menuService);
         KitchenSocket.startHeartBeat();
-        fileStore.startAutoSave(orderService);
+
+        fileStore.startAutoSave(orderService, menuService);
 
         // ---- 3. 启动 Jetty
         Server server = new Server();
@@ -97,7 +105,8 @@ public class AppServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 System.out.println("[App] saving before exit...");
-                fileStore.save(orderService.listPendingOrders());
+                fileStore.saveOrders(orderService.listPendingOrders());
+                fileStore.saveMenu(menuService.listAll());
                 fileStore.shutdown();
                 server.stop();
             } catch (Exception e) { e.printStackTrace(); }

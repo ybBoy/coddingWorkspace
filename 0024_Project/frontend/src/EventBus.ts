@@ -48,8 +48,12 @@ export const EventBus = new EventBusImpl()
 
 /** 约定的事件名字符串常量，避免写散 */
 export const EVT = {
-  ORDERS_UPDATED: 'orders:updated',   // 载荷: Order[]   WebSocket 推送新数据时触发
-  VIEW_CHANGED: 'view:changed',       // 载荷: 'entry' | 'board'   顶部切换按钮触发
-  SEARCH_CHANGED: 'search:changed',   // 载荷: string   搜索框输入时触发
-  WS_STATUS: 'ws:status',             // 载荷: 'connecting' | 'open' | 'closed'
+  ORDERS_UPDATED: 'orders:updated',    // 载荷: Order[]   WebSocket 推送新订单数据时触发
+  MENU_UPDATED: 'menu:updated',        // 载荷: MenuItem[] 菜单数据更新
+  VIEW_CHANGED: 'view:changed',        // 载荷: 'entry' | 'board'   顶部切换按钮触发
+  SEARCH_CHANGED: 'search:changed',    // 载荷: string   搜索框输入时触发
+  WS_STATUS: 'ws:status',              // 载荷: 'connecting' | 'open' | 'closed'
+  NEW_ORDER_ARRIVED: 'order:new',      // 载荷: Order      新订单到达（用于声音/桌面通知）
+  BIGSCREEN_TOGGLE: 'bigscreen:toggle', // 载荷: boolean   大屏模式开关
+  NOTIFICATION_TOGGLE: 'notify:toggle', // 载荷: {sound:boolean, desktop:boolean}
 } as const

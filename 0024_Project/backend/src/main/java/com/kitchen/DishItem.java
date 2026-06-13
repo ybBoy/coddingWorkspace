@@ -11,6 +11,8 @@ public class DishItem {
     private int quantity;       // 数量
     private String note;        // 单条备注，如"少辣"
     private boolean redo;       // 是否标记为重做（橙色提示）
+    private boolean done;       // 是否已完成制作（菜品级完成状态，用于单菜勾选）
+    private long finishedAt;    // 菜品完成的时间戳 (0 表示未完成)
 
     public DishItem() {}
 
@@ -20,6 +22,8 @@ public class DishItem {
         this.quantity = quantity;
         this.note = note;
         this.redo = false;
+        this.done = false;
+        this.finishedAt = 0L;
     }
 
     // === Getter / Setter ===
@@ -33,4 +37,11 @@ public class DishItem {
     public void setNote(String note) { this.note = note; }
     public boolean isRedo() { return redo; }
     public void setRedo(boolean redo) { this.redo = redo; }
+    public boolean isDone() { return done; }
+    public void setDone(boolean done) {
+        this.done = done;
+        this.finishedAt = done ? System.currentTimeMillis() : 0L;
+    }
+    public long getFinishedAt() { return finishedAt; }
+    public void setFinishedAt(long finishedAt) { this.finishedAt = finishedAt; }
 }

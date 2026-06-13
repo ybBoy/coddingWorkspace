@@ -3,12 +3,14 @@ import { Expense } from '../../shared/types'
 import { eventBus } from '../../shared/EventBus'
 
 interface ExpenseTimelineProps {
-  recentExpenses: Expense[]
   monthExpenses: Expense[]
   currentMonth: string
 }
 
-const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ recentExpenses, currentMonth }) => {
+const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ monthExpenses, currentMonth }) => {
+  const displayExpenses = [...monthExpenses]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 20)
   const formatTime = (timeStr: string): string => {
     const date = new Date(timeStr)
     const month = date.getMonth() + 1
@@ -43,7 +45,7 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ recentExpenses, curre
     return colors[category] || '#7f8c8d'
   }
 
-  const groupedByDate = recentExpenses.reduce((groups, expense) => {
+  const groupedByDate = displayExpenses.reduce((groups, expense) => {
     const dateKey = expense.time.slice(0, 10)
     if (!groups[dateKey]) {
       groups[dateKey] = []
@@ -66,11 +68,11 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ recentExpenses, curre
   return (
     <div className="card">
       <h3 className="card-title">
-        最近记录
+        本月记录
         <span className="card-subtitle">（最多20条 · {currentMonth}）</span>
       </h3>
       <div className="timeline">
-        {recentExpenses.length === 0 ? (
+        {displayExpenses.length === 0 ? (
           <div className="empty-state">暂无记录，开始记第一笔吧~</div>
         ) : (
           Object.entries(groupedByDate).map(([dateKey, dayExpenses]) => {

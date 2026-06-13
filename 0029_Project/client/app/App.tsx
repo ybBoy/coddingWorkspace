@@ -117,14 +117,14 @@ const App: React.FC = () => {
     const unsubExpenseAdded = eventBus.on('expense:added', (data: NewExpenseData) => {
       socketClient.send({
         type: 'ADD_EXPENSE',
-        payload: data
+        payload: { ...data, year: selectedYear, month: selectedMonth }
       })
     })
 
     const unsubExpenseEdited = eventBus.on('expense:edited', (data: EditExpenseData) => {
       socketClient.send({
         type: 'EDIT_EXPENSE',
-        payload: data
+        payload: { ...data, year: selectedYear, month: selectedMonth }
       })
       addToast({ message: '已保存修改', type: 'success' })
     })
@@ -132,21 +132,21 @@ const App: React.FC = () => {
     const unsubExpenseDeleted = eventBus.on('expense:deleted', (id: string) => {
       socketClient.send({
         type: 'DELETE_EXPENSE',
-        payload: { id }
+        payload: { id, year: selectedYear, month: selectedMonth }
       })
     })
 
     const unsubBudgetChanged = eventBus.on('budget:changed', (budget: Budget) => {
       socketClient.send({
         type: 'SET_BUDGET',
-        payload: budget
+        payload: { ...budget, year: selectedYear, month: selectedMonth }
       })
     })
 
     const unsubBudgetRemoved = eventBus.on('budget:removed', (category: string) => {
       socketClient.send({
         type: 'REMOVE_BUDGET',
-        payload: { category }
+        payload: { category, year: selectedYear, month: selectedMonth }
       })
     })
 
@@ -180,7 +180,7 @@ const App: React.FC = () => {
     const unsubConfigUpdated = eventBus.on('config:updated', (cfg: LedgerConfig) => {
       socketClient.send({
         type: 'UPDATE_CONFIG',
-        payload: cfg
+        payload: { ...cfg, year: selectedYear, month: selectedMonth }
       })
       addToast({ message: '配置已保存', type: 'success' })
     })
@@ -360,7 +360,6 @@ const App: React.FC = () => {
             currentMonth={formatMonthDisplay(selectedYear, selectedMonth)}
           />
           <ExpenseTimeline
-            recentExpenses={state.recentExpenses}
             monthExpenses={state.monthExpenses}
             currentMonth={formatMonthDisplay(selectedYear, selectedMonth)}
           />

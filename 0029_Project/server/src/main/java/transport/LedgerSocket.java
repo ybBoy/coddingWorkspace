@@ -18,12 +18,14 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ServerEndpoint("/ledger")
 public class LedgerSocket {
     private static final Set<Session> sessions = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private static final Map<Session, YearMonth> sessionMonths = new ConcurrentHashMap<>();
     private static LedgerService ledgerService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final int RECENT_EXPENSES_LIMIT = 20;
@@ -39,6 +41,7 @@ public class LedgerSocket {
     @OnOpen
     public void onOpen(Session session) {
         sessions.add(session);
+        sessionMonths.put(session, YearMonth.now());
         try {
             sendFullState(session, YearMonth.now());
         } catch (IOException e) {
@@ -49,11 +52,13 @@ public class LedgerSocket {
     @OnClose
     public void onClose(Session session) {
         sessions.remove(session);
+        sessionMonths.remove(session);
     }
 
     @OnError
     public void onError(Session session, Throwable throwable) {
         sessions.remove(session);
+        sessionMonths.remove(session);
         throwable.printStackTrace();
     }
 
@@ -66,28 +71,29 @@ public class LedgerSocket {
 
             switch (type) {
                 case "ADD_EXPENSE":
-                    handleAddExpense(payload);
+                    handleAddExpense(session, payload);
                     break;
                 case "DELETE_EXPENSE":
-                    handleDeleteExpense(payload);
+                    handleDeleteExpense(session, payload);
                     break;
                 case "SET_BUDGET":
-                    handleSetBudget(payload);
+                    handleSetBudget(session, payload);
                     break;
                 case "REMOVE_BUDGET":
-                    handleRemoveBudget(payload);
+                    handleRemoveBudget(session, payload);
                     break;
                 case "EDIT_EXPENSE":
-                    handleEditExpense(payload);
+                    handleEditExpense(session, payload);
                     break;
                 case "EXPORT_MONTH":
                     handleExportMonth(session, payload);
                     break;
                 case "UPDATE_CONFIG":
-                    handleUpdateConfig(payload);
+                    handleUpdateConfig(session, payload);
                     break;
                 case "GET_STATE":
                     YearMonth month = parseYearMonth(payload);
+                    sessionMonths.put(session, month);
                     sendFullState(session, month);
                     break;
                 default:
@@ -98,7 +104,7 @@ public class LedgerSocket {
         }
     }
 
-    private void handleAddExpense(JsonNode payload) {
+    private void handleAddExpense(Session session, JsonNode payload) {
         BigDecimal amount = new BigDecimal(payload.path("amount").asText());
         String category = payload.path("category").asText();
         String payer = payload.path("payer").asText();
@@ -110,29 +116,37 @@ public class LedgerSocket {
 
         Expense expense = new Expense(amount, category, payer, remark, time);
         ledgerService.addExpense(expense);
+        YearMonth targetMonth = parseYearMonth(payload);
+        sessionMonths.put(session, targetMonth);
         broadcastFullState();
     }
 
-    private void handleDeleteExpense(JsonNode payload) {
+    private void handleDeleteExpense(Session session, JsonNode payload) {
         String id = payload.path("id").asText();
         ledgerService.deleteExpense(id);
+        YearMonth targetMonth = parseYearMonth(payload);
+        sessionMonths.put(session, targetMonth);
         broadcastFullState();
     }
 
-    private void handleSetBudget(JsonNode payload) {
+    private void handleSetBudget(Session session, JsonNode payload) {
         String category = payload.path("category").asText();
         BigDecimal amount = new BigDecimal(payload.path("amount").asText());
         ledgerService.setBudget(new Budget(category, amount));
+        YearMonth targetMonth = parseYearMonth(payload);
+        sessionMonths.put(session, targetMonth);
         broadcastFullState();
     }
 
-    private void handleRemoveBudget(JsonNode payload) {
+    private void handleRemoveBudget(Session session, JsonNode payload) {
         String category = payload.path("category").asText();
         ledgerService.removeBudget(category);
+        YearMonth targetMonth = parseYearMonth(payload);
+        sessionMonths.put(session, targetMonth);
         broadcastFullState();
     }
 
-    private void handleEditExpense(JsonNode payload) {
+    private void handleEditExpense(Session session, JsonNode payload) {
         String id = payload.path("id").asText();
         BigDecimal amount = new BigDecimal(payload.path("amount").asText());
         String category = payload.path("category").asText();
@@ -140,10 +154,12 @@ public class LedgerSocket {
         String remark = payload.path("remark").asText();
         String time = payload.path("time").asText();
         ledgerService.editExpense(id, amount, category, payer, remark, time);
+        YearMonth targetMonth = parseYearMonth(payload);
+        sessionMonths.put(session, targetMonth);
         broadcastFullState();
     }
 
-    private void handleUpdateConfig(JsonNode payload) {
+    private void handleUpdateConfig(Session session, JsonNode payload) {
         String ledgerName = payload.path("ledgerName").asText();
         java.util.List<String> categories = new java.util.ArrayList<>();
         JsonNode catNode = payload.path("categories");
@@ -160,6 +176,8 @@ public class LedgerSocket {
             }
         }
         ledgerService.updateConfig(new LedgerConfig(ledgerName, categories, payers));
+        YearMonth targetMonth = parseYearMonth(payload);
+        sessionMonths.put(session, targetMonth);
         broadcastFullState();
     }
 
@@ -270,9 +288,10 @@ public class LedgerSocket {
 
     private void broadcastFullState() {
         try {
-            String json = objectMapper.writeValueAsString(buildFullState(YearMonth.now()));
             for (Session session : sessions) {
                 if (session.isOpen()) {
+                    YearMonth month = sessionMonths.getOrDefault(session, YearMonth.now());
+                    String json = objectMapper.writeValueAsString(buildFullState(month));
                     session.getBasicRemote().sendText(json);
                 }
             }

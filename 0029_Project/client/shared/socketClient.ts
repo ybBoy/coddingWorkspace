@@ -3,6 +3,11 @@ import { eventBus } from './EventBus'
 
 const QUEUE_KEY = 'ledger_offline_queue'
 
+const WRITE_TYPES = new Set([
+  'ADD_EXPENSE', 'EDIT_EXPENSE', 'DELETE_EXPENSE',
+  'SET_BUDGET', 'REMOVE_BUDGET', 'UPDATE_CONFIG'
+])
+
 class SocketClient {
   private ws: WebSocket | null = null
   private reconnectTimer: number | null = null
@@ -65,12 +70,17 @@ class SocketClient {
   send(message: OutgoingMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message))
-    } else {
+    } else if (WRITE_TYPES.has(message.type)) {
       this.queue.push(message)
       this.saveQueue()
       const count = this.queue.length
       eventBus.emit('toast:show', {
         message: count === 1 ? '网络离线，已暂存 1 条操作' : `网络离线，已暂存 ${count} 条操作`,
+        type: 'warning'
+      })
+    } else {
+      eventBus.emit('toast:show', {
+        message: '网络离线，请稍后重试',
         type: 'warning'
       })
     }

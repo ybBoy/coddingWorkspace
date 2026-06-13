@@ -662,3 +662,313 @@ body.bigscreen .search-label { font-size: 18px; }
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ===== 第三轮新增：工位切换 Tab ===== */
+.station-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.station-tabs button {
+  background: #fff;
+  color: #5D4037;
+  border: 1px solid #E0D0B8;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 20px;
+}
+.station-tabs button.active {
+  background: #F57C00;
+  color: #fff;
+  border-color: #F57C00;
+  box-shadow: 0 2px 8px rgba(245,124,0,.25);
+}
+.station-tabs button:hover:not(.active) {
+  background: #FFF3E0;
+  border-color: #FF9800;
+}
+
+/* 工位标签（菜品行内） */
+.station-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: #E8F5E9;
+  color: #2E7D32;
+  font-weight: 600;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.station-tag-inline {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  padding: 1px 8px;
+  background: #E8F5E9;
+  color: #2E7D32;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* 菜品变淡（非当前工位） */
+.dish-dim {
+  opacity: 0.35;
+}
+
+/* ===== 撤销订单卡片 ===== */
+.order-card.cancelled {
+  background: #ECEFF1;
+  opacity: 0.65;
+}
+.order-card.cancelled .table-no {
+  text-decoration: line-through;
+  color: #78909C;
+}
+.tag-cancelled {
+  background: #90A4AE;
+  color: #fff;
+}
+
+/* 撤单按钮 */
+.btn-danger {
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+}
+.btn-danger:hover {
+  background: #FFEBEE;
+}
+
+/* ===== 编辑模式横幅 ===== */
+.edit-banner {
+  background: #FFF3E0;
+  border: 1px solid #FFCC80;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #E65100;
+  line-height: 1.5;
+}
+
+/* 已完成菜品行只读样式 */
+.dish-item-done {
+  background: #F1F8E9;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.dish-item-done input.read-only {
+  background: transparent;
+  border-color: transparent;
+  color: #558B2F;
+}
+
+/* ===== 角色选择器 ===== */
+.role-selector {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,.12);
+  padding: 3px;
+  border-radius: 8px;
+}
+.role-chip {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: rgba(255,255,255,.75);
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.role-chip.active {
+  background: #fff;
+  color: #E08E0B;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+.role-chip:hover:not(.active) {
+  background: rgba(255,255,255,.2);
+}
+
+/* ===== 历史归档页面 ===== */
+.history-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.history-head {
+  margin-bottom: 16px;
+}
+.history-head h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #5D4A2F;
+}
+.history-sub {
+  font-size: 13px;
+  color: #8D6E63;
+  margin-top: 4px;
+}
+.empty-state {
+  text-align: center;
+  color: #A1887F;
+  font-size: 14px;
+  padding: 40px 20px;
+}
+
+/* 日期 Tab */
+.date-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.date-tab {
+  background: #fff;
+  color: #5D4037;
+  border: 1px solid #E0D0B8;
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.date-tab.active {
+  background: #F57C00;
+  color: #fff;
+  border-color: #F57C00;
+}
+.date-tab:hover:not(.active) {
+  background: #FFF3E0;
+  border-color: #FF9800;
+}
+
+/* 历史列表表格 */
+.history-table {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(139,111,71,.06);
+  overflow-x: auto;
+}
+.history-row {
+  display: flex;
+  padding: 10px 14px;
+  border-bottom: 1px dashed #F0E2CC;
+  align-items: center;
+  font-size: 13px;
+  gap: 8px;
+}
+.history-head-row {
+  font-weight: 600;
+  color: #5D4A2F;
+  background: #FFF8F0;
+  border-bottom: 2px solid #E0D0B8;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.row-cancelled {
+  opacity: 0.55;
+}
+.dish-inline {
+  white-space: nowrap;
+}
+
+/* ===== 菜品耗时分析面板 ===== */
+.analysis-panel {
+  margin: 20px 0;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(139,111,71,.06);
+}
+.analysis-panel h3 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: #5D4A2F;
+}
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.analysis-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #FFF8F0;
+  border: 1px solid #F0E2CC;
+  border-radius: 8px;
+  padding: 12px;
+}
+.analysis-rank {
+  font-size: 22px;
+  font-weight: 700;
+  color: #F57C00;
+  min-width: 32px;
+  text-align: center;
+}
+.analysis-body {
+  flex: 1;
+}
+.analysis-name {
+  font-weight: 600;
+  color: #3E2723;
+  margin-bottom: 4px;
+}
+.analysis-meta {
+  font-size: 13px;
+  color: #5D4037;
+}
+.analysis-redo {
+  font-size: 12px;
+  color: #E65100;
+  margin-top: 2px;
+}
+
+/* 菜单管理弹层加宽 */
+.modal-menu {
+  max-width: 640px;
+}
+.menu-mgr-add select {
+  flex: 0 0 160px;
+  padding: 8px 6px;
+}
+
+/* ===== 打印小票 ===== */
+@media print {
+  body * { visibility: hidden; }
+  .receipt-print, .receipt-print * { visibility: visible; }
+  .receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+  }
+}
+
+/* ===== 大屏模式第三轮补充 ===== */
+body.bigscreen .station-tabs button {
+  font-size: 17px;
+  padding: 10px 20px;
+}
+body.bigscreen .role-chip {
+  font-size: 15px;
+  padding: 6px 12px;
+}
+body.bigscreen .history-row {
+  font-size: 16px;
+  padding: 14px 18px;
+}
+body.bigscreen .analysis-card {
+  padding: 16px;
+}
+body.bigscreen .analysis-name { font-size: 16px; }
+body.bigscreen .analysis-meta { font-size: 15px; }
+body.bigscreen .date-tab { font-size: 15px; padding: 8px 18px; }

@@ -30,6 +30,8 @@ import java.util.concurrent.TimeUnit;
  *  前端 -> 后端:
  *    // 订单相关
  *    { "type": "CREATE", "tableNo":"A3", "dishes":[...], "remark":"...", "urgent":false }
+ *    { "type": "UPDATE", "orderId":"...", "tableNo":"A3", "dishes":[...], "remark":"..." }  // 改单
+ *    { "type": "CANCEL", "orderId":"...", "reason":"..." }                                     // 撤单
  *    { "type": "START",  "orderId":"ORD-1001" }
  *    { "type": "FINISH", "orderId":"ORD-1001" }
  *    { "type": "DISH_DONE", "orderId":"...", "dishId":"...", "done":true }
@@ -41,11 +43,20 @@ import java.util.concurrent.TimeUnit;
  *    { "type": "MENU_ADD",    "item":{...} }
  *    { "type": "MENU_UPDATE", "item":{...} }
  *    { "type": "MENU_DELETE", "id":"..." }
+ *    // 历史查询 / 统计 / 导出
+ *    { "type": "HISTORY_DATES" }                                        // 返回所有有归档的日期列表
+ *    { "type": "HISTORY_QUERY", "date":"YYYY-MM-DD" }                  // 返回指定日期的全部订单（内存+归档）
+ *    { "type": "DISH_ANALYSIS", "date":"YYYY-MM-DD" }                  // 返回菜品维度的耗时/重做率分析
+ *    { "type": "EXPORT_CSV",    "date":"YYYY-MM-DD" }                  // 返回该日期的 CSV 文本
  *    // 心跳
  *    { "type": "PING" }
  *  后端 -> 前端:
- *    { "type": "ORDERS", "data": [ ... ] }  全量订单列表
- *    { "type": "MENU",   "data": [ ... ] }  全量菜单
+ *    { "type": "ORDERS",        "data": [ ... ] }  全量订单列表（实时）
+ *    { "type": "MENU",          "data": [ ... ] }  全量菜单
+ *    { "type": "HISTORY_DATES", "data": ["2026-06-12","2026-06-11",...] }
+ *    { "type": "HISTORY_QUERY", "data": [ ... ], "date":"YYYY-MM-DD" }
+ *    { "type": "DISH_ANALYSIS", "data": [ ... ], "date":"YYYY-MM-DD" }
+ *    { "type": "EXPORT_CSV",    "data": "...csv文本...", "date":"YYYY-MM-DD" }
  *    { "type": "PONG" }
  */
 @ServerEndpoint("/ws")
@@ -53,11 +64,13 @@ public class KitchenSocket {
     private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
     private static OrderService orderService;
     private static MenuService menuService;
+    private static FileStore fileStore;
     private static final Gson gson = new Gson();
     private static ScheduledExecutorService heartBeat;
 
     public static void setOrderService(OrderService svc) { orderService = svc; }
     public static void setMenuService(MenuService svc) { menuService = svc; }
+    public static void setFileStore(FileStore fs) { fileStore = fs; }
 
     /** 启动心跳：每 30 秒强制广播一次全量数据 */
     public static void startHeartBeat() {
@@ -109,6 +122,24 @@ public class KitchenSocket {
                         }
                     }
                     orderService.createOrder(tableNo, dishes, remark, urgent);
+                    break;
+                }
+                case "UPDATE": {
+                    // 改单
+                    String oid = json.get("orderId").getAsString();
+                    String tableNo = json.has("tableNo") ? json.get("tableNo").getAsString() : null;
+                    String remark = json.has("remark") ? json.get("remark").getAsString() : null;
+                    List<DishItem> dishes = json.has("dishes")
+                            ? gson.fromJson(json.get("dishes"), new com.google.gson.reflect.TypeToken<List<DishItem>>() {}.getType())
+                            : null;
+                    orderService.updateOrder(oid, tableNo, dishes, remark);
+                    break;
+                }
+                case "CANCEL": {
+                    // 撤单
+                    String oid = json.get("orderId").getAsString();
+                    String reason = json.has("reason") ? json.get("reason").getAsString() : "";
+                    orderService.cancelOrder(oid, reason);
                     break;
                 }
                 case "START": {
@@ -170,6 +201,41 @@ public class KitchenSocket {
                     menuService.remove(id);
                     break;
                 }
+                // ---- 历史 / 统计 / 导出（仅回包给请求方，不广播）----
+                case "HISTORY_DATES": {
+                    if (fileStore != null) {
+                        send(session, wrap("HISTORY_DATES", fileStore.listArchiveDates()));
+                    }
+                    break;
+                }
+                case "HISTORY_QUERY": {
+                    String date = json.has("date") ? json.get("date").getAsString() : FileStore.todayStr();
+                    List<Order> archive = (fileStore != null) ? fileStore.loadDailyArchive(date) : new ArrayList<>();
+                    List<Order> merged = (orderService != null)
+                            ? orderService.listByDateWithArchive(date, archive)
+                            : archive;
+                    send(session, wrapDate("HISTORY_QUERY", merged, date));
+                    break;
+                }
+                case "DISH_ANALYSIS": {
+                    String date = json.has("date") ? json.get("date").getAsString() : FileStore.todayStr();
+                    List<Order> archive = (fileStore != null) ? fileStore.loadDailyArchive(date) : new ArrayList<>();
+                    List<Order> merged = (orderService != null)
+                            ? orderService.listByDateWithArchive(date, archive)
+                            : archive;
+                    send(session, wrapDate("DISH_ANALYSIS", OrderService.dishAnalysis(merged), date));
+                    break;
+                }
+                case "EXPORT_CSV": {
+                    String date = json.has("date") ? json.get("date").getAsString() : FileStore.todayStr();
+                    List<Order> archive = (fileStore != null) ? fileStore.loadDailyArchive(date) : new ArrayList<>();
+                    List<Order> merged = (orderService != null)
+                            ? orderService.listByDateWithArchive(date, archive)
+                            : archive;
+                    String csv = OrderService.exportCsv(merged);
+                    send(session, wrapDate("EXPORT_CSV", csv, date));
+                    break;
+                }
                 case "PING": {
                     send(session, "{\"type\":\"PONG\"}");
                     break;
@@ -200,6 +266,18 @@ public class KitchenSocket {
         JsonObject obj = new JsonObject();
         obj.addProperty("type", type);
         obj.add("data", new JsonParser().parse(gson.toJson(data)));
+        return gson.toJson(obj);
+    }
+
+    private static String wrapDate(String type, Object data, String date) {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("type", type);
+        obj.addProperty("date", date);
+        if (data instanceof String) {
+            obj.addProperty("data", (String) data);
+        } else {
+            obj.add("data", new JsonParser().parse(gson.toJson(data)));
+        }
         return gson.toJson(obj);
     }
 

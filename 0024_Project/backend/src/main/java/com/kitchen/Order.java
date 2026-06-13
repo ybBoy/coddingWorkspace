@@ -10,18 +10,20 @@ import java.util.List;
  * 被 FileStore 持久化，被 OrderService 操作，被 KitchenSocket 广播到前端
  */
 public class Order {
-    public enum Status { NEW, COOKING, DONE }
+    public enum Status { NEW, COOKING, DONE, CANCELLED }
     public enum Priority { NORMAL, HIGH }  // 加急标记
 
     private String id;              // 订单号，如"ORD-1001"
     private String tableNo;         // 桌号，如"A3"、"12"
     private List<DishItem> dishes;  // 多个菜品
     private String remark;          // 订单整体备注
-    private Status status;          // NEW / COOKING / DONE
+    private Status status;          // NEW / COOKING / DONE / CANCELLED
     private Priority priority;      // 普通 / 加急
     private long createdAt;         // 下单时间戳(ms)
     private long updatedAt;         // 最后更新时间戳
     private long finishedAt;        // 整单出餐时间戳(0 表示未完成)
+    private long cancelledAt;       // 撤销时间戳(0 表示未撤销)
+    private String cancelReason;    // 撤销原因
 
     public Order() {
         this.dishes = new ArrayList<>();
@@ -40,11 +42,13 @@ public class Order {
         this.createdAt = now;
         this.updatedAt = now;
         this.finishedAt = 0L;
+        this.cancelledAt = 0L;
+        this.cancelReason = null;
     }
 
-    /** 超过 15 分钟且未完成 => 超时 */
+    /** 超过 15 分钟且未完成 => 超时（撤销单不算超时） */
     public boolean isTimeout() {
-        if (status == Status.DONE) return false;
+        if (status == Status.DONE || status == Status.CANCELLED) return false;
         return System.currentTimeMillis() - createdAt > 15 * 60 * 1000L;
     }
 
@@ -87,8 +91,12 @@ public class Order {
     public Status getStatus() { return status; }
     public void setStatus(Status status) {
         this.status = status;
+        long now = System.currentTimeMillis();
         if (status == Status.DONE && this.finishedAt == 0) {
-            this.finishedAt = System.currentTimeMillis();
+            this.finishedAt = now;
+        }
+        if (status == Status.CANCELLED && this.cancelledAt == 0) {
+            this.cancelledAt = now;
         }
     }
     public Priority getPriority() { return priority; }
@@ -99,4 +107,8 @@ public class Order {
     public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
     public long getFinishedAt() { return finishedAt; }
     public void setFinishedAt(long finishedAt) { this.finishedAt = finishedAt; }
+    public long getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(long cancelledAt) { this.cancelledAt = cancelledAt; }
+    public String getCancelReason() { return cancelReason; }
+    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
 }

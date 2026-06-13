@@ -66,8 +66,12 @@ public class AppServer {
         MenuService menuService = new MenuService();
         menuService.restoreFrom(fileStore.loadMenu());
 
+        // 双向关联：下单时根据菜单分配工位
+        orderService.setMenuService(menuService);
+
         KitchenSocket.setOrderService(orderService);
         KitchenSocket.setMenuService(menuService);
+        KitchenSocket.setFileStore(fileStore);  // 历史查询需要读归档
         KitchenSocket.startHeartBeat();
 
         fileStore.startAutoSave(orderService, menuService);
@@ -105,6 +109,15 @@ public class AppServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 System.out.println("[App] saving before exit...");
+                // 停机前把所有（包括<24h的）DONE/CANCELLED 订单都归档一次
+                // 把内存里剩下的 DONE/CANCELLED 也归档
+                java.util.List<Order> remaining = new java.util.ArrayList<>();
+                for (Order o : orderService.listAll()) {
+                    if (o.getStatus() == Order.Status.DONE || o.getStatus() == Order.Status.CANCELLED) {
+                        remaining.add(o);
+                    }
+                }
+                if (!remaining.isEmpty()) fileStore.appendDailyArchive(remaining);
                 fileStore.saveOrders(orderService.listPendingOrders());
                 fileStore.saveMenu(menuService.listAll());
                 fileStore.shutdown();

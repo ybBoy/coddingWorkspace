@@ -8,6 +8,7 @@ public class MenuItem {
     private String id;         // UUID
     private String name;       // 菜名，如"红烧牛肉面"
     private String category;   // 分类，如"主食"/"饮品"/"小吃"（可选，用于分组显示）
+    private String station;    // 制作工位：如"热菜"/"饮品"/"主食"（下单时自动带入 DishItem）
     private double price;      // 价格（暂不参与计算，仅供展示）
     private int sort;          // 排序号，小的在前
     private boolean enabled;   // 是否启用（下架/上架）
@@ -18,6 +19,7 @@ public class MenuItem {
         this.id = id;
         this.name = name;
         this.category = category;
+        this.station = null;
         this.price = price;
         this.sort = sort;
         this.enabled = true;
@@ -30,6 +32,8 @@ public class MenuItem {
     public void setName(String name) { this.name = name; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public String getStation() { return station; }
+    public void setStation(String station) { this.station = station; }
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
     public int getSort() { return sort; }

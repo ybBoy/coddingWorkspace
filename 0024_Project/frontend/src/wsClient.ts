@@ -65,6 +65,14 @@ class WsClient {
           EventBus.emit(EVT.ORDERS_UPDATED, orders)
         } else if (msg.type === 'MENU' && Array.isArray(msg.data)) {
           EventBus.emit(EVT.MENU_UPDATED, msg.data as MenuItem[])
+        } else if (msg.type === 'HISTORY_DATES' && Array.isArray(msg.data)) {
+          EventBus.emit(EVT.HISTORY_DATES, msg.data as string[])
+        } else if (msg.type === 'HISTORY_QUERY') {
+          EventBus.emit(EVT.HISTORY_RESULT, { date: msg.date, orders: msg.data || [] })
+        } else if (msg.type === 'DISH_ANALYSIS') {
+          EventBus.emit(EVT.DISH_ANALYSIS_RESULT, { date: msg.date, analysis: msg.data || [] })
+        } else if (msg.type === 'EXPORT_CSV') {
+          EventBus.emit(EVT.EXPORT_CSV_RESULT, { date: msg.date, csv: msg.data || '' })
         }
       } catch (e) {
         console.error('[WS] parse failed', e)

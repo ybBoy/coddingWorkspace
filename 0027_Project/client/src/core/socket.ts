@@ -1,6 +1,7 @@
 import {
   eventBus,
   EVENT_CHECKIN,
+  EVENT_CHECKIN_ERROR,
   EVENT_STATS_REFRESH,
   EVENT_RECORDS_UPDATE,
 } from './EventBus'
@@ -116,13 +117,14 @@ class WSocket {
         break
       case 'checkIn':
         eventBus.emit(EVENT_CHECKIN, payload.record)
-        eventBus.emit(EVENT_STATS_REFRESH, payload.stats)
-        eventBus.emit(EVENT_RECORDS_UPDATE, payload.records)
+        eventBus.emit(EVENT_STATS_REFRESH, payload)
+        eventBus.emit(EVENT_RECORDS_UPDATE, payload.recentRecords)
         break
       case 'statsUpdate':
         eventBus.emit(EVENT_STATS_REFRESH, payload)
         break
       case 'error':
+        eventBus.emit(EVENT_CHECKIN_ERROR, payload)
         console.error('[WSocket] Server error:', payload)
         break
       default:

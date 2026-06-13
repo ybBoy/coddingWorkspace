@@ -1,6 +1,7 @@
 export type EventCallback = (data?: any) => void
 
 export const EVENT_CHECKIN = 'checkIn'
+export const EVENT_CHECKIN_ERROR = 'checkInError'
 export const EVENT_FILTER_CHANGE = 'filterChange'
 export const EVENT_STATS_REFRESH = 'statsRefresh'
 export const EVENT_RECORDS_UPDATE = 'recordsUpdate'

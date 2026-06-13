@@ -1,5 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { socket } from '../core/socket'
+import {
+  eventBus,
+  EVENT_CHECKIN,
+  EVENT_CHECKIN_ERROR,
+} from '../core/EventBus'
 
 interface CheckInFormProps {
   boothId: string
@@ -22,6 +27,41 @@ function CheckInForm({ boothId }: CheckInFormProps) {
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const pendingRef = useRef(false)
+  const successTimerRef = useRef<any>(null)
+
+  useEffect(() => {
+    const handleCheckInSuccess = () => {
+      if (pendingRef.current) {
+        pendingRef.current = false
+        setSubmitting(false)
+        setSuccess('签到成功！')
+        setName('')
+        setPhoneSuffix('')
+        setSelectedProjects([])
+        if (successTimerRef.current) clearTimeout(successTimerRef.current)
+        successTimerRef.current = setTimeout(() => setSuccess(''), 3000)
+      }
+    }
+
+    const handleCheckInError = (payload: any) => {
+      if (pendingRef.current) {
+        pendingRef.current = false
+        setSubmitting(false)
+        setError(payload?.message || '签到失败，请重试')
+      }
+    }
+
+    const unsub1 = eventBus.on(EVENT_CHECKIN, handleCheckInSuccess)
+    const unsub2 = eventBus.on(EVENT_CHECKIN_ERROR, handleCheckInError)
+
+    return () => {
+      unsub1()
+      unsub2()
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    }
+  }, [])
 
   const handleProjectToggle = (project: string) => {
     setSelectedProjects((prev) =>
@@ -47,13 +87,6 @@ function CheckInForm({ boothId }: CheckInFormProps) {
     return true
   }
 
-  const clearForm = () => {
-    setName('')
-    setPhoneSuffix('')
-    setSelectedProjects([])
-    setError('')
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -66,25 +99,25 @@ function CheckInForm({ boothId }: CheckInFormProps) {
       return
     }
 
-    try {
-      socket.sendCheckIn({
-        boothId,
-        visitor: {
-          name: name.trim(),
-          phoneSuffix,
-        },
-        interestedProjects: [...selectedProjects],
-      })
+    pendingRef.current = true
+    setSubmitting(true)
 
-      setSuccess('签到成功！')
-      clearForm()
+    socket.sendCheckIn({
+      boothId,
+      visitor: {
+        name: name.trim(),
+        phoneSuffix,
+      },
+      interestedProjects: [...selectedProjects],
+    })
 
-      setTimeout(() => {
-        setSuccess('')
-      }, 3000)
-    } catch (err) {
-      setError('签到失败，请重试')
-    }
+    setTimeout(() => {
+      if (pendingRef.current) {
+        pendingRef.current = false
+        setSubmitting(false)
+        setError('服务器响应超时，请重试')
+      }
+    }, 8000)
   }
 
   return (
@@ -104,6 +137,7 @@ function CheckInForm({ boothId }: CheckInFormProps) {
             onChange={(e) => setName(e.target.value)}
             placeholder="请输入访客姓名"
             maxLength={20}
+            disabled={submitting}
           />
         </div>
 
@@ -121,6 +155,7 @@ function CheckInForm({ boothId }: CheckInFormProps) {
             maxLength={4}
             pattern="\d{4}"
             inputMode="numeric"
+            disabled={submitting}
           />
         </div>
 
@@ -138,6 +173,7 @@ function CheckInForm({ boothId }: CheckInFormProps) {
                   type="checkbox"
                   checked={selectedProjects.includes(project)}
                   onChange={() => handleProjectToggle(project)}
+                  disabled={submitting}
                 />
                 <span>{project}</span>
               </label>
@@ -145,8 +181,8 @@ function CheckInForm({ boothId }: CheckInFormProps) {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary">
-          提交签到
+        <button type="submit" className="btn-primary" disabled={submitting}>
+          {submitting ? '提交中...' : '提交签到'}
         </button>
       </form>
     </div>

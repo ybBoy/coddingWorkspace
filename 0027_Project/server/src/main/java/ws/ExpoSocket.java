@@ -126,7 +126,7 @@ public class ExpoSocket extends WebSocketServer {
         message.put("type", "checkIn");
         message.put("payload", payload);
 
-        broadcast(gson.toJson(message));
+        broadcastAll(gson.toJson(message));
     }
 
     private void sendSnapshot(WebSocket conn) {
@@ -154,7 +154,7 @@ public class ExpoSocket extends WebSocketServer {
         conn.send(gson.toJson(message));
     }
 
-    private void broadcast(String message) {
+    private void broadcastAll(String message) {
         for (WebSocket conn : connections) {
             if (conn.isOpen()) {
                 conn.send(message);

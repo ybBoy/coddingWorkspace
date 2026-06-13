@@ -4,7 +4,6 @@ import type { Booth, CheckInRecord, SnapshotData } from '../core/socket'
 import { socket } from '../core/socket'
 import {
   eventBus,
-  EVENT_CHECKIN,
   EVENT_STATS_REFRESH,
   EVENT_RECORDS_UPDATE,
 } from '../core/EventBus'
@@ -20,17 +19,12 @@ function BoothPage() {
     DEFAULT_BOOTHS[0].id
   )
   const [booths, setBooths] = useState<Booth[]>(DEFAULT_BOOTHS)
-  const [boothStats, setBoothStats] = useState<Record<string, number>>({})
   const [records, setRecords] = useState<CheckInRecord[]>([])
-  const [todayCount, setTodayCount] = useState(0)
 
   useEffect(() => {
     const handleStatsRefresh = (data: SnapshotData) => {
       if (data.booths && data.booths.length > 0) {
         setBooths(data.booths)
-      }
-      if (data.boothStats) {
-        setBoothStats(data.boothStats)
       }
     }
 
@@ -40,27 +34,22 @@ function BoothPage() {
       }
     }
 
-    const handleCheckIn = (record: CheckInRecord) => {
-      if (record && record.boothId === selectedBoothId) {
-        setTodayCount((prev) => prev + 1)
-      }
-    }
-
     const unsub1 = eventBus.on(EVENT_STATS_REFRESH, handleStatsRefresh)
     const unsub2 = eventBus.on(EVENT_RECORDS_UPDATE, handleRecordsUpdate)
-    const unsub3 = eventBus.on(EVENT_CHECKIN, handleCheckIn)
 
     return () => {
       unsub1()
       unsub2()
-      unsub3()
     }
   }, [selectedBoothId])
 
-  useEffect(() => {
-    const count = boothStats[selectedBoothId] || 0
-    setTodayCount(count)
-  }, [boothStats, selectedBoothId])
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  const todayStartTs = todayStart.getTime()
+
+  const todayCount = records
+    .filter((r) => r.boothId === selectedBoothId && r.timestamp >= todayStartTs)
+    .length
 
   useEffect(() => {
     socket.connect()

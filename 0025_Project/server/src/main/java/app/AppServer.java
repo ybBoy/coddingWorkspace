@@ -1,6 +1,6 @@
 package app;
 
-import service.ReadingService;
+import service.RoomService;
 import store.JsonFileStore;
 import ws.ReadingSocket;
 
@@ -24,16 +24,16 @@ public class AppServer {
         System.out.println("=====================================");
 
         JsonFileStore store = new JsonFileStore(dataFilePath, null);
-        ReadingService service = new ReadingService(store);
+        RoomService service = new RoomService(store);
 
         JsonFileStore storeWithHook = new JsonFileStore(dataFilePath, () ->
-                store.save(service.getArticle(), service.getAllNotes()));
+                store.saveRooms(service.listRooms()));
 
         ReadingSocket socket = new ReadingSocket(port, service);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n[Shutdown] Saving final state...");
-            store.save(service.getArticle(), service.getAllNotes());
+            store.saveRooms(service.listRooms());
             try {
                 socket.stop(1000, "Server shutting down");
             } catch (Exception ignored) {}

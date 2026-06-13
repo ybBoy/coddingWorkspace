@@ -18,7 +18,11 @@ class EventBus {
     if (set) set.delete(handler);
   }
 
-  emit<K extends keyof EventMap>(event: K, data: EventMap[K]): void {
+  emit<K extends keyof EventMap>(
+    event: K,
+    ...args: EventMap[K] extends void ? [data?: EventMap[K]] : [data: EventMap[K]]
+  ): void {
+    const data = args[0] as EventMap[K];
     const set = this.listeners.get(event);
     if (set) {
       set.forEach(fn => {

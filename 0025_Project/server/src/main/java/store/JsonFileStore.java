@@ -3,8 +3,7 @@ package store;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import domain.Article;
-import domain.Note;
+import domain.Room;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -20,25 +19,23 @@ public class JsonFileStore {
     private final Runnable saveHook;
 
     public static class StoreData {
-        Article article;
-        List<Note> notes;
+        List<Room> rooms;
 
         public StoreData() {}
-        public StoreData(Article article, List<Note> notes) {
-            this.article = article;
-            this.notes = notes;
+        public StoreData(List<Room> rooms) {
+            this.rooms = rooms;
         }
 
-        public Article getArticle() { return article; }
-        public void setArticle(Article article) { this.article = article; }
-
-        public List<Note> getNotes() { return notes; }
-        public void setNotes(List<Note> notes) { this.notes = notes; }
+        public List<Room> getRooms() { return rooms; }
+        public void setRooms(List<Room> rooms) { this.rooms = rooms; }
     }
 
     public JsonFileStore(String filePath, Runnable saveHook) {
         this.dataFile = new File(filePath);
-        this.gson = new GsonBuilder().setPrettyPrinting().create();
+        this.gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create();
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "json-store-scheduler");
             t.setDaemon(true);
@@ -58,12 +55,11 @@ public class JsonFileStore {
         }, 10, 10, TimeUnit.SECONDS);
     }
 
-    public synchronized void save(Article article, List<Note> notes) {
-        StoreData data = new StoreData(article, notes);
+    public synchronized void saveRooms(List<Room> rooms) {
+        StoreData data = new StoreData(rooms);
         try (Writer writer = new OutputStreamWriter(
                 new FileOutputStream(dataFile), StandardCharsets.UTF_8)) {
             gson.toJson(data, writer);
-            System.out.println("[Store] Data saved to " + dataFile.getAbsolutePath());
         } catch (IOException e) {
             System.err.println("[Store] Failed to save data: " + e.getMessage());
         }
@@ -77,9 +73,8 @@ public class JsonFileStore {
         try (Reader reader = new InputStreamReader(
                 new FileInputStream(dataFile), StandardCharsets.UTF_8)) {
             StoreData data = gson.fromJson(reader, new TypeToken<StoreData>(){}.getType());
-            if (data != null && data.article != null) {
-                System.out.println("[Store] Data loaded from " + dataFile.getAbsolutePath());
-                if (data.notes == null) data.notes = new ArrayList<>();
+            if (data != null && data.rooms != null) {
+                System.out.println("[Store] Data loaded: " + data.rooms.size() + " rooms");
                 return Optional.of(data);
             }
         } catch (IOException e) {

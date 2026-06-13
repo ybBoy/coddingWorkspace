@@ -1,10 +1,11 @@
-import React from 'react';
-import type { Article, SocketStatus } from '../../core/types';
+import React, { useState } from 'react';
+import type { Article, SocketStatus, Presence } from '../../core/types';
 import eventBus from '../../core/EventBus';
 
 interface Props {
   article: Article | null;
   isModerator: boolean;
+  isOwner: boolean;
   setIsModerator: (v: boolean) => void;
   moderators: string[];
   userName: string;
@@ -12,7 +13,14 @@ interface Props {
   socketStatus: SocketStatus;
   onlineCount: number;
   onlineNames?: string[];
+  typingUsers?: string[];
+  presences?: Presence[];
+  roomName: string;
+  ownerName: string;
+  roomId: string;
   onOpenNotesMobile?: () => void;
+  onLeaveRoom?: () => void;
+  onStartReplay?: () => void;
 }
 
 const STATUS_META: Record<SocketStatus, { label: string; cls: string }> = {
@@ -23,9 +31,12 @@ const STATUS_META: Record<SocketStatus, { label: string; cls: string }> = {
 };
 
 const ModeratorBar: React.FC<Props> = ({
-  article, isModerator, setIsModerator, moderators,
-  userName, setUserName, socketStatus, onlineCount, onlineNames, onOpenNotesMobile
+  article, isModerator, isOwner, setIsModerator, moderators,
+  userName, setUserName, socketStatus, onlineCount, onlineNames,
+  typingUsers, roomName, ownerName,
+  onOpenNotesMobile, onLeaveRoom, onStartReplay
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
   const currentIdx = article ? article.paragraphs.findIndex(p => p.id === article.currentParagraphId) : -1;
   const total = article?.paragraphs.length || 0;
   const canPrev = currentIdx > 0;
@@ -33,13 +44,21 @@ const ModeratorBar: React.FC<Props> = ({
   const status = STATUS_META[socketStatus];
   const currentModeratorName = moderators?.[0];
 
+  const typingText = typingUsers && typingUsers.length > 0
+    ? typingUsers.slice(0, 3).join('、') + (typingUsers.length > 3 ? ` 等${typingUsers.length}人` : '') + ' 正在输入…'
+    : '';
+
   return (
     <header className="topbar">
       <div className="topbar__brand">
-        <span className="topbar__logo">📚</span>
+        <button className="topbar__back" onClick={onLeaveRoom} title="返回房间列表">
+          ←
+        </button>
         <div className="topbar__title-group">
-          <h1 className="topbar__title">共读标注板</h1>
-          <span className="topbar__subtitle">线上读书会 · 实时互动</span>
+          <h1 className="topbar__title">{roomName || '共读标注板'}</h1>
+          <span className="topbar__subtitle">
+            房主: {ownerName || 'system'} · {article?.title || '加载中'}
+          </span>
         </div>
       </div>
 
@@ -59,6 +78,15 @@ const ModeratorBar: React.FC<Props> = ({
             </span>
           )}
         </div>
+
+        {typingText && (
+          <span className="typing-indicator">
+            <span className="typing-indicator__dots">
+              <span /><span /><span />
+            </span>
+            {typingText}
+          </span>
+        )}
 
         {isModerator && article && (
           <div className="moderator-ctrl">
@@ -87,6 +115,31 @@ const ModeratorBar: React.FC<Props> = ({
       </div>
 
       <div className="topbar__right">
+        <div className="topbar__menu">
+          <button
+            className="btn btn--ghost topbar__menubtn"
+            onClick={() => setShowMenu(v => !v)}
+          >
+            ⋯ 更多
+          </button>
+          {showMenu && (
+            <div className="topbar__dropdown" onClick={() => setShowMenu(false)}>
+              <button className="topbar__menuitem" onClick={() => { eventBus.emit('REQUEST_EXPORT_MD'); }}>
+                📄 导出 Markdown
+              </button>
+              <button className="topbar__menuitem" onClick={() => { eventBus.emit('REQUEST_EXPORT_JSON'); }}>
+                💾 导出 JSON
+              </button>
+              <button className="topbar__menuitem" onClick={() => { onStartReplay && onStartReplay(); }}>
+                🎬 回放模式
+              </button>
+              <button className="topbar__menuitem topbar__menuitem--danger" onClick={() => { onLeaveRoom && onLeaveRoom(); }}>
+                🚪 离开房间
+              </button>
+            </div>
+          )}
+        </div>
+
         <label className="name-input">
           <span className="name-input__label">昵称</span>
           <input
@@ -98,7 +151,7 @@ const ModeratorBar: React.FC<Props> = ({
           />
         </label>
 
-        <label className="switch-wrap" title={isModerator ? '当前为主持人身份' : '切换为主持人（需服务端授权）'}>
+        <label className="switch-wrap" title={isModerator ? '当前为主持人身份' : '切换为主持人（需房主授权）'}>
           <input
             type="checkbox"
             checked={isModerator}
@@ -106,7 +159,7 @@ const ModeratorBar: React.FC<Props> = ({
           />
           <span className="switch-wrap__slider" />
           <span className="switch-wrap__text">
-            {isModerator ? '🎙️ 主持人' : '主持人模式'}
+            {isOwner ? '👑 房主' : isModerator ? '🎙️ 主持人' : '主持人模式'}
           </span>
         </label>
 

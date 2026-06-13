@@ -2,11 +2,11 @@ package ws;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import domain.Note;
+import domain.*;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
-import service.ReadingService;
+import service.RoomService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -16,12 +16,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ReadingSocket extends WebSocketServer {
-    private final ReadingService service;
+    private final RoomService service;
     private final Gson gson;
     private final Set<WebSocket> connections;
     private final Map<WebSocket, String> userNames;
-    private final Map<WebSocket, Boolean> moderatorMap;
-    private static final String MODERATOR_TOKEN = "reading-moderator-2025";
+    private final Map<WebSocket, String> connRoomMap;
 
     public static class WsMessage {
         String type;
@@ -45,7 +44,7 @@ public class ReadingSocket extends WebSocketServer {
         public void setSender(String sender) { this.sender = sender; }
     }
 
-    public ReadingSocket(int port, ReadingService service) {
+    public ReadingSocket(int port, RoomService service) {
         super(new InetSocketAddress(port));
         this.service = service;
         this.gson = new GsonBuilder()
@@ -54,30 +53,33 @@ public class ReadingSocket extends WebSocketServer {
                 .create();
         this.connections = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.userNames = new ConcurrentHashMap<>();
-        this.moderatorMap = new ConcurrentHashMap<>();
+        this.connRoomMap = new ConcurrentHashMap<>();
     }
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         connections.add(conn);
-        String nameFromQuery = extractNameFromQuery(handshake);
+        String nameFromQuery = extractParamFromQuery(handshake, "name");
+        String roomFromQuery = extractParamFromQuery(handshake, "room");
         if (nameFromQuery != null && !nameFromQuery.isEmpty()) {
             userNames.put(conn, nameFromQuery);
         }
+        if (roomFromQuery != null && !roomFromQuery.isEmpty()) {
+            connRoomMap.put(conn, roomFromQuery);
+        }
         System.out.println("[WS] New connection: " + conn.getRemoteSocketAddress()
-                + (nameFromQuery != null ? " (" + nameFromQuery + ")" : ""));
-        sendTo(conn, new WsMessage("INIT", buildInitData(conn), null));
-        broadcastOnlineCount();
+                + (nameFromQuery != null ? " (" + nameFromQuery + ")" : "")
+                + (roomFromQuery != null ? " room=" + roomFromQuery : ""));
     }
 
-    private String extractNameFromQuery(ClientHandshake handshake) {
+    private String extractParamFromQuery(ClientHandshake handshake, String key) {
         try {
             String res = handshake.getResourceDescriptor();
             if (res == null || !res.contains("?")) return null;
             String q = res.substring(res.indexOf('?') + 1);
             for (String pair : q.split("&")) {
                 String[] kv = pair.split("=", 2);
-                if (kv.length == 2 && "name".equals(kv[0])) {
+                if (kv.length == 2 && key.equals(kv[0])) {
                     return URLDecoder.decode(kv[1], "UTF-8");
                 }
             }
@@ -89,10 +91,13 @@ public class ReadingSocket extends WebSocketServer {
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         connections.remove(conn);
         String name = userNames.remove(conn);
-        moderatorMap.remove(conn);
+        String roomId = connRoomMap.remove(conn);
+        if (roomId != null && name != null) {
+            service.leaveRoom(roomId, name);
+            broadcastRoomPresence(roomId);
+        }
         System.out.println("[WS] Connection closed: " + conn.getRemoteSocketAddress()
                 + (name != null ? " (" + name + ")" : ""));
-        broadcastOnlineCount();
     }
 
     @Override
@@ -104,6 +109,7 @@ public class ReadingSocket extends WebSocketServer {
             handleMessage(conn, msg);
         } catch (Exception e) {
             System.err.println("[WS] Message parse error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -154,38 +160,95 @@ public class ReadingSocket extends WebSocketServer {
         if (sender != null && !sender.trim().isEmpty()) {
             userNames.put(conn, sender.trim());
         }
+        String userName = userNames.get(conn);
+        if (userName == null || userName.isEmpty()) {
+            userName = "匿名";
+            userNames.put(conn, userName);
+        }
+
         switch (msg.type) {
+            case "LIST_ROOMS": {
+                List<Map<String, Object>> roomList = new ArrayList<>();
+                for (Room r : service.listRooms()) {
+                    Map<String, Object> rm = new LinkedHashMap<>();
+                    rm.put("id", r.getId());
+                    rm.put("name", r.getName());
+                    rm.put("hasPasscode", r.getPasscode() != null && !r.getPasscode().isEmpty());
+                    rm.put("onlineCount", r.getOnlineCount());
+                    rm.put("articleTitle", r.getArticle().getTitle());
+                    rm.put("ownerName", r.getOwnerName());
+                    rm.put("createdAt", r.getCreatedAt());
+                    roomList.add(rm);
+                }
+                sendTo(conn, new WsMessage("ROOM_LIST", roomList, null));
+                break;
+            }
+            case "CREATE_ROOM": {
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String name = p.get("name") != null ? p.get("name").toString() : "新共读室";
+                String passcode = p.get("passcode") != null ? p.get("passcode").toString() : "";
+                Room room = service.createRoom(name, passcode, userName, null);
+                connRoomMap.put(conn, room.getId());
+                sendTo(conn, new WsMessage("ROOM_CREATED", buildRoomState(room, userName), userName));
+                broadcastRoomPresence(room.getId());
+                break;
+            }
+            case "JOIN_ROOM": {
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String roomId = p.get("roomId") != null ? p.get("roomId").toString() : "default";
+                String passcode = p.get("passcode") != null ? p.get("passcode").toString() : "";
+                boolean ok = service.joinRoom(roomId, userName, passcode);
+                if (ok) {
+                    connRoomMap.put(conn, roomId);
+                    Room room = service.getRoom(roomId);
+                    sendTo(conn, new WsMessage("ROOM_JOINED", buildRoomState(room, userName), userName));
+                    broadcastRoomPresence(roomId);
+                } else {
+                    sendError(conn, "JOIN_ROOM", "房间不存在或口令错误");
+                }
+                break;
+            }
             case "SET_NAME": {
                 if (msg.payload != null) {
                     String name = msg.payload.toString().trim();
-                    if (!name.isEmpty()) userNames.put(conn, name);
+                    if (!name.isEmpty()) {
+                        String oldRoom = connRoomMap.get(conn);
+                        userNames.put(conn, name);
+                        if (oldRoom != null) {
+                            broadcastRoomPresence(oldRoom);
+                        }
+                    }
                 }
                 break;
             }
             case "SET_MODERATOR": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "SET_MODERATOR", "未加入房间"); break; }
                 Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String target = p.get("target") != null ? p.get("target").toString() : userName;
                 boolean wantMod = Boolean.TRUE.equals(p.get("moderator"));
-                String token = p.get("token") != null ? p.get("token").toString() : "";
-                boolean granted = MODERATOR_TOKEN.equals(token);
-                if (wantMod) {
-                    if (granted || moderatorMap.isEmpty()) {
-                        moderatorMap.put(conn, true);
-                        sendTo(conn, new WsMessage("MODERATOR_GRANTED", true, null));
-                        broadcastModeratorList();
-                    } else {
-                        sendTo(conn, new WsMessage("MODERATOR_DENIED", "已存在主持人", null));
-                    }
+                if (service.setModerator(roomId, target, wantMod, userName)) {
+                    broadcastRoomState(roomId);
                 } else {
-                    moderatorMap.remove(conn);
-                    broadcastModeratorList();
+                    sendError(conn, "SET_MODERATOR", "权限不足");
                 }
                 break;
             }
+            case "PRESENCE_UPDATE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String paragraphId = p.get("paragraphId") != null ? p.get("paragraphId").toString() : null;
+                Boolean typing = p.get("typing") != null ? (Boolean) p.get("typing") : null;
+                service.updatePresence(roomId, userName, paragraphId, typing);
+                broadcastRoomPresence(roomId);
+                break;
+            }
             case "ADD_NOTE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "ADD_NOTE", "未加入房间"); break; }
                 Map<String, Object> p = (Map<String, Object>) msg.payload;
                 String paragraphId = (String) p.get("paragraphId");
-                String author = userNames.get(conn);
-                if (author == null) author = p.get("author") != null ? p.get("author").toString() : "匿名";
                 String content = (String) p.get("content");
                 Note.NoteType type;
                 try {
@@ -193,86 +256,211 @@ public class ReadingSocket extends WebSocketServer {
                 } catch (Exception e) {
                     type = Note.NoteType.THOUGHT;
                 }
-                Note note = service.addNote(paragraphId, author, content, type);
+                Note note = service.addNote(roomId, paragraphId, userName, content, type);
                 if (note != null) {
-                    broadcast(new WsMessage("NOTE_ADDED", note, author));
+                    broadcastRoom(roomId, new WsMessage("NOTE_ADDED", note, userName));
+                }
+                break;
+            }
+            case "ADD_REPLY": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "ADD_REPLY", "未加入房间"); break; }
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String noteId = (String) p.get("noteId");
+                String parentReplyId = p.get("parentReplyId") != null ? p.get("parentReplyId").toString() : null;
+                String content = (String) p.get("content");
+                Reply reply = service.addReply(roomId, noteId, parentReplyId, userName, content);
+                if (reply != null) {
+                    broadcastRoom(roomId, new WsMessage("REPLY_ADDED", reply, userName));
                 }
                 break;
             }
             case "TOGGLE_LIKE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
                 Map<String, Object> p = (Map<String, Object>) msg.payload;
                 String noteId = (String) p.get("noteId");
-                String user = userNames.get(conn);
-                if (user == null) user = "匿名";
-                if (service.toggleLike(noteId, user)) {
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put("noteId", noteId);
-                    payload.put("likes", service.getAllNotes().stream()
-                            .filter(n -> noteId.equals(n.getId()))
-                            .findFirst()
-                            .map(n -> {
-                                Map<String, Object> m = new HashMap<>();
-                                m.put("count", n.getLikeCount());
-                                m.put("users", n.getLikes());
-                                return m;
-                            }).orElse(null));
-                    payload.put("user", user);
-                    broadcast(new WsMessage("LIKE_UPDATED", payload, user));
+                if (service.toggleLike(roomId, noteId, userName)) {
+                    Room room = service.getRoom(roomId);
+                    Note note = room.getNotes().stream()
+                            .filter(n -> noteId.equals(n.getId())).findFirst().orElse(null);
+                    if (note != null) {
+                        Map<String, Object> payload = new HashMap<>();
+                        payload.put("noteId", noteId);
+                        Map<String, Object> likes = new HashMap<>();
+                        likes.put("count", note.getLikeCount());
+                        likes.put("users", note.getLikes());
+                        payload.put("likes", likes);
+                        payload.put("user", userName);
+                        broadcastRoom(roomId, new WsMessage("LIKE_UPDATED", payload, userName));
+                    }
+                }
+                break;
+            }
+            case "TOGGLE_LIKE_REPLY": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String replyId = (String) p.get("replyId");
+                if (service.toggleLikeReply(roomId, replyId, userName)) {
+                    Room room = service.getRoom(roomId);
+                    Reply reply = room.getReplies().stream()
+                            .filter(r -> replyId.equals(r.getId())).findFirst().orElse(null);
+                    if (reply != null) {
+                        Map<String, Object> payload = new HashMap<>();
+                        payload.put("replyId", replyId);
+                        Map<String, Object> likes = new HashMap<>();
+                        likes.put("count", reply.getLikeCount());
+                        likes.put("users", reply.getLikes());
+                        payload.put("likes", likes);
+                        payload.put("user", userName);
+                        broadcastRoom(roomId, new WsMessage("REPLY_LIKE_UPDATED", payload, userName));
+                    }
                 }
                 break;
             }
             case "TOGGLE_HIGHLIGHT": {
-                if (!isModerator(conn)) {
-                    sendError(conn, "TOGGLE_HIGHLIGHT", "仅主持人可标记重点");
-                    break;
-                }
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "TOGGLE_HIGHLIGHT", "未加入房间"); break; }
                 Map<String, Object> p = (Map<String, Object>) msg.payload;
                 String noteId = (String) p.get("noteId");
-                if (service.toggleHighlight(noteId)) {
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put("noteId", noteId);
-                    payload.put("highlighted", service.getAllNotes().stream()
-                            .filter(n -> noteId.equals(n.getId()))
-                            .findFirst()
-                            .map(Note::isHighlighted).orElse(false));
-                    broadcast(new WsMessage("HIGHLIGHT_UPDATED", payload, userNames.get(conn)));
+                if (service.toggleHighlight(roomId, noteId, userName)) {
+                    Room room = service.getRoom(roomId);
+                    Note note = room.getNotes().stream()
+                            .filter(n -> noteId.equals(n.getId())).findFirst().orElse(null);
+                    if (note != null) {
+                        Map<String, Object> payload = new HashMap<>();
+                        payload.put("noteId", noteId);
+                        payload.put("highlighted", note.isHighlighted());
+                        broadcastRoom(roomId, new WsMessage("HIGHLIGHT_UPDATED", payload, userName));
+                    }
+                } else {
+                    sendError(conn, "TOGGLE_HIGHLIGHT", "仅主持人可标记重点");
                 }
                 break;
             }
             case "SWITCH_PARAGRAPH": {
-                if (!isModerator(conn)) {
-                    sendError(conn, "SWITCH_PARAGRAPH", "仅主持人可切换段落");
-                    break;
-                }
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "SWITCH_PARAGRAPH", "未加入房间"); break; }
                 Map<String, Object> p = (Map<String, Object>) msg.payload;
                 String pid = (String) p.get("paragraphId");
-                if (service.switchParagraph(pid)) {
-                    broadcastParagraphSwitched(conn);
+                if (service.switchParagraph(roomId, pid, userName)) {
+                    broadcastParagraphSwitched(roomId, userName);
+                } else {
+                    sendError(conn, "SWITCH_PARAGRAPH", "仅主持人可切换段落");
                 }
                 break;
             }
             case "MOVE_NEXT": {
-                if (!isModerator(conn)) {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "MOVE_NEXT", "未加入房间"); break; }
+                if (service.moveNext(roomId, userName)) {
+                    broadcastParagraphSwitched(roomId, userName);
+                } else {
                     sendError(conn, "MOVE_NEXT", "仅主持人可切换段落");
-                    break;
-                }
-                if (service.moveNext()) {
-                    broadcastParagraphSwitched(conn);
                 }
                 break;
             }
             case "MOVE_PREV": {
-                if (!isModerator(conn)) {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "MOVE_PREV", "未加入房间"); break; }
+                if (service.movePrev(roomId, userName)) {
+                    broadcastParagraphSwitched(roomId, userName);
+                } else {
                     sendError(conn, "MOVE_PREV", "仅主持人可切换段落");
-                    break;
-                }
-                if (service.movePrev()) {
-                    broadcastParagraphSwitched(conn);
                 }
                 break;
             }
+            case "ADD_TO_QUEUE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "ADD_TO_QUEUE", "未加入房间"); break; }
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String noteId = (String) p.get("noteId");
+                if (service.addToDiscussionQueue(roomId, noteId, userName)) {
+                    broadcastDiscussionQueue(roomId, userName);
+                } else {
+                    sendError(conn, "ADD_TO_QUEUE", "仅主持人可操作");
+                }
+                break;
+            }
+            case "REMOVE_FROM_QUEUE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String noteId = (String) p.get("noteId");
+                if (service.removeFromDiscussionQueue(roomId, noteId, userName)) {
+                    broadcastDiscussionQueue(roomId, userName);
+                } else {
+                    sendError(conn, "REMOVE_FROM_QUEUE", "仅主持人可操作");
+                }
+                break;
+            }
+            case "REORDER_QUEUE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                List<String> order = (List<String>) p.get("order");
+                if (service.reorderDiscussionQueue(roomId, order, userName)) {
+                    broadcastDiscussionQueue(roomId, userName);
+                } else {
+                    sendError(conn, "REORDER_QUEUE", "仅主持人可操作");
+                }
+                break;
+            }
+            case "IMPORT_ARTICLE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) { sendError(conn, "IMPORT_ARTICLE", "未加入房间"); break; }
+                Map<String, Object> p = (Map<String, Object>) msg.payload;
+                String title = p.get("title") != null ? p.get("title").toString() : null;
+                String author = p.get("author") != null ? p.get("author").toString() : null;
+                String text = p.get("text") != null ? p.get("text").toString() : "";
+                Article a = service.importArticle(roomId, title, author, text, userName);
+                if (a != null) {
+                    broadcastRoomState(roomId);
+                    broadcastRoom(roomId, new WsMessage("ARTICLE_UPDATED", a, userName));
+                } else {
+                    sendError(conn, "IMPORT_ARTICLE", "仅主持人或房主可导入");
+                }
+                break;
+            }
+            case "EXPORT_MARKDOWN": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                String md = service.exportMarkdown(roomId);
+                Map<String, Object> res = new HashMap<>();
+                res.put("format", "markdown");
+                res.put("content", md);
+                res.put("filename", (service.getRoom(roomId).getName() + ".md").replaceAll("[\\\\/:*?\"<>|]", "_"));
+                sendTo(conn, new WsMessage("EXPORT_RESULT", res, null));
+                break;
+            }
+            case "EXPORT_JSON": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                Map<String, Object> json = service.exportJson(roomId);
+                Map<String, Object> res = new HashMap<>();
+                res.put("format", "json");
+                res.put("content", json);
+                res.put("filename", (service.getRoom(roomId).getName() + ".json").replaceAll("[\\\\/:*?\"<>|]", "_"));
+                sendTo(conn, new WsMessage("EXPORT_RESULT", res, null));
+                break;
+            }
+            case "GET_TIMELINE": {
+                String roomId = connRoomMap.get(conn);
+                if (roomId == null) break;
+                Room room = service.getRoom(roomId);
+                List<TimelineEvent> timeline = room != null ? room.getTimeline() : new ArrayList<>();
+                sendTo(conn, new WsMessage("TIMELINE_DATA", timeline, null));
+                break;
+            }
             case "REQUEST_STATE": {
-                sendTo(conn, new WsMessage("STATE_SYNC", buildInitData(conn), null));
+                String roomId = connRoomMap.get(conn);
+                if (roomId != null) {
+                    Room room = service.getRoom(roomId);
+                    if (room != null) {
+                        sendTo(conn, new WsMessage("STATE_SYNC", buildRoomState(room, userName), null));
+                    }
+                }
                 break;
             }
             case "HEARTBEAT": {
@@ -284,8 +472,124 @@ public class ReadingSocket extends WebSocketServer {
         }
     }
 
-    private boolean isModerator(WebSocket conn) {
-        return Boolean.TRUE.equals(moderatorMap.get(conn));
+    private Map<String, Object> buildRoomState(Room room, String userName) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("roomId", room.getId());
+        data.put("roomName", room.getName());
+        data.put("ownerName", room.getOwnerName());
+        data.put("article", room.getArticle());
+        data.put("notes", room.getNotes());
+        data.put("replies", room.getReplies());
+        data.put("discussionQueue", room.getDiscussionQueue());
+
+        Map<String, Integer> noteCounts = new HashMap<>();
+        for (Note n : room.getNotes()) {
+            noteCounts.merge(n.getParagraphId(), 1, Integer::sum);
+        }
+        data.put("noteCounts", noteCounts);
+
+        List<Map<String, Object>> presences = new ArrayList<>();
+        for (Presence p : room.getPresences().values()) {
+            Map<String, Object> pm = new LinkedHashMap<>();
+            pm.put("userName", p.getUserName());
+            pm.put("roomId", p.getRoomId());
+            pm.put("paragraphId", p.getParagraphId());
+            pm.put("typing", p.isTyping() && (System.currentTimeMillis() - p.getTypingSince()) < 15000);
+            pm.put("typingSince", p.getTypingSince());
+            pm.put("joinedAt", p.getJoinedAt());
+            pm.put("lastActiveAt", p.getLastActiveAt());
+            pm.put("isOwner", p.isOwner());
+            pm.put("isModerator", p.isModerator());
+            presences.add(pm);
+        }
+        data.put("presences", presences);
+
+        Presence self = room.getPresence(userName);
+        data.put("isOwner", self != null && self.isOwner());
+        data.put("isModerator", self != null && self.isModerator());
+
+        List<String> typingUsers = room.getTypingUsers();
+        data.put("typingUsers", typingUsers);
+
+        data.put("onlineCount", room.getOnlineCount());
+        List<String> onlineNames = new ArrayList<>();
+        for (Presence p : room.getPresences().values()) {
+            onlineNames.add(p.getUserName());
+        }
+        data.put("onlineNames", onlineNames);
+
+        List<String> mods = new ArrayList<>();
+        for (Presence p : room.getPresences().values()) {
+            if (p.isModerator()) mods.add(p.getUserName());
+        }
+        data.put("moderators", mods);
+
+        return data;
+    }
+
+    private void broadcastParagraphSwitched(String roomId, String userName) {
+        Room room = service.getRoom(roomId);
+        if (room == null) return;
+        Article article = room.getArticle();
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("paragraphId", article.getCurrentParagraphId());
+        payload.put("index", article.getCurrentParagraphIndex());
+        broadcastRoom(roomId, new WsMessage("PARAGRAPH_SWITCHED", payload, userName));
+    }
+
+    private void broadcastDiscussionQueue(String roomId, String userName) {
+        Room room = service.getRoom(roomId);
+        if (room == null) return;
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("discussionQueue", new ArrayList<>(room.getDiscussionQueue()));
+        broadcastRoom(roomId, new WsMessage("DISCUSSION_QUEUE_UPDATED", payload, userName));
+    }
+
+    private void broadcastRoomPresence(String roomId) {
+        Room room = service.getRoom(roomId);
+        if (room == null) return;
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("onlineCount", room.getOnlineCount());
+        List<String> names = new ArrayList<>();
+        List<Map<String, Object>> details = new ArrayList<>();
+        for (Presence p : room.getPresences().values()) {
+            names.add(p.getUserName());
+            Map<String, Object> pm = new LinkedHashMap<>();
+            pm.put("userName", p.getUserName());
+            pm.put("paragraphId", p.getParagraphId());
+            pm.put("typing", p.isTyping() && (System.currentTimeMillis() - p.getTypingSince()) < 15000);
+            pm.put("isOwner", p.isOwner());
+            pm.put("isModerator", p.isModerator());
+            pm.put("joinedAt", p.getJoinedAt());
+            pm.put("lastActiveAt", p.getLastActiveAt());
+            details.add(pm);
+        }
+        payload.put("names", names);
+        payload.put("presences", details);
+        payload.put("typingUsers", room.getTypingUsers());
+        List<String> mods = new ArrayList<>();
+        for (Presence p : room.getPresences().values()) {
+            if (p.isModerator()) mods.add(p.getUserName());
+        }
+        payload.put("moderators", mods);
+        broadcastRoom(roomId, new WsMessage("PRESENCE_UPDATED", payload, null));
+    }
+
+    private void broadcastRoomState(String roomId) {
+        Room room = service.getRoom(roomId);
+        if (room == null) return;
+        broadcastRoom(roomId, new WsMessage("ROOM_STATE", buildMinimalRoomState(room), null));
+    }
+
+    private Map<String, Object> buildMinimalRoomState(Room room) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("discussionQueue", room.getDiscussionQueue());
+        List<String> mods = new ArrayList<>();
+        for (Presence p : room.getPresences().values()) {
+            if (p.isModerator()) mods.add(p.getUserName());
+        }
+        data.put("moderators", mods);
+        return data;
     }
 
     private void sendError(WebSocket conn, String action, String reason) {
@@ -295,60 +599,15 @@ public class ReadingSocket extends WebSocketServer {
         sendTo(conn, new WsMessage("ERROR", err, null));
     }
 
-    private void broadcastParagraphSwitched(WebSocket conn) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("paragraphId", service.getArticle().getCurrentParagraphId());
-        payload.put("index", service.getArticle().getCurrentParagraphIndex());
-        broadcast(new WsMessage("PARAGRAPH_SWITCHED", payload, userNames.get(conn)));
-    }
-
-    private void broadcastOnlineCount() {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("onlineCount", connections.size());
-        List<String> names = new ArrayList<>();
+    private void broadcastRoom(String roomId, WsMessage msg) {
+        String json = gson.toJson(msg);
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        String utf8Json = new String(bytes, StandardCharsets.UTF_8);
         for (WebSocket c : connections) {
-            String n = userNames.get(c);
-            if (n != null) names.add(n);
-        }
-        payload.put("names", names);
-        broadcast(new WsMessage("ONLINE_COUNT", payload, null));
-    }
-
-    private void broadcastModeratorList() {
-        List<String> mods = new ArrayList<>();
-        for (Map.Entry<WebSocket, Boolean> e : moderatorMap.entrySet()) {
-            if (Boolean.TRUE.equals(e.getValue())) {
-                String n = userNames.get(e.getKey());
-                if (n != null) mods.add(n);
+            if (c != null && c.isOpen() && roomId.equals(connRoomMap.get(c))) {
+                c.send(utf8Json);
             }
         }
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("moderators", mods);
-        broadcast(new WsMessage("MODERATOR_LIST", payload, null));
-    }
-
-    private Map<String, Object> buildInitData(WebSocket conn) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("article", service.getArticle());
-        data.put("notes", service.getAllNotes());
-        data.put("noteCounts", service.getNoteCountByParagraph());
-        data.put("onlineCount", connections.size());
-        List<String> names = new ArrayList<>();
-        for (WebSocket c : connections) {
-            String n = userNames.get(c);
-            if (n != null) names.add(n);
-        }
-        data.put("onlineNames", names);
-        List<String> mods = new ArrayList<>();
-        for (Map.Entry<WebSocket, Boolean> e : moderatorMap.entrySet()) {
-            if (Boolean.TRUE.equals(e.getValue())) {
-                String n = userNames.get(e.getKey());
-                if (n != null) mods.add(n);
-            }
-        }
-        data.put("moderators", mods);
-        data.put("isModerator", isModerator(conn));
-        return data;
     }
 
     private void broadcast(WsMessage msg) {

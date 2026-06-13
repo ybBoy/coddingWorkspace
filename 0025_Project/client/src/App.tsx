@@ -2,36 +2,54 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ArticleView from './features/reader/ArticleView';
 import NotePanel from './features/notes/NotePanel';
 import ModeratorBar from './features/moderator/ModeratorBar';
+import RoomLobby from './features/room/RoomLobby';
+import ReplayView from './features/replay/ReplayView';
 import eventBus from './core/EventBus';
 import socket from './core/socket';
 import type {
-  Article, Note, SocketStatus, NoteType, Paragraph,
-  LikeUpdatePayload, HighlightUpdatePayload, ParagraphSwitchPayload,
-  OnlineCountPayload, ModeratorListPayload
+  Article, Note, Reply, SocketStatus, NoteType, Paragraph,
+  LikeUpdatePayload, ReplyLikeUpdatePayload, HighlightUpdatePayload,
+  ParagraphSwitchPayload, OnlineCountPayload, ModeratorListPayload,
+  DiscussionQueuePayload, TimelineEvent, RoomState, RoomSummary,
+  ExportResultPayload
 } from './core/types';
 
 type NoteCounts = Record<string, number>;
+type ViewMode = 'lobby' | 'reading' | 'replay';
 
 const STORAGE_KEY = 'reading-board:user';
-const MOD_STORAGE_KEY = 'reading-board:want-mod';
+const ROOM_STORAGE_KEY = 'reading-board:last-room';
 
 const App: React.FC = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>('lobby');
+  const [roomId, setRoomId] = useState<string>(() => localStorage.getItem(ROOM_STORAGE_KEY) || '');
+  const [roomName, setRoomName] = useState<string>('');
+  const [ownerName, setOwnerName] = useState<string>('');
   const [article, setArticle] = useState<Article | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [discussionQueue, setDiscussionQueue] = useState<string[]>([]);
   const [noteCounts, setNoteCounts] = useState<NoteCounts>({});
+  const [presences, setPresences] = useState<OnlineCountPayload['presences']>([]);
   const [socketStatus, setSocketStatus] = useState<SocketStatus>('connecting');
   const [onlineCount, setOnlineCount] = useState(0);
   const [onlineNames, setOnlineNames] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [userName, setUserNameState] = useState<string>(() => localStorage.getItem(STORAGE_KEY) || '');
-  const [isModerator, setIsModerator] = useState<boolean>(() => localStorage.getItem(MOD_STORAGE_KEY) === '1');
+  const [isOwner, setIsOwner] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const [moderators, setModerators] = useState<string[]>([]);
   const [highlightParagraphId, setHighlightParagraphId] = useState<string | null>(null);
   const [selectedParagraphId, setSelectedParagraphId] = useState<string | null>(null);
   const [mobileNotesOpen, setMobileNotesOpen] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [roomList, setRoomList] = useState<RoomSummary[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [replayIndex, setReplayIndex] = useState(0);
 
   const flashTimerRef = useRef<number | null>(null);
   const errorTimerRef = useRef<number | null>(null);
+  const typingTimerRef = useRef<number | null>(null);
 
   const clearFlashTimer = () => {
     if (flashTimerRef.current !== null) {
@@ -52,35 +70,69 @@ const App: React.FC = () => {
     socket.setUserName(name);
   };
 
-  const handleSetIsModerator = (want: boolean) => {
-    setIsModerator(want);
-    localStorage.setItem(MOD_STORAGE_KEY, want ? '1' : '0');
-    socket.setModerator(want, want ? 'reading-moderator-2025' : undefined);
+  const applyRoomState = (state: RoomState) => {
+    setRoomId(state.roomId);
+    setRoomName(state.roomName);
+    setOwnerName(state.ownerName);
+    setArticle(state.article);
+    setNotes(state.notes);
+    setReplies(state.replies);
+    setDiscussionQueue(state.discussionQueue);
+    setNoteCounts(state.noteCounts);
+    setPresences(state.presences);
+    setIsOwner(state.isOwner);
+    setIsModerator(state.isModerator);
+    setTypingUsers(state.typingUsers || []);
+    setOnlineCount(state.onlineCount);
+    setOnlineNames(state.onlineNames);
+    setModerators(state.moderators);
+    setHighlightParagraphId(state.article.currentParagraphId);
+    if (!selectedParagraphId) setSelectedParagraphId(state.article.currentParagraphId);
+    localStorage.setItem(ROOM_STORAGE_KEY, state.roomId);
+    socket.setRoomId(state.roomId);
+    setViewMode('reading');
+  };
+
+  const downloadBlob = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
     if (userName) socket.setUserName(userName);
+    if (roomId) socket.setRoomId(roomId);
     socket.connect();
 
     const unsubs: (() => void)[] = [];
 
     unsubs.push(eventBus.on('SOCKET_STATUS', s => setSocketStatus(s)));
 
-    unsubs.push(eventBus.on('STATE_SYNC', state => {
-      if (state.article) {
-        setArticle(state.article);
-        setHighlightParagraphId(state.article.currentParagraphId);
-        if (!selectedParagraphId) setSelectedParagraphId(state.article.currentParagraphId);
-      }
-      if (state.notes) setNotes(state.notes);
-      if (state.noteCounts) setNoteCounts(state.noteCounts);
-      if (typeof state.onlineCount === 'number') setOnlineCount(state.onlineCount);
-      if (Array.isArray(state.onlineNames)) setOnlineNames(state.onlineNames);
-      if (Array.isArray(state.moderators)) setModerators(state.moderators);
-      if (typeof state.isModerator === 'boolean') {
-        setIsModerator(state.isModerator);
-        localStorage.setItem(MOD_STORAGE_KEY, state.isModerator ? '1' : '0');
-      }
+    unsubs.push(eventBus.on('ROOM_LIST', list => {
+      setRoomList(list || []);
+    }));
+
+    unsubs.push(eventBus.on('ROOM_CREATED', (state: RoomState) => {
+      applyRoomState(state);
+    }));
+
+    unsubs.push(eventBus.on('ROOM_JOINED', (state: RoomState) => {
+      applyRoomState(state);
+    }));
+
+    unsubs.push(eventBus.on('STATE_SYNC', (state: RoomState) => {
+      if (state && state.roomId) applyRoomState(state);
+    }));
+
+    unsubs.push(eventBus.on('ROOM_STATE', state => {
+      if (state.discussionQueue) setDiscussionQueue(state.discussionQueue);
+      if (state.moderators) setModerators(state.moderators);
     }));
 
     unsubs.push(eventBus.on('NOTE_ADDED', (note: Note) => {
@@ -94,6 +146,13 @@ const App: React.FC = () => {
       }));
     }));
 
+    unsubs.push(eventBus.on('REPLY_ADDED', (reply: Reply) => {
+      setReplies(prev => {
+        if (prev.find(r => r.id === reply.id)) return prev;
+        return [...prev, reply];
+      });
+    }));
+
     unsubs.push(eventBus.on('LIKE_UPDATED', (payload: LikeUpdatePayload) => {
       setNotes(prev => prev.map(n => {
         if (n.id === payload.noteId) {
@@ -103,6 +162,18 @@ const App: React.FC = () => {
           };
         }
         return n;
+      }));
+    }));
+
+    unsubs.push(eventBus.on('REPLY_LIKE_UPDATED', (payload: ReplyLikeUpdatePayload) => {
+      setReplies(prev => prev.map(r => {
+        if (r.id === payload.replyId) {
+          return {
+            ...r,
+            likes: payload.likes ? Array.from(payload.likes.users) : r.likes
+          };
+        }
+        return r;
       }));
     }));
 
@@ -126,23 +197,48 @@ const App: React.FC = () => {
       }, 3000);
     }));
 
-    unsubs.push(eventBus.on('ONLINE_COUNT', (payload: OnlineCountPayload) => {
+    unsubs.push(eventBus.on('PRESENCE_UPDATED', (payload: OnlineCountPayload) => {
       if (typeof payload.onlineCount === 'number') setOnlineCount(payload.onlineCount);
       if (Array.isArray(payload.names)) setOnlineNames(payload.names);
+      if (Array.isArray(payload.presences)) setPresences(payload.presences);
+      if (Array.isArray(payload.typingUsers)) setTypingUsers(payload.typingUsers);
+      if (Array.isArray(payload.moderators)) setModerators(payload.moderators);
     }));
 
     unsubs.push(eventBus.on('MODERATOR_LIST', (payload: ModeratorListPayload) => {
       if (Array.isArray(payload.moderators)) setModerators(payload.moderators);
     }));
 
+    unsubs.push(eventBus.on('DISCUSSION_QUEUE_UPDATED', (payload: DiscussionQueuePayload) => {
+      setDiscussionQueue(payload.discussionQueue);
+    }));
+
+    unsubs.push(eventBus.on('ARTICLE_UPDATED', (a: Article) => {
+      setArticle(a);
+      setSelectedParagraphId(a.currentParagraphId);
+      setHighlightParagraphId(a.currentParagraphId);
+    }));
+
+    unsubs.push(eventBus.on('EXPORT_RESULT', (payload: ExportResultPayload) => {
+      if (payload.format === 'markdown') {
+        downloadBlob(payload.content as string, payload.filename, 'text/markdown;charset=utf-8');
+      } else if (payload.format === 'json') {
+        downloadBlob(JSON.stringify(payload.content, null, 2), payload.filename, 'application/json;charset=utf-8');
+      }
+    }));
+
+    unsubs.push(eventBus.on('TIMELINE_DATA', (data: TimelineEvent[]) => {
+      setTimeline(data);
+      setReplayIndex(0);
+      setViewMode('replay');
+    }));
+
     unsubs.push(eventBus.on('MODERATOR_GRANTED', () => {
       setIsModerator(true);
-      localStorage.setItem(MOD_STORAGE_KEY, '1');
     }));
 
     unsubs.push(eventBus.on('MODERATOR_DENIED', (reason: string) => {
       setIsModerator(false);
-      localStorage.setItem(MOD_STORAGE_KEY, '0');
       showError(`主持人申请被拒绝：${reason}`);
     }));
 
@@ -155,8 +251,17 @@ const App: React.FC = () => {
       socket.addNote(paragraphId, content, type);
     }));
 
+    unsubs.push(eventBus.on('REQUEST_ADD_REPLY', data => {
+      const { noteId, parentReplyId, content } = data as { noteId: string; parentReplyId?: string; content: string };
+      socket.addReply(noteId, content, parentReplyId);
+    }));
+
     unsubs.push(eventBus.on('REQUEST_LIKE', (noteId: string) => {
       socket.toggleLike(noteId);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_LIKE_REPLY', (replyId: string) => {
+      socket.toggleLikeReply(replyId);
     }));
 
     unsubs.push(eventBus.on('REQUEST_HIGHLIGHT', (noteId: string) => {
@@ -176,7 +281,58 @@ const App: React.FC = () => {
     }));
 
     unsubs.push(eventBus.on('REQUEST_SET_MODERATOR', payload => {
-      socket.setModerator(payload.moderator, payload.token);
+      socket.setModerator(payload.moderator, payload.target);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_JOIN_ROOM', payload => {
+      socket.joinRoom(payload.roomId, payload.passcode);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_CREATE_ROOM', payload => {
+      socket.createRoom(payload.name, payload.passcode);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_LIST_ROOMS', () => {
+      socket.listRooms();
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_PRESENCE', payload => {
+      socket.updatePresence(payload.paragraphId, payload.typing);
+      if (payload.typing) {
+        if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = window.setTimeout(() => {
+          socket.updatePresence(undefined, false);
+          typingTimerRef.current = null;
+        }, 3000);
+      }
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_ADD_TO_QUEUE', (noteId: string) => {
+      socket.addToQueue(noteId);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_REMOVE_FROM_QUEUE', (noteId: string) => {
+      socket.removeFromQueue(noteId);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_REORDER_QUEUE', (order: string[]) => {
+      socket.reorderQueue(order);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_IMPORT_ARTICLE', payload => {
+      socket.importArticle(payload.title, payload.author, payload.text);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_EXPORT_MD', () => {
+      socket.exportMarkdown();
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_EXPORT_JSON', () => {
+      socket.exportJson();
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_TIMELINE', () => {
+      socket.getTimeline();
     }));
 
     unsubs.push(eventBus.on('SELECT_PARAGRAPH_FOR_NOTE', (pid: string) => {
@@ -188,19 +344,30 @@ const App: React.FC = () => {
       setMobileNotesOpen(true);
     }));
 
+    unsubs.push(eventBus.on('SHOW_REPLAY', () => {
+      socket.getTimeline();
+    }));
+
     return () => {
       unsubs.forEach(u => u());
       clearFlashTimer();
       if (errorTimerRef.current !== null) window.clearTimeout(errorTimerRef.current);
+      if (typingTimerRef.current !== null) window.clearTimeout(typingTimerRef.current);
       socket.disconnect();
     };
   }, []);
 
   useEffect(() => {
-    if (isModerator && socketStatus === 'open') {
-      socket.setModerator(true, 'reading-moderator-2025');
+    if (socketStatus === 'open' && viewMode === 'lobby') {
+      socket.listRooms();
     }
-  }, [isModerator, socketStatus]);
+  }, [socketStatus, viewMode]);
+
+  useEffect(() => {
+    if (socketStatus === 'open' && roomId && viewMode === 'reading') {
+      socket.joinRoom(roomId);
+    }
+  }, [socketStatus, roomId]);
 
   const currentParagraph = useMemo<Paragraph | null>(() => {
     if (!article) return null;
@@ -215,19 +382,95 @@ const App: React.FC = () => {
 
   const currentParagraphId = article?.currentParagraphId || null;
 
+  const repliesByNote = useMemo(() => {
+    const map: Record<string, Reply[]> = {};
+    for (const r of replies) {
+      if (!map[r.noteId]) map[r.noteId] = [];
+      map[r.noteId].push(r);
+    }
+    for (const k of Object.keys(map)) {
+      map[k].sort((a, b) => a.createdAt - b.createdAt);
+    }
+    return map;
+  }, [replies]);
+
+  const readersByParagraph = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const p of presences || []) {
+      if (!map[p.paragraphId]) map[p.paragraphId] = [];
+      if (p.userName !== userName) map[p.paragraphId].push(p.userName);
+    }
+    return map;
+  }, [presences, userName]);
+
+  const handleLeaveRoom = () => {
+    setViewMode('lobby');
+    setRoomId('');
+    localStorage.removeItem(ROOM_STORAGE_KEY);
+    socket.setRoomId('');
+  };
+
+  const handleStartReplay = () => {
+    eventBus.emit('REQUEST_TIMELINE');
+  };
+
+  const handleExitReplay = () => {
+    setViewMode('reading');
+  };
+
+  if (viewMode === 'lobby') {
+    return (
+      <div className="app-shell">
+        <RoomLobby
+          roomList={roomList}
+          userName={userName}
+          setUserName={setUserName}
+          socketStatus={socketStatus}
+        />
+        {errorToast && (
+          <div className="toast toast--error">⚠️ {errorToast}</div>
+        )}
+      </div>
+    );
+  }
+
+  if (viewMode === 'replay') {
+    return (
+      <div className="app-shell">
+        <ReplayView
+          timeline={timeline}
+          article={article}
+          notes={notes}
+          currentIndex={replayIndex}
+          setCurrentIndex={setReplayIndex}
+          onExit={handleExitReplay}
+          roomName={roomName}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <ModeratorBar
         article={article}
         isModerator={isModerator}
-        setIsModerator={handleSetIsModerator}
+        isOwner={isOwner}
+        setIsModerator={(want) => eventBus.emit('REQUEST_SET_MODERATOR', { moderator: want })}
         moderators={moderators}
         userName={userName}
         setUserName={setUserName}
         socketStatus={socketStatus}
         onlineCount={onlineCount}
         onlineNames={onlineNames}
+        typingUsers={typingUsers}
+        presences={presences}
+        roomName={roomName}
+        ownerName={ownerName}
+        roomId={roomId}
         onOpenNotesMobile={() => setMobileNotesOpen(true)}
+        onLeaveRoom={handleLeaveRoom}
+        onStartReplay={handleStartReplay}
       />
 
       <main className="app-main">
@@ -235,6 +478,7 @@ const App: React.FC = () => {
           <ArticleView
             article={article}
             notes={notes}
+            repliesByNote={repliesByNote}
             noteCounts={noteCounts}
             currentParagraphId={currentParagraphId}
             highlightParagraphId={highlightParagraphId}
@@ -242,6 +486,8 @@ const App: React.FC = () => {
             setSelectedParagraphId={setSelectedParagraphId}
             isModerator={isModerator}
             userName={userName}
+            readersByParagraph={readersByParagraph}
+            discussionQueue={discussionQueue}
           />
         </div>
 
@@ -253,8 +499,11 @@ const App: React.FC = () => {
           selectedParagraph={selectedParagraph}
           setSelectedParagraphId={setSelectedParagraphId}
           notes={notes}
+          repliesByNote={repliesByNote}
+          discussionQueue={discussionQueue}
           userName={userName}
           isModerator={isModerator}
+          isOwner={isOwner}
           mobileOpen={mobileNotesOpen}
           onMobileClose={() => setMobileNotesOpen(false)}
         />

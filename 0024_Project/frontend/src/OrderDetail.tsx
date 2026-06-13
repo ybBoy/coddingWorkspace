@@ -171,7 +171,7 @@ export default function OrderDetail({ order, column, highlightStation }: Props) 
           撤销原因：{order.cancelReason}
         </div>
       )}
-      {!cancelled && order.remark && <div className="order-remark">📌 {order.remark}</div>
+      {!cancelled && order.remark && <div className="order-remark">📌 {order.remark}</div>}
 
       <div className="dishes">
         {order.dishes.map((d) => {

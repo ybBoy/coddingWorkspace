@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+server/target/
+
+# Build outputs
+client/build/
+server/*.jar
+data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

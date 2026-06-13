@@ -175,6 +175,8 @@ public class GroupSocket extends WebSocketServer {
             JsonObject data = new JsonObject();
             data.addProperty("type", "self-registered");
             data.addProperty("participantId", p.getId());
+            boolean approved = "approved".equals(p.getRegisterStatus());
+            data.addProperty("approved", approved);
             conn.send(gson.toJson(data));
         }
 
@@ -221,9 +223,15 @@ public class GroupSocket extends WebSocketServer {
             return;
         }
 
+        String auditType = null;
+        String auditDesc = null;
+        boolean needAudit = true;
+
         if ("set-activity-name".equals(type)) {
             String name = msg.has("name") ? msg.get("name").getAsString() : "";
             service.setActivityName(name);
+            auditType = "set-activity-name";
+            auditDesc = "修改活动名称为: " + name;
             broadcastRoomState(roomCode);
         } else if ("add-participant".equals(type)) {
             String name = msg.has("name") ? msg.get("name").getAsString() : "";
@@ -231,7 +239,9 @@ public class GroupSocket extends WebSocketServer {
             String department = msg.has("department") ? msg.get("department").getAsString() : null;
             int skill = msg.has("skill") ? msg.get("skill").getAsInt() : 0;
             String tag = msg.has("tag") ? msg.get("tag").getAsString() : null;
-            service.addParticipant(name, gender, department, skill, tag, false);
+            Participant p = service.addParticipant(name, gender, department, skill, tag, false);
+            auditType = "add-participant";
+            auditDesc = "添加参与者: " + (p != null ? p.getName() : name);
             broadcastRoomState(roomCode);
         } else if ("add-participants".equals(type)) {
             List<String> names = new ArrayList<String>();
@@ -241,6 +251,8 @@ public class GroupSocket extends WebSocketServer {
                 }
             }
             service.addParticipants(names);
+            auditType = "add-participants";
+            auditDesc = "批量添加参与者: " + names.size() + " 人";
             broadcastRoomState(roomCode);
         } else if ("update-participant".equals(type)) {
             String id = msg.has("id") ? msg.get("id").getAsString() : "";
@@ -249,36 +261,61 @@ public class GroupSocket extends WebSocketServer {
             int skill = msg.has("skill") ? msg.get("skill").getAsInt() : 0;
             String tag = msg.has("tag") ? msg.get("tag").getAsString() : null;
             service.updateParticipant(id, gender, department, skill, tag);
+            auditType = "update-participant";
+            auditDesc = "更新参与者信息";
             broadcastRoomState(roomCode);
         } else if ("remove-participant".equals(type)) {
             String id = msg.has("id") ? msg.get("id").getAsString() : "";
+            Participant p = null;
+            for (Participant pp : service.getParticipants()) {
+                if (pp.getId().equals(id)) {
+                    p = pp;
+                    break;
+                }
+            }
             service.removeParticipant(id);
+            auditType = "remove-participant";
+            auditDesc = "移除参与者: " + (p != null ? p.getName() : id);
             broadcastRoomState(roomCode);
         } else if ("clear-participants".equals(type)) {
             service.clearParticipants();
+            auditType = "clear-participants";
+            auditDesc = "清空所有参与者";
             broadcastRoomState(roomCode);
         } else if ("set-group-count".equals(type)) {
             int count = msg.has("count") ? msg.get("count").getAsInt() : 4;
             service.setGroupCount(count);
+            auditType = "set-group-count";
+            auditDesc = "设置分组数量为: " + count;
             broadcastRoomState(roomCode);
         } else if ("random-group".equals(type)) {
             service.randomGroup();
+            auditType = "random-group";
+            auditDesc = "执行随机分组";
             broadcastRoomState(roomCode);
         } else if ("toggle-lock".equals(type)) {
             String groupId = msg.has("groupId") ? msg.get("groupId").getAsString() : "";
             service.toggleGroupLock(groupId);
+            auditType = "toggle-lock";
+            auditDesc = "切换分组锁定状态";
             broadcastRoomState(roomCode);
         } else if ("move-participant".equals(type)) {
             String participantId = msg.has("participantId") ? msg.get("participantId").getAsString() : "";
             String targetGroupId = msg.has("targetGroupId") ? msg.get("targetGroupId").getAsString() : "";
             service.moveParticipant(participantId, targetGroupId);
+            auditType = "move-participant";
+            auditDesc = "移动参与者到新分组";
             broadcastRoomState(roomCode);
         } else if ("undo".equals(type)) {
             service.undo();
+            auditType = "undo";
+            auditDesc = "撤销上一步操作";
             broadcastRoomState(roomCode);
         } else if ("restore-version".equals(type)) {
             int versionIndex = msg.has("versionIndex") ? msg.get("versionIndex").getAsInt() : -1;
             service.restoreVersion(versionIndex);
+            auditType = "restore-version";
+            auditDesc = "恢复到历史版本";
             broadcastRoomState(roomCode);
         } else if ("set-rules".equals(type)) {
             List<GroupRule> rules = new ArrayList<GroupRule>();
@@ -293,17 +330,123 @@ public class GroupSocket extends WebSocketServer {
                 }
             }
             service.setRules(rules);
+            auditType = "set-rules";
+            auditDesc = "更新分组规则";
             broadcastRoomState(roomCode);
         } else if ("save".equals(type)) {
             service.save();
+            auditType = "save";
+            auditDesc = "保存房间数据已持久化";
             sendSuccess(conn, "已保存");
+            broadcastRoomState(roomCode);
         } else if ("export-csv".equals(type)) {
+            needAudit = false;
             String csv = buildExportCsv(service);
             JsonObject data = new JsonObject();
             data.addProperty("type", "export-data");
             data.addProperty("format", "csv");
             data.addProperty("content", csv);
             conn.send(gson.toJson(data));
+        } else if ("approve-participant".equals(type)) {
+            String id = msg.has("id") ? msg.get("id").getAsString() : "";
+            boolean ok = service.approveParticipant(id);
+            auditType = "approve-participant";
+            Participant p = null;
+            for (Participant pp : service.getParticipants()) {
+                if (pp.getId().equals(id)) {
+                    p = pp;
+                    break;
+                }
+            }
+            auditDesc = "审核通过: " + (p != null ? p.getName() : id);
+            broadcastRoomState(roomCode);
+        } else if ("reject-participant".equals(type)) {
+            String id = msg.has("id") ? msg.get("id").getAsString() : "";
+            boolean ok = service.rejectParticipant(id);
+            auditType = "reject-participant";
+            Participant p = null;
+            for (Participant pp : service.getParticipants()) {
+                if (pp.getId().equals(id)) {
+                    p = pp;
+                    break;
+                }
+            }
+            auditDesc = "拒绝加入: " + (p != null ? p.getName() : id);
+            broadcastRoomState(roomCode);
+        } else if ("set-require-approval".equals(type)) {
+            boolean requireApproval = msg.has("requireApproval") && msg.get("requireApproval").getAsBoolean();
+            service.setRequireApproval(requireApproval);
+            auditType = "set-require-approval";
+            auditDesc = (requireApproval ? "开启" : "关闭") + "参与者审核机制";
+            broadcastRoomState(roomCode);
+        } else if ("save-template".equals(type)) {
+            needAudit = false;
+            String name = msg.has("name") ? msg.get("name").getAsString() : "";
+            ActivityTemplate template = service.saveAsTemplate(name);
+            if (template != null) {
+                JsonObject data = new JsonObject();
+                data.addProperty("type", "template-created");
+                data.add("template", gson.toJsonTree(template));
+                conn.send(gson.toJson(data));
+            }
+            sendAuditEvent(roomCode, "save-template", "保存模板: " + name);
+        } else if ("apply-template".equals(type)) {
+            String templateId = msg.has("templateId") ? msg.get("templateId").getAsString() : "";
+            boolean ok = service.applyTemplate(templateId);
+            auditType = "apply-template";
+            ActivityTemplate tpl = jsonStore.getTemplate(templateId);
+            auditDesc = "应用模板: " + (tpl != null ? tpl.getName() : templateId);
+            broadcastRoomState(roomCode);
+        } else if ("list-templates".equals(type)) {
+            needAudit = false;
+            List<ActivityTemplate> templates = jsonStore.getAllTemplates();
+            JsonObject data = new JsonObject();
+            data.addProperty("type", "templates-list");
+            data.add("templates", gson.toJsonTree(templates));
+            conn.send(gson.toJson(data));
+        } else if ("delete-template".equals(type)) {
+            needAudit = false;
+            String templateId = msg.has("templateId") ? msg.get("templateId").getAsString() : "";
+            ActivityTemplate deleted = jsonStore.getTemplate(templateId);
+            jsonStore.deleteTemplate(templateId);
+            List<ActivityTemplate> templates = jsonStore.getAllTemplates();
+            JsonObject data = new JsonObject();
+            data.addProperty("type", "templates-list");
+            data.add("templates", gson.toJsonTree(templates));
+            conn.send(gson.toJson(data));
+            sendAuditEvent(roomCode, "delete-template", "删除模板: " + (deleted != null ? deleted.getName() : templateId));
+        } else if ("set-group-size-limits".equals(type)) {
+            int minSize = msg.has("minSize") ? msg.get("minSize").getAsInt() : 0;
+            int maxSize = msg.has("maxSize") ? msg.get("maxSize").getAsInt() : 0;
+            service.setGroupMinSize(minSize);
+            service.setGroupMaxSize(maxSize);
+            auditType = "set-group-size-limits";
+            auditDesc = "设置分组大小限制: 最小 " + minSize + " 人，最大 " + maxSize + " 人";
+            broadcastRoomState(roomCode);
+        }
+
+        if (needAudit && auditType != null) {
+            sendAuditEvent(roomCode, auditType, auditDesc != null ? auditDesc : auditType);
+        }
+    }
+
+    private void sendAuditEvent(String roomCode, String type, String description) {
+        Set<WebSocket> conns = roomConnections.get(roomCode);
+        if (conns == null || conns.isEmpty()) return;
+
+        JsonObject data = new JsonObject();
+        data.addProperty("type", "audit-event");
+        data.addProperty("eventType", type);
+        data.addProperty("description", description);
+        data.addProperty("timestamp", System.currentTimeMillis());
+
+        String json = gson.toJson(data);
+        for (WebSocket conn : new HashSet<WebSocket>(conns)) {
+            try {
+                conn.send(json);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -364,6 +507,9 @@ public class GroupSocket extends WebSocketServer {
         data.addProperty("groupCount", service.getGroupCount());
         data.addProperty("roomCode", roomCode);
         data.addProperty("isHost", isHost);
+        data.addProperty("requireApproval", service.isRequireApproval());
+        data.addProperty("groupMinSize", service.getGroupMinSize());
+        data.addProperty("groupMaxSize", service.getGroupMaxSize());
         data.add("participants", gson.toJsonTree(service.getParticipants()));
         data.add("groups", gson.toJsonTree(service.getGroups()));
         data.add("logs", gson.toJsonTree(service.getActionLogs()));
@@ -383,15 +529,18 @@ public class GroupSocket extends WebSocketServer {
         data.addProperty("activityName", service.getActivityName());
         data.addProperty("groupCount", service.getGroupCount());
         data.addProperty("roomCode", roomCode);
+        data.addProperty("requireApproval", service.isRequireApproval());
+        data.addProperty("groupMinSize", service.getGroupMinSize());
+        data.addProperty("groupMaxSize", service.getGroupMaxSize());
         data.add("participants", gson.toJsonTree(service.getParticipants()));
         data.add("groups", gson.toJsonTree(service.getGroups()));
         data.add("logs", gson.toJsonTree(service.getActionLogs()));
         data.add("rules", gson.toJsonTree(service.getRules()));
 
-        String json = gson.toJson(data);
+        String baseJson = gson.toJson(data);
         for (WebSocket conn : new HashSet<WebSocket>(conns)) {
             try {
-                JsonObject msg = gson.fromJson(json, JsonObject.class);
+                JsonObject msg = gson.fromJson(baseJson, JsonObject.class);
                 Boolean isHost = connectionHost.get(conn);
                 msg.addProperty("isHost", isHost != null && isHost);
                 conn.send(gson.toJson(msg));

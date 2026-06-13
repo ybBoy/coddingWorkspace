@@ -9,8 +9,11 @@ public class Participant {
     private int skill;
     private String tag;
     private boolean selfRegistered;
+    private String registerStatus;
+    private String fingerprint;
 
     public Participant() {
+        this.registerStatus = "approved";
     }
 
     public Participant(String id, String name) {
@@ -18,6 +21,7 @@ public class Participant {
         this.name = name;
         this.skill = 0;
         this.selfRegistered = false;
+        this.registerStatus = "approved";
     }
 
     public String getId() {
@@ -82,5 +86,21 @@ public class Participant {
 
     public void setSelfRegistered(boolean selfRegistered) {
         this.selfRegistered = selfRegistered;
+    }
+
+    public String getRegisterStatus() {
+        return registerStatus;
+    }
+
+    public void setRegisterStatus(String registerStatus) {
+        this.registerStatus = registerStatus;
+    }
+
+    public String getFingerprint() {
+        return fingerprint;
+    }
+
+    public void setFingerprint(String fingerprint) {
+        this.fingerprint = fingerprint;
     }
 }

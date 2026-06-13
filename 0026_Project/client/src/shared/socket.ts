@@ -1,5 +1,5 @@
 import { eventBus } from './EventBus';
-import { AppState, ConnectionStatus } from './types';
+import { AppState, ConnectionStatus, ActivityTemplate } from './types';
 
 class SocketService {
   private ws: WebSocket | null = null;
@@ -85,6 +85,15 @@ class SocketService {
       case 'success':
         eventBus.emit('success', data.message);
         break;
+      case 'template-created':
+        eventBus.emit('template-created', data);
+        break;
+      case 'templates-list':
+        eventBus.emit('templates-list', data.templates);
+        break;
+      case 'audit-event':
+        eventBus.emit('audit-event', data);
+        break;
       default:
         break;
     }
@@ -112,6 +121,38 @@ class SocketService {
 
   claimHost(token: string): void {
     this.send({ type: 'claim-host', token });
+  }
+
+  setRequireApproval(v: boolean): void {
+    this.send({ type: 'set-require-approval', requireApproval: v });
+  }
+
+  approveParticipant(id: string): void {
+    this.send({ type: 'approve-participant', id });
+  }
+
+  rejectParticipant(id: string): void {
+    this.send({ type: 'reject-participant', id });
+  }
+
+  saveTemplate(name: string): void {
+    this.send({ type: 'save-template', name });
+  }
+
+  listTemplates(): void {
+    this.send({ type: 'list-templates' });
+  }
+
+  applyTemplate(templateId: string): void {
+    this.send({ type: 'apply-template', templateId });
+  }
+
+  deleteTemplate(templateId: string): void {
+    this.send({ type: 'delete-template', templateId });
+  }
+
+  setGroupSizeLimits(minSize: number, maxSize: number): void {
+    this.send({ type: 'set-group-size-limits', minSize, maxSize });
   }
 
   private scheduleReconnect(): void {

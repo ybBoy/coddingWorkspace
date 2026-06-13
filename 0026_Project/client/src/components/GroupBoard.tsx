@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import socket from '../shared/socket';
 import { Group, Participant } from '../shared/types';
 
@@ -11,12 +11,13 @@ interface GroupBoardProps {
 
 const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost, myParticipantId }) => {
   const [selectedPid, setSelectedPid] = useState<string | null>(null);
-  const [recentlyMoved, setRecentlyMoved] = useState<Set<string>>(new Set());
+  const [movedSet, setMovedSet] = useState<Set<string>>(new Set());
   const prevGroupsRef = useRef<Group[]>(groups);
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     const prevGroups = prevGroupsRef.current;
-    const movedIds = new Set<string>();
+    const movedIds: string[] = [];
 
     const prevMap = new Map<string, string>();
     prevGroups.forEach((g) => {
@@ -32,22 +33,54 @@ const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost, m
       const prevGroup = prevMap.get(p.id);
       const currGroup = currMap.get(p.id);
       if (prevGroup !== currGroup && currGroup) {
-        movedIds.add(p.id);
+        movedIds.push(p.id);
       }
     });
 
-    if (movedIds.size > 0) {
-      setRecentlyMoved(movedIds);
-      const timer = setTimeout(() => {
-        setRecentlyMoved(new Set());
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (movedIds.length > 0) {
+      setMovedSet((prev) => {
+        const next = new Set(prev);
+        movedIds.forEach((id) => {
+          next.add(id);
+          const existingTimer = timersRef.current.get(id);
+          if (existingTimer) clearTimeout(existingTimer);
+          const timer = setTimeout(() => {
+            setMovedSet((s) => {
+              const n = new Set(s);
+              n.delete(id);
+              return n;
+            });
+            timersRef.current.delete(id);
+          }, 2000);
+          timersRef.current.set(id, timer);
+        });
+        return next;
+      });
     }
 
     prevGroupsRef.current = groups;
+    return () => {};
   }, [groups, participants]);
 
-  const participantMap = new Map(participants.map((p) => [p.id, p]));
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((t) => clearTimeout(t));
+      timersRef.current.clear();
+    };
+  }, []);
+
+  const participantMap = useMemo(
+    () => new Map(participants.map((p) => [p.id, p])),
+    [participants]
+  );
+
+  const myGroupId = useMemo(() => {
+    if (!myParticipantId) return null;
+    for (const g of groups) {
+      if (g.participantIds.includes(myParticipantId)) return g.id;
+    }
+    return null;
+  }, [groups, myParticipantId]);
 
   const handleMemberClick = (pid: string, groupLocked: boolean) => {
     if (!isHost || groupLocked) return;
@@ -82,6 +115,12 @@ const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost, m
 
   const selectedParticipant = selectedPid ? participantMap.get(selectedPid) : null;
 
+  const isTeammate = (pid: string, groupId: string) => {
+    if (!myParticipantId || !myGroupId || groupId !== myGroupId) return false;
+    if (pid === myParticipantId) return false;
+    return true;
+  };
+
   return (
     <div className="group-board-wrapper">
       {selectedPid && selectedParticipant && (
@@ -91,70 +130,77 @@ const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost, m
         </div>
       )}
       <div className="group-board">
-        {groups.map((group, index) => (
-          <div
-            key={group.id}
-            className={`group-card ${group.locked ? 'locked' : ''} ${
-              selectedPid && !group.locked ? 'selectable' : ''
-            }`}
-            style={{ borderColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
-            onClick={() => handleGroupClick(group.id)}
-          >
+        {groups.map((group, index) => {
+          const isMyGroup = myGroupId === group.id;
+          const dimOtherGroup = myParticipantId && !isMyGroup;
+          return (
             <div
-              className="group-header"
-              style={{ backgroundColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
+              key={group.id}
+              className={`group-card ${group.locked ? 'locked' : ''} ${
+                selectedPid && !group.locked && isHost ? 'selectable' : ''
+              } ${isMyGroup ? 'my-group' : ''} ${dimOtherGroup ? 'dim-other-group' : ''}`}
+              style={{ borderColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
+              onClick={() => handleGroupClick(group.id)}
             >
-              <span className="group-name">{group.name}</span>
-              <span className="group-count">{group.participantIds.length} 人</span>
-              {isHost && (
-                <button
-                  className={`lock-btn ${group.locked ? 'locked' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); handleToggleLock(group.id); }}
-                  title={group.locked ? '解锁' : '锁定'}
-                >
-                  {group.locked ? '🔒' : '🔓'}
-                </button>
-              )}
+              <div
+                className="group-header"
+                style={{ backgroundColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
+              >
+                <span className="group-name">{group.name}</span>
+                <span className="group-count">{group.participantIds.length} 人</span>
+                {isHost && (
+                  <button
+                    className={`lock-btn ${group.locked ? 'locked' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); handleToggleLock(group.id); }}
+                    title={group.locked ? '解锁' : '锁定'}
+                  >
+                    {group.locked ? '🔒' : '🔓'}
+                  </button>
+                )}
+              </div>
+              <div className="group-members">
+                {group.participantIds.length === 0 ? (
+                  <div className="empty-member">
+                    {group.locked ? '锁定中' : '点击加入'}
+                  </div>
+                ) : (
+                  <ul>
+                    {group.participantIds.map((pid, idx) => {
+                      const p = participantMap.get(pid);
+                      if (!p) return null;
+                      const isMoved = movedSet.has(pid);
+                      const isSelected = selectedPid === pid;
+                      const isMe = myParticipantId === pid;
+                      const isTeammateFlag = isTeammate(pid, group.id);
+                      return (
+                        <li
+                          key={pid}
+                          className={`member-item ${isMoved ? 'moved-member' : ''} ${
+                            isSelected ? 'selected' : ''
+                          } ${isMe ? 'is-me' : ''} ${isTeammateFlag ? 'teammate' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMemberClick(pid, group.locked);
+                          }}
+                        >
+                          <span className="member-idx">{idx + 1}</span>
+                          <span className="member-name">
+                            {isMoved && <span className="moved-sparkle">✨</span>}
+                            {p.name}
+                            {isMe && <span className="me-badge">我</span>}
+                          </span>
+                          {isTeammateFlag && <span className="teammate-icon">👥</span>}
+                          {p.gender && <span className="member-tag">{p.gender}</span>}
+                          {p.department && <span className="member-tag dept">{p.department}</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
-            <div className="group-members">
-              {group.participantIds.length === 0 ? (
-                <div className="empty-member">
-                  {group.locked ? '锁定中' : '点击加入'}
-                </div>
-              ) : (
-                <ul>
-                  {group.participantIds.map((pid, idx) => {
-                    const p = participantMap.get(pid);
-                    if (!p) return null;
-                    const isMoved = recentlyMoved.has(pid);
-                    const isSelected = selectedPid === pid;
-                    const isMe = myParticipantId === pid;
-                    return (
-                      <li
-                        key={pid}
-                        className={`member-item ${isMoved ? 'highlight' : ''} ${
-                          isSelected ? 'selected' : ''
-                        } ${isMe ? 'is-me' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMemberClick(pid, group.locked);
-                        }}
-                      >
-                        <span className="member-idx">{idx + 1}</span>
-                        <span className="member-name">
-                          {p.name}
-                          {isMe && <span className="me-badge">我</span>}
-                        </span>
-                        {p.gender && <span className="member-tag">{p.gender}</span>}
-                        {p.department && <span className="member-tag dept">{p.department}</span>}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import socket from '../shared/socket';
 import { Participant } from '../shared/types';
 
@@ -21,6 +21,20 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
   const [groupCountInput, setGroupCountInput] = useState(groupCount.toString());
   const [showBatch, setShowBatch] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [batchDupMsg, setBatchDupMsg] = useState<string | null>(null);
+
+  const isSingleDuplicate = useMemo(() => {
+    if (!nameInput.trim()) return false;
+    const n = nameInput.trim();
+    const g = genderInput || undefined;
+    const d = deptInput || undefined;
+    return participants.some(
+      (p) =>
+        p.name === n &&
+        (p.gender || undefined) === g &&
+        (p.department || undefined) === d
+    );
+  }, [nameInput, genderInput, deptInput, participants]);
 
   const handleAddSingle = () => {
     if (!nameInput.trim() || !isHost) return;
@@ -43,6 +57,27 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
       .split(/[\n,，、；;]/)
       .map((n) => n.trim())
       .filter((n) => n.length > 0);
+
+    const existingNames = new Set(participants.map((p) => p.name));
+    const seenInBatch = new Set<string>();
+    const duplicates: string[] = [];
+
+    names.forEach((n) => {
+      if (existingNames.has(n) || seenInBatch.has(n)) {
+        if (!duplicates.includes(n)) duplicates.push(n);
+      }
+      seenInBatch.add(n);
+    });
+
+    if (duplicates.length > 0) {
+      setBatchDupMsg(
+        `⚠ 检测到重复姓名：${duplicates.slice(0, 5).join('、')}${duplicates.length > 5 ? ' 等' : ''}`
+      );
+      setTimeout(() => setBatchDupMsg(null), 4000);
+    } else {
+      setBatchDupMsg(null);
+    }
+
     if (names.length > 0) {
       socket.send({ type: 'add-participants', names });
     }
@@ -53,6 +88,16 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
   const handleRemove = (id: string) => {
     if (!isHost) return;
     socket.send({ type: 'remove-participant', id });
+  };
+
+  const handleApprove = (id: string) => {
+    if (!isHost) return;
+    socket.send({ type: 'update-register-status', id, status: 'approved' });
+  };
+
+  const handleReject = (id: string) => {
+    if (!isHost) return;
+    socket.send({ type: 'update-register-status', id, status: 'rejected' });
   };
 
   const handleClearAll = () => {
@@ -88,6 +133,9 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
               />
               <button onClick={handleAddSingle}>添加</button>
             </div>
+            {isSingleDuplicate && (
+              <div className="dup-hint">⚠ 可能重复</div>
+            )}
             <button className="toggle-btn" onClick={() => setShowDetail(!showDetail)}>
               {showDetail ? '收起详情' : '填写属性'} ▾
             </button>
@@ -126,6 +174,7 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
             </button>
             {showBatch && (
               <div className="batch-input">
+                {batchDupMsg && <div className="batch-dup-msg">{batchDupMsg}</div>}
                 <textarea
                   value={batchInput}
                   onChange={(e) => setBatchInput(e.target.value)}
@@ -178,6 +227,30 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
                   {p.gender && <span className="tag gender-tag">{p.gender}</span>}
                   {p.department && <span className="tag dept-tag">{p.department}</span>}
                   {p.selfRegistered && <span className="tag self-tag">自助</span>}
+                  {p.registerStatus === 'pending' && (
+                    <span className="tag status-tag status-pending">待审核</span>
+                  )}
+                  {p.registerStatus === 'rejected' && (
+                    <span className="tag status-tag status-rejected">已拒绝</span>
+                  )}
+                  {isHost && (p.registerStatus === 'pending' || p.registerStatus === 'rejected') && (
+                    <>
+                      <button
+                        className="mini-btn approve-btn"
+                        onClick={(e) => { e.stopPropagation(); handleApprove(p.id); }}
+                        title="通过"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        className="mini-btn reject-btn"
+                        onClick={(e) => { e.stopPropagation(); handleReject(p.id); }}
+                        title="拒绝"
+                      >
+                        ✗
+                      </button>
+                    </>
+                  )}
                   {isHost && (
                     <button
                       className="remove-btn"

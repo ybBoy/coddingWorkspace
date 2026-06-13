@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { eventBus } from '../shared/EventBus';
 import socket from '../shared/socket';
-import { AppState, ConnectionStatus, AppPhase } from '../shared/types';
+import { AppState, ConnectionStatus, AppPhase, ActivityTemplate } from '../shared/types';
 import LobbyPage from './LobbyPage';
 import ParticipantInput from '../components/ParticipantInput';
 import GroupBoard from '../components/GroupBoard';
 import HostControls from '../components/HostControls';
+import BigScreenPage from './BigScreenPage';
 import '../styles/GroupPage.css';
 
-const GroupPage: React.FC = () => {
+interface GroupPageProps {
+  onEnterBigScreen?: () => void;
+}
+
+const GroupPage: React.FC<GroupPageProps> = ({ onEnterBigScreen }) => {
   const [phase, setPhase] = useState<AppPhase>('lobby');
   const [state, setState] = useState<AppState>({
     activityName: '活动抽签分组',
@@ -27,6 +32,21 @@ const GroupPage: React.FC = () => {
   const [hostToken, setHostToken] = useState('');
   const [myParticipantId, setMyParticipantId] = useState<string | null>(null);
   const [selfName, setSelfName] = useState('');
+  const [toast, setToast] = useState<{ text: string; type: 'info' | 'success' | 'warning' | 'error' } | null>(null);
+  const [prevGroupId, setPrevGroupId] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<ActivityTemplate[]>([]);
+  const [showBigScreen, setShowBigScreen] = useState(false);
+  const [auditMessages, setAuditMessages] = useState<Array<{id: number; type: string; description: string; timestamp: number}>>([]);
+  const auditIdRef = useRef(0);
+
+  useEffect(() => {
+    if (state.roomCode) {
+      const savedId = localStorage.getItem('gd_participant_id_' + state.roomCode);
+      if (savedId) {
+        setMyParticipantId(savedId);
+      }
+    }
+  }, [state.roomCode]);
 
   useEffect(() => {
     const handleStateUpdate = (data: AppState) => {
@@ -52,7 +72,25 @@ const GroupPage: React.FC = () => {
 
     const handleSelfRegistered = (data: any) => {
       setMyParticipantId(data.participantId);
+      if (state.roomCode) {
+        localStorage.setItem('gd_participant_' + state.roomCode, data.participantId);
+        localStorage.setItem('gd_participant_id_' + state.roomCode, data.participantId);
+      }
       showNotification('success', '报名成功！');
+    };
+
+    const handleAuditEvent = (data: any) => {
+      const id = ++auditIdRef.current;
+      const newMessage = {
+        id,
+        type: data.type || 'info',
+        description: data.message || data.description || '有新的审核事件',
+        timestamp: Date.now(),
+      };
+      setAuditMessages((prev) => [...prev, newMessage]);
+      setTimeout(() => {
+        setAuditMessages((prev) => prev.filter((m) => m.id !== id));
+      }, 3000);
     };
 
     const handleExportData = (data: any) => {
@@ -77,6 +115,10 @@ const GroupPage: React.FC = () => {
       showNotification('success', message);
     };
 
+    const handleTemplatesList = (data: ActivityTemplate[]) => {
+      setTemplates(data);
+    };
+
     eventBus.on('state-update', handleStateUpdate);
     eventBus.on('connection-status', handleConnectionStatus);
     eventBus.on('host-granted', handleHostGranted);
@@ -85,6 +127,8 @@ const GroupPage: React.FC = () => {
     eventBus.on('export-data', handleExportData);
     eventBus.on('error', handleError);
     eventBus.on('success', handleSuccess);
+    eventBus.on('templates-list', handleTemplatesList);
+    eventBus.on('audit-event', handleAuditEvent);
 
     socket.connect();
 
@@ -102,6 +146,7 @@ const GroupPage: React.FC = () => {
       eventBus.off('export-data', handleExportData);
       eventBus.off('error', handleError);
       eventBus.off('success', handleSuccess);
+      eventBus.off('templates-list', handleTemplatesList);
       socket.disconnect();
     };
   }, []);
@@ -110,6 +155,13 @@ const GroupPage: React.FC = () => {
     setNotification({ type, message });
     setTimeout(() => {
       setNotification(null);
+    }, 3000);
+  };
+
+  const showToast = (text: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+    setToast({ text, type });
+    setTimeout(() => {
+      setToast(null);
     }, 3000);
   };
 
@@ -137,6 +189,9 @@ const GroupPage: React.FC = () => {
     );
     if (found) {
       setMyParticipantId(found.id);
+      if (state.roomCode) {
+        localStorage.setItem('gd_participant_id_' + state.roomCode, found.id);
+      }
       showNotification('success', `已找到你！你在${found.groupId ? '分组中' : '等待分组'}`);
     } else {
       showNotification('error', '未找到该名字，请确认后重试');
@@ -161,6 +216,21 @@ const GroupPage: React.FC = () => {
     }
   };
 
+  if (showBigScreen) {
+    return (
+      <>
+        <BigScreenPage onExit={() => setShowBigScreen(false)} />
+        <div className="toast-container">
+          {auditMessages.map((msg) => (
+            <div key={msg.id} className="toast-item" style={{ animationDelay: '0s' }}>
+              {msg.description}
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
   if (phase === 'lobby') {
     return (
       <div>
@@ -169,6 +239,13 @@ const GroupPage: React.FC = () => {
             {notification.message}
           </div>
         )}
+        <div className="toast-container">
+          {auditMessages.map((msg) => (
+            <div key={msg.id} className="toast-item">
+              {msg.description}
+            </div>
+          ))}
+        </div>
         <LobbyPage onEnterRoom={() => setPhase('room')} />
       </div>
     );
@@ -181,6 +258,13 @@ const GroupPage: React.FC = () => {
           {notification.message}
         </div>
       )}
+      <div className="toast-container">
+        {auditMessages.map((msg) => (
+          <div key={msg.id} className="toast-item">
+            {msg.description}
+          </div>
+        ))}
+      </div>
 
       <header className="app-header">
         <div className="header-left">
@@ -276,6 +360,13 @@ const GroupPage: React.FC = () => {
             roomCode={state.roomCode}
             hostToken={hostToken}
             onClaimHost={handleClaimHost}
+            participants={state.participants}
+            groups={state.groups}
+            requireApproval={state.requireApproval || false}
+            groupMinSize={state.groupMinSize}
+            groupMaxSize={state.groupMaxSize}
+            templates={templates}
+            onEnterBigScreen={() => setShowBigScreen(true)}
           />
         </aside>
       </main>

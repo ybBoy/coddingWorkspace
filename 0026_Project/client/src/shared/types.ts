@@ -7,6 +7,8 @@ export interface Participant {
   skill?: number;
   tag?: string | null;
   selfRegistered?: boolean;
+  registerStatus?: string;
+  fingerprint?: string;
 }
 
 export interface Group {
@@ -21,6 +23,10 @@ export interface ActionLog {
   action: string;
   description: string;
   groupsSnapshot: Group[];
+  operatorId?: string;
+  operatorName?: string;
+  operatorType?: string;
+  affectedParticipantIds?: string[];
 }
 
 export interface GroupRule {
@@ -37,6 +43,20 @@ export interface AppState {
   logs: ActionLog[];
   rules: GroupRule[];
   isHost: boolean;
+  requireApproval?: boolean;
+  groupMinSize?: number;
+  groupMaxSize?: number;
+  templates?: ActivityTemplate[];
+}
+
+export interface ActivityTemplate {
+  id: string;
+  name: string;
+  activityName: string;
+  groupCount: number;
+  rules: GroupRule[];
+  customFields: string[];
+  createdAt: number;
 }
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';

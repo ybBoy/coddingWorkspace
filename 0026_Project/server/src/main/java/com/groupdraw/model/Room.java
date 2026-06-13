@@ -12,12 +12,18 @@ public class Room {
     private List<Group> groups;
     private List<ActionLog> actionLogs;
     private List<GroupRule> rules;
+    private boolean requireApproval;
+    private int groupMinSize;
+    private int groupMaxSize;
 
     public Room() {
         this.participants = new ArrayList<Participant>();
         this.groups = new ArrayList<Group>();
         this.actionLogs = new ArrayList<ActionLog>();
         this.rules = new ArrayList<GroupRule>();
+        this.requireApproval = false;
+        this.groupMinSize = 0;
+        this.groupMaxSize = 0;
     }
 
     public Room(String code, String activityName, String hostToken) {
@@ -29,6 +35,9 @@ public class Room {
         this.groups = new ArrayList<Group>();
         this.actionLogs = new ArrayList<ActionLog>();
         this.rules = new ArrayList<GroupRule>();
+        this.requireApproval = false;
+        this.groupMinSize = 0;
+        this.groupMaxSize = 0;
     }
 
     public String getCode() {
@@ -93,5 +102,29 @@ public class Room {
 
     public void setRules(List<GroupRule> rules) {
         this.rules = rules;
+    }
+
+    public boolean isRequireApproval() {
+        return requireApproval;
+    }
+
+    public void setRequireApproval(boolean requireApproval) {
+        this.requireApproval = requireApproval;
+    }
+
+    public int getGroupMinSize() {
+        return groupMinSize;
+    }
+
+    public void setGroupMinSize(int groupMinSize) {
+        this.groupMinSize = groupMinSize;
+    }
+
+    public int getGroupMaxSize() {
+        return groupMaxSize;
+    }
+
+    public void setGroupMaxSize(int groupMaxSize) {
+        this.groupMaxSize = groupMaxSize;
     }
 }

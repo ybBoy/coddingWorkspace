@@ -1,0 +1,146 @@
+.room-grid-panel {
+  padding: 16px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.room-grid-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 14px;
+}
+
+.floor-section {
+  margin-bottom: 24px;
+}
+
+.floor-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-left: 4px;
+  border-left: 3px solid #1677ff;
+  line-height: 1;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.room-card {
+  border-radius: 8px;
+  padding: 14px;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.room-card.selected {
+  outline: 3px solid #1677ff;
+  outline-offset: 2px;
+}
+
+.room-card.status-vacant {
+  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
+}
+
+.room-card.status-occupied {
+  background: linear-gradient(135deg, #4096ff 0%, #1677ff 100%);
+}
+
+.room-card.status-dirty {
+  background: linear-gradient(135deg, #ffa940 0%, #fa8c16 100%);
+}
+
+.room-card.status-maintenance {
+  background: linear-gradient(135deg, #ff7875 0%, #f5222d 100%);
+}
+
+.room-no {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.room-type {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.room-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: inline-block;
+  align-self: flex-start;
+  margin-bottom: 8px;
+}
+
+.room-guest {
+  margin-top: auto;
+  font-size: 12px;
+}
+
+.guest-name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.checkout-time {
+  opacity: 0.9;
+}
+
+.room-overdue {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ff0000;
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  animation: blink 1.2s infinite;
+  font-weight: 600;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 1024px) {
+  .room-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .room-card {
+    padding: 12px;
+    min-height: 110px;
+  }
+
+  .room-no {
+    font-size: 18px;
+  }
+}

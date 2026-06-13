@@ -1,0 +1,94 @@
+.filter-panel {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-item label {
+  color: #666;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.filter-item select {
+  padding: 6px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  min-width: 120px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-item select:hover {
+  border-color: #4096ff;
+}
+
+.filter-item select:focus {
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+}
+
+.filter-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.status-vacant {
+  background: #52c41a;
+}
+
+.legend-dot.status-occupied {
+  background: #1677ff;
+}
+
+.legend-dot.status-dirty {
+  background: #fa8c16;
+}
+
+.legend-dot.status-maintenance {
+  background: #f5222d;
+}
+
+@media (max-width: 1024px) {
+  .filter-panel {
+    gap: 16px;
+    padding: 10px 16px;
+  }
+
+  .filter-legend {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -1,0 +1,89 @@
+.log-panel {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  height: 100%;
+}
+
+.log-header {
+  padding: 10px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.log-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #595959;
+}
+
+.log-list {
+  padding: 8px 16px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: 180px;
+}
+
+.log-empty {
+  color: #bfbfbf;
+  font-size: 12px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #595959;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.log-item:last-child {
+  border-bottom: none;
+}
+
+.log-time {
+  color: #8c8c8c;
+  font-family: "Courier New", monospace;
+}
+
+.log-room {
+  font-weight: 600;
+  color: #262626;
+  min-width: 50px;
+}
+
+.log-action {
+  font-weight: 500;
+}
+
+.log-action.action-checkin {
+  color: #1677ff;
+}
+
+.log-action.action-checkout {
+  color: #fa8c16;
+}
+
+.log-action.action-clean {
+  color: #52c41a;
+}
+
+.log-action.action-maintenance {
+  color: #f5222d;
+}
+
+.log-remark {
+  color: #8c8c8c;
+}
+
+.log-operator {
+  color: #bfbfbf;
+  margin-left: auto;
+}

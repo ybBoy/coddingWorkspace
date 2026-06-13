@@ -1,0 +1,151 @@
+.room-status-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #001529 0%, #003a8c 100%);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.hotel-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.conn-dot.conn-online {
+  background: #52c41a;
+  box-shadow: 0 0 6px #52c41a;
+}
+
+.conn-dot.conn-offline {
+  background: #ff4d4f;
+  animation: blink 1s infinite;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 12px;
+  padding: 12px;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.filter-wrapper {
+  flex-shrink: 0;
+}
+
+.grid-wrapper {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.side-panel {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.app-footer {
+  flex-shrink: 0;
+  padding: 0 12px 12px;
+  height: 200px;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-header {
+    padding: 10px 16px;
+  }
+
+  .hotel-name {
+    font-size: 16px;
+  }
+
+  .header-stats {
+    gap: 16px;
+  }
+
+  .app-main {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .side-panel {
+    width: 280px;
+  }
+
+  .app-footer {
+    padding: 0 8px 8px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column;
+  }
+
+  .side-panel {
+    width: 100%;
+    max-height: 40vh;
+  }
+}

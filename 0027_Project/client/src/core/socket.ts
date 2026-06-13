@@ -7,12 +7,16 @@ import {
   EVENT_RECORDS_UPDATE,
   EVENT_RANGE_STATS,
   EVENT_EXPORT_RECORDS,
+  EVENT_CONFIG_ACK,
+  EVENT_BACKUP_DATA,
+  EVENT_CLEAR_DATA_ACK,
 } from './EventBus'
 
 export interface Booth {
   id: string
   name: string
   description: string
+  disabled?: boolean
 }
 
 export interface Visitor {
@@ -30,6 +34,8 @@ export interface CheckInRecord {
 
 export interface SnapshotData {
   booths: Booth[]
+  allBooths?: Booth[]
+  projects?: string[]
   records: CheckInRecord[]
   boothStats: Record<string, number>
   projectStats: Record<string, number>
@@ -54,6 +60,9 @@ type WSMessageType =
   | 'statsUpdate'
   | 'rangeStats'
   | 'exportRecords'
+  | 'configAck'
+  | 'backupData'
+  | 'clearAllDataAck'
   | 'error'
 
 interface WSMessage {
@@ -153,6 +162,16 @@ class WSocket {
         break
       case 'exportRecords':
         eventBus.emit(EVENT_EXPORT_RECORDS, payload.records)
+        break
+      case 'configAck':
+        eventBus.emit(EVENT_CONFIG_ACK, payload)
+        eventBus.emit(EVENT_STATS_REFRESH, payload)
+        break
+      case 'backupData':
+        eventBus.emit(EVENT_BACKUP_DATA, payload)
+        break
+      case 'clearAllDataAck':
+        eventBus.emit(EVENT_CLEAR_DATA_ACK, payload)
         break
       case 'error':
         eventBus.emit(EVENT_CHECKIN_ERROR, payload)
@@ -254,6 +273,56 @@ class WSocket {
       JSON.stringify({
         type: 'exportRecords',
       })
+    )
+  }
+
+  private sendConfig(type: string, payload: Record<string, unknown>): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('[WSocket] Cannot send: not connected')
+      return
+    }
+    this.ws.send(JSON.stringify({ type, payload }))
+  }
+
+  addBooth(name: string, description = ''): void {
+    this.sendConfig('addBooth', { name, description })
+  }
+
+  updateBooth(id: string, opts: { name?: string; description?: string; disabled?: boolean }): void {
+    this.sendConfig('updateBooth', { id, ...opts })
+  }
+
+  deleteBooth(id: string): void {
+    this.sendConfig('deleteBooth', { id })
+  }
+
+  addProject(name: string): void {
+    this.sendConfig('addProject', { name })
+  }
+
+  updateProject(oldName: string, newName: string): void {
+    this.sendConfig('updateProject', { oldName, newName })
+  }
+
+  deleteProject(name: string): void {
+    this.sendConfig('deleteProject', { name })
+  }
+
+  requestBackup(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('[WSocket] Cannot send: not connected')
+      return
+    }
+    this.ws.send(JSON.stringify({ type: 'backupData' }))
+  }
+
+  requestClearAllData(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('[WSocket] Cannot send: not connected')
+      return
+    }
+    this.ws.send(
+      JSON.stringify({ type: 'clearAllData', payload: { confirm: 'CLEAR_ALL' } })
     )
   }
 }

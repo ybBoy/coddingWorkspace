@@ -9,17 +9,9 @@ import {
   EVENT_RECORDS_UPDATE,
 } from '../core/EventBus'
 
-const DEFAULT_BOOTHS: Booth[] = [
-  { id: 'B001', name: '人工智能展', description: '展示最新的人工智能技术与应用' },
-  { id: 'B002', name: '智能硬件展', description: '展示创新的智能硬件产品' },
-  { id: 'B003', name: '数字文创展', description: '展示数字文化创意产业成果' },
-]
-
 function BoothPage() {
-  const [selectedBoothId, setSelectedBoothId] = useState<string>(
-    DEFAULT_BOOTHS[0].id
-  )
-  const [booths, setBooths] = useState<Booth[]>(DEFAULT_BOOTHS)
+  const [selectedBoothId, setSelectedBoothId] = useState<string>('')
+  const [booths, setBooths] = useState<Booth[]>([])
   const [records, setRecords] = useState<CheckInRecord[]>([])
   const [todayBoothStats, setTodayBoothStats] = useState<Record<string, number>>({})
   const [showQR, setShowQR] = useState(false)
@@ -29,15 +21,20 @@ function BoothPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const boothFromUrl = params.get('booth')
-    if (boothFromUrl) {
-      setSelectedBoothId(boothFromUrl)
-    }
-  }, [])
 
-  useEffect(() => {
     const handleStatsRefresh = (data: SnapshotData) => {
       if (data.booths && data.booths.length > 0) {
         setBooths(data.booths)
+        setSelectedBoothId((prev) => {
+          if (prev && data.booths!.some((b) => b.id === prev && !b.disabled)) {
+            return prev
+          }
+          if (boothFromUrl && data.booths!.some((b) => b.id === boothFromUrl && !b.disabled)) {
+            return boothFromUrl
+          }
+          const firstAvailable = data.booths!.find((b) => !b.disabled)
+          return firstAvailable ? firstAvailable.id : ''
+        })
       }
       if (data.todayBoothStats) {
         setTodayBoothStats(data.todayBoothStats)
@@ -57,7 +54,7 @@ function BoothPage() {
       unsub1()
       unsub2()
     }
-  }, [selectedBoothId])
+  }, [])
 
   useEffect(() => {
     socket.connect()

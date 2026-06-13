@@ -9,6 +9,9 @@ export const EVENT_RECORDS_UPDATE = 'recordsUpdate'
 export const EVENT_RANGE_STATS = 'rangeStats'
 export const EVENT_PEAK_ALERT = 'peakAlert'
 export const EVENT_EXPORT_RECORDS = 'exportRecords'
+export const EVENT_CONFIG_ACK = 'configAck'
+export const EVENT_BACKUP_DATA = 'backupData'
+export const EVENT_CLEAR_DATA_ACK = 'clearDataAck'
 
 class EventBus {
   private listeners: Map<string, Set<EventCallback>> = new Map()

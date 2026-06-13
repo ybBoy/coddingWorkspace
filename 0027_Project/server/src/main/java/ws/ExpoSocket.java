@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import model.Booth;
 import model.CheckInRecord;
 import model.Visitor;
 import org.java_websocket.WebSocket;
@@ -75,6 +76,22 @@ public class ExpoSocket extends WebSocketServer {
                 handleGetRecordsByRange(conn, payload);
             } else if ("exportRecords".equals(type)) {
                 handleExportRecords(conn);
+            } else if ("backupData".equals(type)) {
+                handleBackupData(conn);
+            } else if ("clearAllData".equals(type)) {
+                handleClearAllData(conn, payload);
+            } else if ("addBooth".equals(type)) {
+                handleAddBooth(conn, payload);
+            } else if ("updateBooth".equals(type)) {
+                handleUpdateBooth(conn, payload);
+            } else if ("deleteBooth".equals(type)) {
+                handleDeleteBooth(conn, payload);
+            } else if ("addProject".equals(type)) {
+                handleAddProject(conn, payload);
+            } else if ("updateProject".equals(type)) {
+                handleUpdateProject(conn, payload);
+            } else if ("deleteProject".equals(type)) {
+                handleDeleteProject(conn, payload);
             } else {
                 sendError(conn, "未知的消息类型: " + type, null);
             }
@@ -151,6 +168,171 @@ public class ExpoSocket extends WebSocketServer {
         }
     }
 
+    private void handleBackupData(WebSocket conn) {
+        try {
+            String backupJson = expoService.exportBackup();
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("backupJson", backupJson);
+            payload.put("filename", "expo_backup_" + System.currentTimeMillis() + ".json");
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("type", "backupData");
+            message.put("payload", payload);
+            conn.send(gson.toJson(message));
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "备份数据失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleClearAllData(WebSocket conn, JsonElement payload) {
+        try {
+            String confirm = null;
+            if (payload != null && payload.isJsonObject()) {
+                JsonObject pl = payload.getAsJsonObject();
+                confirm = pl.has("confirm") ? pl.get("confirm").getAsString() : null;
+            }
+            if (!"CLEAR_ALL".equals(confirm)) {
+                sendError(conn, "清场确认不匹配，需传入 CLEAR_ALL", null);
+                return;
+            }
+            expoService.clearAllData();
+            Map<String, Object> message = new HashMap<>();
+            message.put("type", "clearAllDataAck");
+            message.put("payload", Collections.singletonMap("success", true));
+            conn.send(gson.toJson(message));
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "清场失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleAddBooth(WebSocket conn, JsonElement payload) {
+        try {
+            if (payload == null || !payload.isJsonObject()) {
+                sendError(conn, "addBooth需要payload", null);
+                return;
+            }
+            JsonObject pl = payload.getAsJsonObject();
+            String name = pl.has("name") ? pl.get("name").getAsString() : null;
+            String description = pl.has("description") ? pl.get("description").getAsString() : "";
+            Booth booth = expoService.addBooth(name, description);
+            sendConfigAck(conn, "addBooth", booth);
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "新增展位失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleUpdateBooth(WebSocket conn, JsonElement payload) {
+        try {
+            if (payload == null || !payload.isJsonObject()) {
+                sendError(conn, "updateBooth需要payload", null);
+                return;
+            }
+            JsonObject pl = payload.getAsJsonObject();
+            String id = pl.has("id") ? pl.get("id").getAsString() : null;
+            String name = pl.has("name") ? pl.get("name").getAsString() : null;
+            String description = pl.has("description") ? pl.get("description").getAsString() : null;
+            Boolean disabled = pl.has("disabled") ? pl.get("disabled").getAsBoolean() : null;
+            Booth booth = expoService.updateBooth(id, name, description, disabled);
+            sendConfigAck(conn, "updateBooth", booth);
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "编辑展位失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleDeleteBooth(WebSocket conn, JsonElement payload) {
+        try {
+            if (payload == null || !payload.isJsonObject()) {
+                sendError(conn, "deleteBooth需要payload", null);
+                return;
+            }
+            JsonObject pl = payload.getAsJsonObject();
+            String id = pl.has("id") ? pl.get("id").getAsString() : null;
+            expoService.deleteBooth(id);
+            sendConfigAck(conn, "deleteBooth", Collections.singletonMap("id", id));
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "删除展位失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleAddProject(WebSocket conn, JsonElement payload) {
+        try {
+            if (payload == null || !payload.isJsonObject()) {
+                sendError(conn, "addProject需要payload", null);
+                return;
+            }
+            JsonObject pl = payload.getAsJsonObject();
+            String name = pl.has("name") ? pl.get("name").getAsString() : null;
+            expoService.addProject(name);
+            sendConfigAck(conn, "addProject", Collections.singletonMap("name", name));
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "新增项目失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleUpdateProject(WebSocket conn, JsonElement payload) {
+        try {
+            if (payload == null || !payload.isJsonObject()) {
+                sendError(conn, "updateProject需要payload", null);
+                return;
+            }
+            JsonObject pl = payload.getAsJsonObject();
+            String oldName = pl.has("oldName") ? pl.get("oldName").getAsString() : null;
+            String newName = pl.has("newName") ? pl.get("newName").getAsString() : null;
+            expoService.updateProject(oldName, newName);
+            Map<String, String> res = new HashMap<>();
+            res.put("oldName", oldName);
+            res.put("newName", newName);
+            sendConfigAck(conn, "updateProject", res);
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "编辑项目失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void handleDeleteProject(WebSocket conn, JsonElement payload) {
+        try {
+            if (payload == null || !payload.isJsonObject()) {
+                sendError(conn, "deleteProject需要payload", null);
+                return;
+            }
+            JsonObject pl = payload.getAsJsonObject();
+            String name = pl.has("name") ? pl.get("name").getAsString() : null;
+            expoService.deleteProject(name);
+            sendConfigAck(conn, "deleteProject", Collections.singletonMap("name", name));
+            broadcastAllStats();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "删除项目失败: " + e.getMessage(), null);
+        }
+    }
+
+    private void sendConfigAck(WebSocket conn, String action, Object data) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("action", action);
+        payload.put("data", data);
+        payload.put("allBooths", expoService.getAllBooths());
+        payload.put("projects", expoService.getProjects());
+        payload.put("booths", expoService.getBooths());
+
+        Map<String, Object> message = new HashMap<>();
+        message.put("type", "configAck");
+        message.put("payload", payload);
+        conn.send(gson.toJson(message));
+    }
+
     private void handleGetRecordsByRange(WebSocket conn, JsonElement payload) {
         if (payload == null || !payload.isJsonObject()) {
             sendError(conn, "getRecordsByRange需要payload", null);
@@ -181,9 +363,9 @@ public class ExpoSocket extends WebSocketServer {
             for (CheckInRecord record : records) {
                 String bid = record.getBoothId();
                 boothStats.put(bid, boothStats.containsKey(bid) ? boothStats.get(bid) + 1 : 1L);
-                List<String> projects = record.getInterestedProjects();
-                if (projects != null) {
-                    for (String p : projects) {
+                List<String> ps = record.getInterestedProjects();
+                if (ps != null) {
+                    for (String p : ps) {
                         projectStats.put(p, projectStats.containsKey(p) ? projectStats.get(p) + 1 : 1L);
                     }
                 }
@@ -223,9 +405,11 @@ public class ExpoSocket extends WebSocketServer {
         broadcastAll(gson.toJson(message));
     }
 
-    private void sendSnapshot(WebSocket conn) {
+    private void broadcastAllStats() {
         Map<String, Object> payload = new HashMap<>();
         payload.put("booths", expoService.getBooths());
+        payload.put("allBooths", expoService.getAllBooths());
+        payload.put("projects", expoService.getProjects());
         payload.put("records", expoService.getRecentRecords(SNAPSHOT_RECORD_LIMIT));
         payload.put("boothStats", expoService.getBoothStats());
         payload.put("projectStats", expoService.getProjectStats());
@@ -233,7 +417,28 @@ public class ExpoSocket extends WebSocketServer {
         payload.put("todayProjectStats", expoService.getTodayProjectStats());
         payload.put("todayTotal", expoService.getTodayTotal());
         payload.put("peakBooths", expoService.getPeakBooths());
-        payload.put("availableProjects", ExpoService.DEFAULT_PROJECTS);
+        payload.put("availableProjects", expoService.getProjects());
+
+        Map<String, Object> message = new HashMap<>();
+        message.put("type", "init");
+        message.put("payload", payload);
+
+        broadcastAll(gson.toJson(message));
+    }
+
+    private void sendSnapshot(WebSocket conn) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("booths", expoService.getBooths());
+        payload.put("allBooths", expoService.getAllBooths());
+        payload.put("projects", expoService.getProjects());
+        payload.put("records", expoService.getRecentRecords(SNAPSHOT_RECORD_LIMIT));
+        payload.put("boothStats", expoService.getBoothStats());
+        payload.put("projectStats", expoService.getProjectStats());
+        payload.put("todayBoothStats", expoService.getTodayBoothStats());
+        payload.put("todayProjectStats", expoService.getTodayProjectStats());
+        payload.put("todayTotal", expoService.getTodayTotal());
+        payload.put("peakBooths", expoService.getPeakBooths());
+        payload.put("availableProjects", expoService.getProjects());
 
         Map<String, Object> message = new HashMap<>();
         message.put("type", "init");

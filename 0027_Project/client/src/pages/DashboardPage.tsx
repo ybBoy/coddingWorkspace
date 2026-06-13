@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import StatsCards from '../components/StatsCards'
 import RecentList from '../components/RecentList'
+import ConfigModal from '../components/ConfigModal'
 import type { Booth, CheckInRecord, SnapshotData, RangeStatsData } from '../core/socket'
 import { socket } from '../core/socket'
 import {
@@ -11,9 +12,12 @@ import {
   EVENT_RANGE_STATS,
   EVENT_PEAK_ALERT,
   EVENT_EXPORT_RECORDS,
+  EVENT_BACKUP_DATA,
+  EVENT_CLEAR_DATA_ACK,
 } from '../core/EventBus'
 
 type TimeRange = '10min' | 'today' | 'all'
+type CarouselMode = 'none' | 'booth' | 'project'
 
 const RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: '10min', label: '最近10分钟' },
@@ -21,23 +25,46 @@ const RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: 'all', label: '全部' },
 ]
 
+const CAROUSEL_OPTIONS: { value: CarouselMode; label: string }[] = [
+  { value: 'none', label: '关闭轮播' },
+  { value: 'booth', label: '按展位轮播' },
+  { value: 'project', label: '按项目轮播' },
+]
+
 function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [booths, setBooths] = useState<Booth[]>([])
+  const [allBooths, setAllBooths] = useState<Booth[]>([])
+  const [projects, setProjects] = useState<string[]>([])
   const [records, setRecords] = useState<CheckInRecord[]>([])
   const [boothStats, setBoothStats] = useState<Record<string, number>>({})
   const [projectStats, setProjectStats] = useState<Record<string, number>>({})
   const [peakBooths, setPeakBooths] = useState<string[]>([])
-  const [filterBoothId, setFilterBoothId] = useState<string | undefined>(
-    undefined
-  )
+  const [filterBoothId, setFilterBoothId] = useState<string | undefined>(undefined)
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
   const [todayTotal, setTodayTotal] = useState<number>(0)
   const [soundEnabled, setSoundEnabled] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
+  const [fullscreenMode, setFullscreenMode] = useState(false)
+  const [carouselMode, setCarouselMode] = useState<CarouselMode>('none')
+  const [carouselIdx, setCarouselIdx] = useState(0)
+  const [backingUp, setBackingUp] = useState(false)
+  const [clearing, setClearing] = useState(false)
+
   const prevPeakRef = useRef<Set<string>>(new Set())
   const audioCtxRef = useRef<AudioContext | null>(null)
   const exportCallbackRef = useRef<((records: CheckInRecord[]) => void) | null>(null)
+  const timeRangeRef = useRef<TimeRange>('all')
+  const carouselTimerRef = useRef<number | null>(null)
+  const backupCallbackRef = useRef<
+    ((payload: { backupJson: string; filename: string }) => void
+  ) | null>(null)
+  const clearCallbackRef = useRef<(() => void) | null>(null)
+
+  useEffect(() => {
+    timeRangeRef.current = timeRange
+  }, [timeRange])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -100,16 +127,63 @@ function DashboardPage() {
     [playPeakAlert]
   )
 
-  const timeRangeRef = useRef<TimeRange>('all')
-
   useEffect(() => {
-    timeRangeRef.current = timeRange
-  }, [timeRange])
+    if (carouselMode === 'none') {
+      setFilterBoothId(undefined)
+      setCarouselIdx(0)
+      if (carouselTimerRef.current) {
+        clearInterval(carouselTimerRef.current)
+        carouselTimerRef.current = null
+      }
+      return
+    }
+
+    const getItems = () => {
+      if (carouselMode === 'booth') {
+        return [...booths.filter((b) => !b.disabled).map((b) => b.id)]
+      } else {
+        return [...projects]
+      }
+    }
+
+    const advance = () => {
+      const items = getItems()
+      if (items.length === 0) return
+      setCarouselIdx((prev) => {
+        const next = (prev + 1) % items.length
+        const item = items[next]
+        if (carouselMode === 'booth') {
+          setFilterBoothId(item)
+        }
+        return next
+      })
+    }
+
+    const items = getItems()
+    if (items.length > 0) {
+      const first = items[0]
+      if (carouselMode === 'booth') {
+        setFilterBoothId(first)
+      }
+    }
+    setCarouselIdx(0)
+
+    carouselTimerRef.current = window.setInterval(advance, 8000)
+
+    return () => {
+      if (carouselTimerRef.current) {
+        clearInterval(carouselTimerRef.current)
+        carouselTimerRef.current = null
+      }
+    }
+  }, [carouselMode, booths, projects])
 
   useEffect(() => {
     const handleStatsRefresh = (data: SnapshotData) => {
       if (!data) return
       if (data.booths) setBooths(data.booths)
+      if (data.allBooths) setAllBooths(data.allBooths)
+      if (data.projects) setProjects(data.projects)
       if (data.peakBooths) {
         setPeakBooths(data.peakBooths)
         detectNewPeaks(data.peakBooths)
@@ -162,11 +236,31 @@ function DashboardPage() {
       }
     }
 
+    const handleBackupData = (payload: { backupJson: string; filename: string }) => {
+      if (backupCallbackRef.current) {
+        const cb = backupCallbackRef.current
+        backupCallbackRef.current = null
+        setBackingUp(false)
+        cb(payload)
+      }
+    }
+
+    const handleClearAck = () => {
+      if (clearCallbackRef.current) {
+        const cb = clearCallbackRef.current
+        clearCallbackRef.current = null
+        setClearing(false)
+        cb()
+      }
+    }
+
     const unsub1 = eventBus.on(EVENT_STATS_REFRESH, handleStatsRefresh)
     const unsub2 = eventBus.on(EVENT_RECORDS_UPDATE, handleRecordsUpdate)
     const unsub3 = eventBus.on(EVENT_FILTER_CHANGE, handleFilterChange)
     const unsub4 = eventBus.on(EVENT_RANGE_STATS, handleRangeStats)
     const unsub5 = eventBus.on(EVENT_EXPORT_RECORDS, handleExportRecords)
+    const unsub6 = eventBus.on(EVENT_BACKUP_DATA, handleBackupData)
+    const unsub7 = eventBus.on(EVENT_CLEAR_DATA_ACK, handleClearAck)
 
     socket.connect()
     socket.requestStats()
@@ -177,6 +271,8 @@ function DashboardPage() {
       unsub3()
       unsub4()
       unsub5()
+      unsub6()
+      unsub7()
     }
   }, [detectNewPeaks])
 
@@ -201,14 +297,14 @@ function DashboardPage() {
   }
 
   const doExport = (exportRecords: CheckInRecord[]) => {
+    const boothMap = new Map(allBooths.map((b) => [b.id, b.name]))
     const rows = [
       ['签到时间', '展位', '姓名', '手机尾号', '感兴趣项目'],
     ]
     exportRecords.forEach((r) => {
-      const booth = booths.find((b) => b.id === r.boothId)
       rows.push([
         new Date(r.timestamp).toLocaleString('zh-CN'),
-        booth?.name || r.boothId,
+        boothMap.get(r.boothId) || r.boothId,
         r.visitor.name,
         r.visitor.phoneSuffix,
         r.interestedProjects.join('、'),
@@ -249,7 +345,6 @@ function DashboardPage() {
   const exportCSV = () => {
     if (exporting) return
     setExporting(true)
-    exportCallbackRef.current = doExport
     const timeoutId = setTimeout(() => {
       if (exportCallbackRef.current === doExport) {
         exportCallbackRef.current = null
@@ -262,6 +357,93 @@ function DashboardPage() {
     }
     socket.requestExportRecords()
   }
+
+  const handleBackup = () => {
+    if (backingUp) return
+    if (!window.confirm('确定要备份当前所有数据吗？备份完成后可继续使用清场功能。')) {
+      return
+    }
+    setBackingUp(true)
+    const timeoutId = setTimeout(() => {
+      if (backupCallbackRef.current === handleBackupPayload) {
+        backupCallbackRef.current = null
+        setBackingUp(false)
+        alert('备份请求超时，请重试')
+      }
+    }, 10000)
+    const handleBackupPayload = (payload: { backupJson: string; filename: string }) => {
+      clearTimeout(timeoutId)
+      const blob = new Blob([payload.backupJson], { type: 'application/json' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', payload.filename)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+    backupCallbackRef.current = handleBackupPayload
+    socket.requestBackup()
+  }
+
+  const handleClearAll = () => {
+    if (clearing) return
+    if (
+      !window.confirm(
+        '⚠️ 危险操作：确定要清空所有签到数据吗？\n\n请先确认已完成数据备份！此操作会清空内存中的所有签到记录并保存到本地 JSON，展位和项目配置会保留。'
+      )
+    ) {
+      return
+    }
+    if (
+      !window.confirm(
+        '再次确认：所有签到数据将被清空且无法从系统恢复（如有备份可从备份文件恢复），确定继续？'
+      )
+    ) {
+      return
+    }
+    setClearing(true)
+    const timeoutId = setTimeout(() => {
+      if (clearCallbackRef.current === handleClearDone) {
+        clearCallbackRef.current = null
+        setClearing(false)
+        alert('清场请求超时，请重试')
+      }
+    }, 10000)
+    const handleClearDone = () => {
+      clearTimeout(timeoutId)
+      alert('清场完成！所有签到记录已清空。')
+    }
+    clearCallbackRef.current = handleClearDone
+    socket.requestClearAllData()
+  }
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen()
+        setFullscreenMode(true)
+      } else {
+        await document.exitFullscreen()
+        setFullscreenMode(false)
+      }
+    } catch (e) {
+      console.warn('Fullscreen not supported:', e)
+      setFullscreenMode(!fullscreenMode)
+    }
+  }
+
+  useEffect(() => {
+    const onFsChange = () => {
+      setFullscreenMode(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange)
+    }
+  }, [])
 
   const sortedBoothStats = Object.entries(boothStats)
     .map(([boothId, count]) => {
@@ -289,59 +471,131 @@ function DashboardPage() {
       ? Math.max(...sortedProjectStats.map((p) => p.count), 1)
       : 1
 
+  const containerClass = fullscreenMode ? 'dashboard-fullscreen' : ''
+
+  const carouselLabel =
+    carouselMode === 'booth'
+      ? booths[carouselIdx]?.name || ''
+      : carouselMode === 'project'
+      ? projects[carouselIdx] || ''
+      : ''
+
   return (
-    <div>
-      <div className="dashboard-header">
-        <div>
-          <h1 className="page-title">实时人流看板</h1>
-          <p className="page-subtitle">展会签到数据实时监控与分析</p>
+    <div className={containerClass}>
+      {!fullscreenMode && (
+        <div className="dashboard-header">
+          <div>
+            <h1 className="page-title">实时人流看板</h1>
+            <p className="page-subtitle">展会签到数据实时监控与分析</p>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div className="current-time">{formatTime(currentTime)}</div>
+          </div>
         </div>
+      )}
+
+      {!fullscreenMode && (
         <div
           style={{
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '12px',
+            marginBottom: '20px',
             flexWrap: 'wrap',
+            gap: '12px',
           }}
         >
-          <div className="current-time">{formatTime(currentTime)}</div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}
-      >
-        <div className="range-filter">
-          {RANGE_OPTIONS.map((opt) => (
+          <div className="range-filter">
+            {RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                className={`range-btn ${timeRange === opt.value ? 'active' : ''}`}
+                onClick={() => setTimeRange(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
-              key={opt.value}
-              className={`range-btn ${timeRange === opt.value ? 'active' : ''}`}
-              onClick={() => setTimeRange(opt.value)}
+              className={`sound-btn ${soundEnabled ? 'on' : ''}`}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              title={soundEnabled ? '关闭提示音' : '开启高峰提示音'}
             >
-              {opt.label}
+              {soundEnabled ? '🔊 提示音开' : '🔇 提示音关'}
             </button>
-          ))}
+            <button
+              className="btn-secondary"
+              onClick={() => setConfigOpen(true)}
+            >
+              ⚙️ 配置管理
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={handleBackup}
+              disabled={backingUp}
+            >
+              {backingUp ? '⏳ 备份中...' : '💾 数据备份'}
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={handleClearAll}
+              disabled={clearing}
+              style={{ color: '#dc2626', borderColor: '#fecaca' }}
+            >
+              {clearing ? '⏳ 清场中...' : '🗑️ 清场模式'}
+            </button>
+            <button className="btn-secondary" onClick={exportCSV} disabled={exporting}>
+              {exporting ? '⏳ 导出中...' : '📥 导出 CSV'}
+            </button>
+            <button className="btn-secondary" onClick={toggleFullscreen}>
+              🖥️ 大屏模式
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            className={`sound-btn ${soundEnabled ? 'on' : ''}`}
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            title={soundEnabled ? '关闭提示音' : '开启高峰提示音'}
-          >
-            {soundEnabled ? '🔊 提示音开' : '🔇 提示音关'}
-          </button>
-          <button className="btn-secondary" onClick={exportCSV} disabled={exporting}>
-            {exporting ? '⏳ 导出中...' : '📥 导出 CSV'}
-          </button>
+      )}
+
+      {fullscreenMode && (
+        <div className="fs-toolbar">
+          <div className="fs-title">
+            📊 实时人流看板 · {formatTime(currentTime)}
+            {carouselMode !== 'none' && (
+              <span style={{ marginLeft: '16px', fontSize: '16px', color: '#94a3b8' }}>
+                正在轮播：{carouselLabel}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="range-filter">
+              {CAROUSEL_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  className={`range-btn ${carouselMode === opt.value ? 'active' : ''}`}
+                  onClick={() => setCarouselMode(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <button
+              className={`sound-btn ${soundEnabled ? 'on' : ''}`}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            >
+              {soundEnabled ? '🔊' : '🔇'}
+            </button>
+            <button className="btn-secondary" onClick={toggleFullscreen}>
+              退出大屏
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <StatsCards
         boothStats={boothStats}
@@ -357,10 +611,7 @@ function DashboardPage() {
           <h2 className="card-title">
             展位人流排行
             {peakBooths.length > 0 && (
-              <span
-                className="peak-indicator"
-                style={{ marginLeft: '8px' }}
-              >
+              <span className="peak-indicator" style={{ marginLeft: '8px' }}>
                 ⚠️ 有 {peakBooths.length} 个展位人流高峰
               </span>
             )}
@@ -383,9 +634,7 @@ function DashboardPage() {
                     <span className="progress-name">
                       {booth.name}
                       {booth.isPeak && (
-                        <span className="peak-tag peak-pulse">
-                          🔥人流高峰
-                        </span>
+                        <span className="peak-tag peak-pulse">🔥人流高峰</span>
                       )}
                     </span>
                     <span className="progress-count">{booth.count}人</span>
@@ -446,6 +695,13 @@ function DashboardPage() {
           filterBoothId={filterBoothId}
         />
       </div>
+
+      <ConfigModal
+        open={configOpen}
+        onClose={() => setConfigOpen(false)}
+        allBooths={allBooths}
+        projects={projects}
+      />
     </div>
   )
 }

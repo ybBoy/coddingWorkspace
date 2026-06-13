@@ -4,13 +4,15 @@ import {
   eventBus,
   EVENT_CHECKIN_ACK,
   EVENT_CHECKIN_ERROR,
+  EVENT_STATS_REFRESH,
 } from '../core/EventBus'
+import type { SnapshotData } from '../core/socket'
 
 interface CheckInFormProps {
   boothId: string
 }
 
-const PROJECT_OPTIONS = [
+const DEFAULT_PROJECTS = [
   '智能对话',
   '机器视觉',
   '边缘计算',
@@ -25,6 +27,7 @@ function CheckInForm({ boothId }: CheckInFormProps) {
   const [name, setName] = useState('')
   const [phoneSuffix, setPhoneSuffix] = useState('')
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
+  const [projects, setProjects] = useState<string[]>(DEFAULT_PROJECTS)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -68,12 +71,23 @@ function CheckInForm({ boothId }: CheckInFormProps) {
       }
     }
 
+    const handleStatsRefresh = (data: SnapshotData) => {
+      if (data.projects && data.projects.length > 0) {
+        setProjects(data.projects)
+        setSelectedProjects((prev) =>
+          prev.filter((p) => data.projects!.includes(p))
+        )
+      }
+    }
+
     const unsub1 = eventBus.on(EVENT_CHECKIN_ACK, handleCheckInAck)
     const unsub2 = eventBus.on(EVENT_CHECKIN_ERROR, handleCheckInError)
+    const unsub3 = eventBus.on(EVENT_STATS_REFRESH, handleStatsRefresh)
 
     return () => {
       unsub1()
       unsub2()
+      unsub3()
       if (successTimerRef.current) clearTimeout(successTimerRef.current)
       if (timeoutTimerRef.current) clearTimeout(timeoutTimerRef.current)
     }
@@ -178,24 +192,37 @@ function CheckInForm({ boothId }: CheckInFormProps) {
 
         <div className="form-group">
           <label className="form-label">感兴趣的项目（多选）</label>
-          <div className="checkbox-group">
-            {PROJECT_OPTIONS.map((project) => (
-              <label
-                key={project}
-                className={`checkbox-item ${
-                  selectedProjects.includes(project) ? 'checked' : ''
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedProjects.includes(project)}
-                  onChange={() => handleProjectToggle(project)}
-                  disabled={submitting}
-                />
-                <span>{project}</span>
-              </label>
-            ))}
-          </div>
+          {projects.length === 0 ? (
+            <div
+              style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: 'var(--text-secondary)',
+                fontSize: '14px',
+              }}
+            >
+              暂无可用项目，请先在配置管理中添加项目
+            </div>
+          ) : (
+            <div className="checkbox-group">
+              {projects.map((project) => (
+                <label
+                  key={project}
+                  className={`checkbox-item ${
+                    selectedProjects.includes(project) ? 'checked' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedProjects.includes(project)}
+                    onChange={() => handleProjectToggle(project)}
+                    disabled={submitting}
+                  />
+                  <span>{project}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         <button type="submit" className="btn-primary" disabled={submitting}>

@@ -4,6 +4,7 @@ public class Booth {
     private String id;
     private String name;
     private String description;
+    private boolean disabled;
 
     public Booth() {
     }
@@ -12,6 +13,7 @@ public class Booth {
         this.id = id;
         this.name = name;
         this.description = description;
+        this.disabled = false;
     }
 
     public String getId() {
@@ -36,5 +38,13 @@ public class Booth {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 }

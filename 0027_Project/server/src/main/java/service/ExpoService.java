@@ -23,15 +23,18 @@ public class ExpoService {
     private static final int DEFAULT_PEAK_WINDOW_MINUTES = 5;
     private static final int DEFAULT_PEAK_THRESHOLD = 20;
 
-    public static final List<String> DEFAULT_PROJECTS = Collections.unmodifiableList(Arrays.asList(
+    private static final List<String> DEFAULT_PROJECTS = Collections.unmodifiableList(Arrays.asList(
             "智能对话", "机器视觉", "边缘计算", "智能穿戴",
             "AR/VR", "数字艺术", "互动游戏", "开源硬件"
     ));
+
+    public static final List<String> DEFAULT_PROJECTS_VIEW = DEFAULT_PROJECTS;
 
     private static ExpoService instance;
 
     private final List<Booth> booths;
     private final List<CheckInRecord> records;
+    private final List<String> projects;
     private final JsonStore jsonStore;
     private final Gson gson;
 
@@ -41,6 +44,7 @@ public class ExpoService {
         JsonStore.StoreData data = jsonStore.load();
         this.booths = Collections.synchronizedList(data.booths);
         this.records = Collections.synchronizedList(data.records);
+        this.projects = Collections.synchronizedList(data.projects);
         jsonStore.startAutoSave(new Runnable() {
             @Override
             public void run() {
@@ -59,18 +63,172 @@ public class ExpoService {
     private void saveData() {
         List<Booth> boothsCopy;
         List<CheckInRecord> recordsCopy;
+        List<String> projectsCopy;
         synchronized (booths) {
             boothsCopy = new ArrayList<>(booths);
         }
         synchronized (records) {
             recordsCopy = new ArrayList<>(records);
         }
-        jsonStore.save(new JsonStore.StoreData(boothsCopy, recordsCopy));
+        synchronized (projects) {
+            projectsCopy = new ArrayList<>(projects);
+        }
+        jsonStore.save(new JsonStore.StoreData(boothsCopy, recordsCopy, projectsCopy));
     }
 
     public List<Booth> getBooths() {
         synchronized (booths) {
+            List<Booth> result = new ArrayList<>();
+            for (Booth b : booths) {
+                if (!b.isDisabled()) {
+                    result.add(b);
+                }
+            }
+            return result;
+        }
+    }
+
+    public List<Booth> getAllBooths() {
+        synchronized (booths) {
             return new ArrayList<>(booths);
+        }
+    }
+
+    public Booth addBooth(String name, String description) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("展位名称不能为空");
+        }
+        String newId;
+        synchronized (booths) {
+            int maxNum = 0;
+            for (Booth b : booths) {
+                String id = b.getId();
+                if (id != null && id.startsWith("B")) {
+                    try {
+                        int n = Integer.parseInt(id.substring(1));
+                        if (n > maxNum) maxNum = n;
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            newId = String.format("B%03d", maxNum + 1);
+            Booth booth = new Booth(newId, name.trim(), description != null ? description.trim() : "");
+            booths.add(booth);
+            saveData();
+            return booth;
+        }
+    }
+
+    public Booth updateBooth(String id, String name, String description, Boolean disabled) {
+        if (id == null) {
+            throw new IllegalArgumentException("展位ID不能为空");
+        }
+        synchronized (booths) {
+            for (Booth booth : booths) {
+                if (id.equals(booth.getId())) {
+                    if (name != null) booth.setName(name.trim());
+                    if (description != null) booth.setDescription(description.trim());
+                    if (disabled != null) booth.setDisabled(disabled);
+                    saveData();
+                    return booth;
+                }
+            }
+            throw new IllegalArgumentException("展位不存在: " + id);
+        }
+    }
+
+    public void deleteBooth(String id) {
+        if (id == null) {
+            throw new IllegalArgumentException("展位ID不能为空");
+        }
+        synchronized (booths) {
+            boolean removed = false;
+            for (int i = booths.size() - 1; i >= 0; i--) {
+                if (id.equals(booths.get(i).getId())) {
+                    booths.remove(i);
+                    removed = true;
+                    break;
+                }
+            }
+            if (!removed) {
+                throw new IllegalArgumentException("展位不存在: " + id);
+            }
+            saveData();
+        }
+    }
+
+    public List<String> getProjects() {
+        synchronized (projects) {
+            return new ArrayList<>(projects);
+        }
+    }
+
+    public void addProject(String projectName) {
+        if (projectName == null || projectName.trim().isEmpty()) {
+            throw new IllegalArgumentException("项目名称不能为空");
+        }
+        String name = projectName.trim();
+        synchronized (projects) {
+            if (projects.contains(name)) {
+                throw new IllegalArgumentException("项目已存在: " + name);
+            }
+            projects.add(name);
+            saveData();
+        }
+    }
+
+    public void updateProject(String oldName, String newName) {
+        if (oldName == null || newName == null || newName.trim().isEmpty()) {
+            throw new IllegalArgumentException("项目名称不能为空");
+        }
+        String newTrim = newName.trim();
+        synchronized (projects) {
+            int idx = projects.indexOf(oldName);
+            if (idx < 0) {
+                throw new IllegalArgumentException("项目不存在: " + oldName);
+            }
+            if (projects.contains(newTrim) && !oldName.equals(newTrim)) {
+                throw new IllegalArgumentException("项目名称已被占用: " + newTrim);
+            }
+            projects.set(idx, newTrim);
+            synchronized (records) {
+                for (CheckInRecord record : records) {
+                    List<String> ps = record.getInterestedProjects();
+                    if (ps != null) {
+                        for (int i = 0; i < ps.size(); i++) {
+                            if (oldName.equals(ps.get(i))) {
+                                ps.set(i, newTrim);
+                            }
+                        }
+                    }
+                }
+            }
+            saveData();
+        }
+    }
+
+    public void deleteProject(String projectName) {
+        if (projectName == null) {
+            throw new IllegalArgumentException("项目名称不能为空");
+        }
+        synchronized (projects) {
+            boolean removed = projects.remove(projectName);
+            if (!removed) {
+                throw new IllegalArgumentException("项目不存在: " + projectName);
+            }
+            synchronized (records) {
+                for (CheckInRecord record : records) {
+                    List<String> ps = record.getInterestedProjects();
+                    if (ps != null) {
+                        for (int i = ps.size() - 1; i >= 0; i--) {
+                            if (projectName.equals(ps.get(i))) {
+                                ps.remove(i);
+                            }
+                        }
+                    }
+                }
+            }
+            saveData();
         }
     }
 
@@ -82,14 +240,14 @@ public class ExpoService {
         boolean boothExists = false;
         synchronized (booths) {
             for (Booth booth : booths) {
-                if (boothId.equals(booth.getId())) {
+                if (boothId.equals(booth.getId()) && !booth.isDisabled()) {
                     boothExists = true;
                     break;
                 }
             }
         }
         if (!boothExists) {
-            throw new IllegalArgumentException("展位不存在: " + boothId);
+            throw new IllegalArgumentException("展位不存在或已停用: " + boothId);
         }
 
         String phoneSuffix = visitor.getPhoneSuffix();
@@ -193,7 +351,9 @@ public class ExpoService {
         Map<String, Long> stats = new HashMap<>();
         synchronized (booths) {
             for (Booth booth : booths) {
-                stats.put(booth.getId(), 0L);
+                if (!booth.isDisabled()) {
+                    stats.put(booth.getId(), 0L);
+                }
             }
         }
         synchronized (records) {
@@ -216,13 +376,13 @@ public class ExpoService {
         synchronized (records) {
             for (CheckInRecord record : records) {
                 if (record.getTimestamp() >= todayStart && record.getTimestamp() <= now) {
-                    List<String> projects = record.getInterestedProjects();
-                    if (projects != null) {
-                        for (String project : projects) {
-                            if (stats.containsKey(project)) {
-                                stats.put(project, stats.get(project) + 1);
+                    List<String> ps = record.getInterestedProjects();
+                    if (ps != null) {
+                        for (String p : ps) {
+                            if (stats.containsKey(p)) {
+                                stats.put(p, stats.get(p) + 1);
                             } else {
-                                stats.put(project, 1L);
+                                stats.put(p, 1L);
                             }
                         }
                     }
@@ -250,7 +410,9 @@ public class ExpoService {
         Map<String, Long> stats = new HashMap<>();
         synchronized (booths) {
             for (Booth booth : booths) {
-                stats.put(booth.getId(), 0L);
+                if (!booth.isDisabled()) {
+                    stats.put(booth.getId(), 0L);
+                }
             }
         }
         synchronized (records) {
@@ -258,8 +420,6 @@ public class ExpoService {
                 String id = record.getBoothId();
                 if (stats.containsKey(id)) {
                     stats.put(id, stats.get(id) + 1);
-                } else {
-                    stats.put(id, 1L);
                 }
             }
         }
@@ -270,13 +430,13 @@ public class ExpoService {
         Map<String, Long> stats = new HashMap<>();
         synchronized (records) {
             for (CheckInRecord record : records) {
-                List<String> projects = record.getInterestedProjects();
-                if (projects != null) {
-                    for (String project : projects) {
-                        if (stats.containsKey(project)) {
-                            stats.put(project, stats.get(project) + 1);
+                List<String> ps = record.getInterestedProjects();
+                if (ps != null) {
+                    for (String p : ps) {
+                        if (stats.containsKey(p)) {
+                            stats.put(p, stats.get(p) + 1);
                         } else {
-                            stats.put(project, 1L);
+                            stats.put(p, 1L);
                         }
                     }
                 }
@@ -316,13 +476,47 @@ public class ExpoService {
         return getPeakBooths(DEFAULT_PEAK_WINDOW_MINUTES, DEFAULT_PEAK_THRESHOLD);
     }
 
+    public String exportBackup() {
+        Map<String, Object> data = new HashMap<>();
+        List<Booth> boothsCopy;
+        List<CheckInRecord> recordsCopy;
+        List<String> projectsCopy;
+        synchronized (booths) { boothsCopy = new ArrayList<>(booths); }
+        synchronized (records) { recordsCopy = new ArrayList<>(records); }
+        synchronized (projects) { projectsCopy = new ArrayList<>(projects); }
+        data.put("booths", boothsCopy);
+        data.put("records", recordsCopy);
+        data.put("projects", projectsCopy);
+        data.put("exportAt", System.currentTimeMillis());
+        data.put("stats", buildSummary());
+        return gson.toJson(data);
+    }
+
+    private Map<String, Object> buildSummary() {
+        Map<String, Object> s = new HashMap<>();
+        s.put("boothCount", getBooths().size());
+        s.put("projectCount", getProjects().size());
+        s.put("totalRecords", getAllRecords().size());
+        s.put("todayTotal", getTodayTotal());
+        return s;
+    }
+
+    public void clearAllData() {
+        synchronized (records) {
+            records.clear();
+        }
+        saveData();
+    }
+
     public String toJson() {
         Map<String, Object> data = new HashMap<>();
         data.put("booths", getBooths());
+        data.put("allBooths", getAllBooths());
         data.put("records", getAllRecords());
         data.put("boothStats", getBoothStats());
         data.put("projectStats", getProjectStats());
         data.put("peakBooths", getPeakBooths());
+        data.put("projects", getProjects());
         return gson.toJson(data);
     }
 }

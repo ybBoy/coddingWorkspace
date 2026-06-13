@@ -26,15 +26,18 @@ public class JsonStore {
     public static class StoreData {
         public List<Booth> booths;
         public List<CheckInRecord> records;
+        public List<String> projects;
 
         public StoreData() {
             this.booths = new ArrayList<>();
             this.records = new ArrayList<>();
+            this.projects = new ArrayList<>();
         }
 
-        public StoreData(List<Booth> booths, List<CheckInRecord> records) {
+        public StoreData(List<Booth> booths, List<CheckInRecord> records, List<String> projects) {
             this.booths = booths;
             this.records = records;
+            this.projects = projects;
         }
     }
 
@@ -64,11 +67,27 @@ public class JsonStore {
             if (data.records == null) {
                 data.records = new ArrayList<>();
             }
+            if (data.projects == null) {
+                data.projects = createDefaultProjects();
+            }
             return data;
         } catch (IOException e) {
             e.printStackTrace();
             return createDefaultData();
         }
+    }
+
+    private List<String> createDefaultProjects() {
+        List<String> projects = new ArrayList<>();
+        projects.add("智能对话");
+        projects.add("机器视觉");
+        projects.add("边缘计算");
+        projects.add("智能穿戴");
+        projects.add("AR/VR");
+        projects.add("数字艺术");
+        projects.add("互动游戏");
+        projects.add("开源硬件");
+        return projects;
     }
 
     private StoreData createDefaultData() {
@@ -78,6 +97,7 @@ public class JsonStore {
         data.booths.add(new Booth("B002", "智能硬件展", "展示创新的智能硬件产品"));
         data.booths.add(new Booth("B003", "数字文创展", "展示数字文化创意产业成果"));
         data.records = new ArrayList<>();
+        data.projects = createDefaultProjects();
         return data;
     }
 

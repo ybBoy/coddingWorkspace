@@ -6,11 +6,11 @@ interface GroupBoardProps {
   groups: Group[];
   participants: Participant[];
   isHost: boolean;
+  myParticipantId?: string | null;
 }
 
-const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost }) => {
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
+const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost, myParticipantId }) => {
+  const [selectedPid, setSelectedPid] = useState<string | null>(null);
   const [recentlyMoved, setRecentlyMoved] = useState<Set<string>>(new Set());
   const prevGroupsRef = useRef<Group[]>(groups);
 
@@ -49,41 +49,22 @@ const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost })
 
   const participantMap = new Map(participants.map((p) => [p.id, p]));
 
-  const handleDragStart = (e: React.DragEvent, participantId: string) => {
-    if (!isHost) {
-      e.preventDefault();
-      return;
-    }
-    setDraggedId(participantId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', participantId);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedId(null);
-    setDragOverGroup(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent, groupId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverGroup !== groupId) {
-      setDragOverGroup(groupId);
+  const handleMemberClick = (pid: string, groupLocked: boolean) => {
+    if (!isHost || groupLocked) return;
+    if (selectedPid === pid) {
+      setSelectedPid(null);
+    } else {
+      setSelectedPid(pid);
     }
   };
 
-  const handleDragLeave = () => {
-    setDragOverGroup(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, groupId: string) => {
-    e.preventDefault();
-    const pid = e.dataTransfer.getData('text/plain');
-    if (pid && isHost) {
-      socket.send({ type: 'move-participant', participantId: pid, targetGroupId: groupId });
+  const handleGroupClick = (groupId: string) => {
+    if (!isHost || !selectedPid) return;
+    const targetGroup = groups.find((g) => g.id === groupId);
+    if (targetGroup && !targetGroup.locked) {
+      socket.send({ type: 'move-participant', participantId: selectedPid, targetGroupId: groupId });
+      setSelectedPid(null);
     }
-    setDraggedId(null);
-    setDragOverGroup(null);
   };
 
   const handleToggleLock = (groupId: string) => {
@@ -93,82 +74,88 @@ const GroupBoard: React.FC<GroupBoardProps> = ({ groups, participants, isHost })
 
   const getGroupColor = (index: number) => {
     const colors = [
-      '#6366f1',
-      '#8b5cf6',
-      '#ec4899',
-      '#f43f5e',
-      '#f97316',
-      '#eab308',
-      '#22c55e',
-      '#14b8a6',
-      '#06b6d4',
-      '#3b82f6',
+      '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316',
+      '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6',
     ];
     return colors[index % colors.length];
   };
 
+  const selectedParticipant = selectedPid ? participantMap.get(selectedPid) : null;
+
   return (
-    <div className="group-board">
-      {groups.map((group, index) => (
-        <div
-          key={group.id}
-          className={`group-card ${group.locked ? 'locked' : ''} ${
-            dragOverGroup === group.id ? 'drag-over' : ''
-          }`}
-          style={{ borderColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
-          onDragOver={(e) => handleDragOver(e, group.id)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, group.id)}
-        >
-          <div
-            className="group-header"
-            style={{ backgroundColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
-          >
-            <span className="group-name">{group.name}</span>
-            <span className="group-count">
-              {group.participantIds.length} 人
-            </span>
-            {isHost && (
-              <button
-                className={`lock-btn ${group.locked ? 'locked' : ''}`}
-                onClick={() => handleToggleLock(group.id)}
-                title={group.locked ? '解锁' : '锁定'}
-              >
-                {group.locked ? '🔒' : '🔓'}
-              </button>
-            )}
-          </div>
-          <div className="group-members">
-            {group.participantIds.length === 0 ? (
-              <div className="empty-member">
-                {group.locked ? '锁定中' : '拖入成员'}
-              </div>
-            ) : (
-              <ul>
-                {group.participantIds.map((pid, idx) => {
-                  const p = participantMap.get(pid);
-                  if (!p) return null;
-                  const isMoved = recentlyMoved.has(pid);
-                  return (
-                    <li
-                      key={pid}
-                      className={`member-item ${isMoved ? 'highlight' : ''} ${
-                        draggedId === pid ? 'dragging' : ''
-                      }`}
-                      draggable={isHost && !group.locked}
-                      onDragStart={(e) => handleDragStart(e, pid)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span className="member-idx">{idx + 1}</span>
-                      <span className="member-name">{p.name}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+    <div className="group-board-wrapper">
+      {selectedPid && selectedParticipant && (
+        <div className="move-hint">
+          已选择 <strong>{selectedParticipant.name}</strong>，点击目标组移动
+          <button className="cancel-move" onClick={() => setSelectedPid(null)}>取消</button>
         </div>
-      ))}
+      )}
+      <div className="group-board">
+        {groups.map((group, index) => (
+          <div
+            key={group.id}
+            className={`group-card ${group.locked ? 'locked' : ''} ${
+              selectedPid && !group.locked ? 'selectable' : ''
+            }`}
+            style={{ borderColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
+            onClick={() => handleGroupClick(group.id)}
+          >
+            <div
+              className="group-header"
+              style={{ backgroundColor: group.locked ? '#9ca3af' : getGroupColor(index) }}
+            >
+              <span className="group-name">{group.name}</span>
+              <span className="group-count">{group.participantIds.length} 人</span>
+              {isHost && (
+                <button
+                  className={`lock-btn ${group.locked ? 'locked' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); handleToggleLock(group.id); }}
+                  title={group.locked ? '解锁' : '锁定'}
+                >
+                  {group.locked ? '🔒' : '🔓'}
+                </button>
+              )}
+            </div>
+            <div className="group-members">
+              {group.participantIds.length === 0 ? (
+                <div className="empty-member">
+                  {group.locked ? '锁定中' : '点击加入'}
+                </div>
+              ) : (
+                <ul>
+                  {group.participantIds.map((pid, idx) => {
+                    const p = participantMap.get(pid);
+                    if (!p) return null;
+                    const isMoved = recentlyMoved.has(pid);
+                    const isSelected = selectedPid === pid;
+                    const isMe = myParticipantId === pid;
+                    return (
+                      <li
+                        key={pid}
+                        className={`member-item ${isMoved ? 'highlight' : ''} ${
+                          isSelected ? 'selected' : ''
+                        } ${isMe ? 'is-me' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMemberClick(pid, group.locked);
+                        }}
+                      >
+                        <span className="member-idx">{idx + 1}</span>
+                        <span className="member-name">
+                          {p.name}
+                          {isMe && <span className="me-badge">我</span>}
+                        </span>
+                        {p.gender && <span className="member-tag">{p.gender}</span>}
+                        {p.department && <span className="member-tag dept">{p.department}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

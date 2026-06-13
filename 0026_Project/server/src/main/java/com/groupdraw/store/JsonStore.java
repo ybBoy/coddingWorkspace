@@ -2,31 +2,33 @@ package com.groupdraw.store;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.groupdraw.model.ActionLog;
-import com.groupdraw.model.Group;
-import com.groupdraw.model.Participant;
+import com.google.gson.reflect.TypeToken;
+import com.groupdraw.model.Room;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class JsonStore {
     private static final String DATA_DIR = "data";
-    private static final String DATA_FILE = "groupdraw-data.json";
+    private static final String DATA_FILE = "groupdraw-rooms.json";
     private static final long SAVE_INTERVAL_MS = 30000;
 
     private Gson gson;
     private Timer saveTimer;
-    private AppState currentState;
+    private Map<String, Room> rooms;
 
     public JsonStore() {
         this.gson = new GsonBuilder().setPrettyPrinting().create();
-        this.currentState = new AppState();
+        this.rooms = new ConcurrentHashMap<String, Room>();
         ensureDataDir();
     }
 
@@ -54,17 +56,19 @@ public class JsonStore {
         }
     }
 
-    public void save() {
+    public synchronized void save() {
         try {
             File file = new File(DATA_DIR, DATA_FILE);
+            List<Room> roomList = new ArrayList<Room>(rooms.values());
             FileWriter writer = new FileWriter(file);
-            gson.toJson(currentState, writer);
+            gson.toJson(roomList, writer);
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    @SuppressWarnings("unchecked")
     public boolean load() {
         try {
             File file = new File(DATA_DIR, DATA_FILE);
@@ -72,10 +76,14 @@ public class JsonStore {
                 return false;
             }
             FileReader reader = new FileReader(file);
-            AppState state = gson.fromJson(reader, AppState.class);
+            Type listType = new TypeToken<ArrayList<Room>>(){}.getType();
+            List<Room> roomList = gson.fromJson(reader, listType);
             reader.close();
-            if (state != null) {
-                this.currentState = state;
+            if (roomList != null) {
+                rooms.clear();
+                for (Room room : roomList) {
+                    rooms.put(room.getCode(), room);
+                }
                 return true;
             }
         } catch (IOException e) {
@@ -84,54 +92,23 @@ public class JsonStore {
         return false;
     }
 
-    public List<Participant> getParticipants() {
-        return currentState.participants;
+    public Room getRoom(String code) {
+        return rooms.get(code);
     }
 
-    public void setParticipants(List<Participant> participants) {
-        currentState.participants = participants;
+    public void putRoom(Room room) {
+        rooms.put(room.getCode(), room);
     }
 
-    public List<Group> getGroups() {
-        return currentState.groups;
+    public void removeRoom(String code) {
+        rooms.remove(code);
     }
 
-    public void setGroups(List<Group> groups) {
-        currentState.groups = groups;
+    public List<Room> getAllRooms() {
+        return new ArrayList<Room>(rooms.values());
     }
 
-    public List<ActionLog> getActionLogs() {
-        return currentState.actionLogs;
-    }
-
-    public void setActionLogs(List<ActionLog> actionLogs) {
-        currentState.actionLogs = actionLogs;
-    }
-
-    public String getActivityName() {
-        return currentState.activityName;
-    }
-
-    public void setActivityName(String activityName) {
-        currentState.activityName = activityName;
-    }
-
-    public int getGroupCount() {
-        return currentState.groupCount;
-    }
-
-    public void setGroupCount(int groupCount) {
-        currentState.groupCount = groupCount;
-    }
-
-    private static class AppState {
-        String activityName = "活动抽签分组";
-        int groupCount = 4;
-        List<Participant> participants = new ArrayList<Participant>();
-        List<Group> groups = new ArrayList<Group>();
-        List<ActionLog> actionLogs = new ArrayList<ActionLog>();
-
-        public AppState() {
-        }
+    public boolean hasRoom(String code) {
+        return rooms.containsKey(code);
     }
 }

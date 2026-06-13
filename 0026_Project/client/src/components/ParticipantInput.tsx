@@ -14,14 +14,27 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
   isHost,
 }) => {
   const [nameInput, setNameInput] = useState('');
+  const [genderInput, setGenderInput] = useState('');
+  const [deptInput, setDeptInput] = useState('');
+  const [skillInput, setSkillInput] = useState('0');
   const [batchInput, setBatchInput] = useState('');
   const [groupCountInput, setGroupCountInput] = useState(groupCount.toString());
   const [showBatch, setShowBatch] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   const handleAddSingle = () => {
     if (!nameInput.trim() || !isHost) return;
-    socket.send({ type: 'add-participant', name: nameInput.trim() });
+    socket.send({
+      type: 'add-participant',
+      name: nameInput.trim(),
+      gender: genderInput || undefined,
+      department: deptInput || undefined,
+      skill: parseInt(skillInput, 10) || 0,
+    });
     setNameInput('');
+    setGenderInput('');
+    setDeptInput('');
+    setSkillInput('0');
   };
 
   const handleAddBatch = () => {
@@ -71,13 +84,40 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddSingle()}
-                placeholder="输入名字后按回车"
-                disabled={!isHost}
+                placeholder="输入名字"
               />
-              <button onClick={handleAddSingle} disabled={!isHost}>
-                添加
-              </button>
+              <button onClick={handleAddSingle}>添加</button>
             </div>
+            <button className="toggle-btn" onClick={() => setShowDetail(!showDetail)}>
+              {showDetail ? '收起详情' : '填写属性'} ▾
+            </button>
+            {showDetail && (
+              <div className="detail-inputs">
+                <div className="form-row">
+                  <select value={genderInput} onChange={(e) => setGenderInput(e.target.value)}>
+                    <option value="">性别</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={deptInput}
+                    onChange={(e) => setDeptInput(e.target.value)}
+                    placeholder="部门"
+                  />
+                </div>
+                <div className="form-row">
+                  <label className="skill-label">能力: {skillInput}</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="input-section">
@@ -90,12 +130,9 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
                   value={batchInput}
                   onChange={(e) => setBatchInput(e.target.value)}
                   placeholder="每行一个名字，也可以用逗号、顿号分隔"
-                  rows={6}
-                  disabled={!isHost}
+                  rows={5}
                 />
-                <button onClick={handleAddBatch} disabled={!isHost}>
-                  批量添加
-                </button>
+                <button onClick={handleAddBatch}>批量添加</button>
               </div>
             )}
           </div>
@@ -111,7 +148,6 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
                 onChange={(e) => setGroupCountInput(e.target.value)}
                 onBlur={handleGroupCountChange}
                 onKeyDown={(e) => e.key === 'Enter' && handleGroupCountChange()}
-                disabled={!isHost}
               />
               <span className="hint">组 (1-20)</span>
             </div>
@@ -139,6 +175,9 @@ const ParticipantInput: React.FC<ParticipantInputProps> = ({
                 <li key={p.id} className="participant-item">
                   <span className="index">{index + 1}.</span>
                   <span className="name">{p.name}</span>
+                  {p.gender && <span className="tag gender-tag">{p.gender}</span>}
+                  {p.department && <span className="tag dept-tag">{p.department}</span>}
+                  {p.selfRegistered && <span className="tag self-tag">自助</span>}
                   {isHost && (
                     <button
                       className="remove-btn"

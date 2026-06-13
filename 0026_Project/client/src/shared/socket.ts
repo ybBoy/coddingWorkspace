@@ -12,8 +12,12 @@ class SocketService {
       this.ws.close();
     }
 
+    const isDev = process.env.NODE_ENV === 'development';
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = host || window.location.host;
+    let wsHost = host || window.location.host;
+    if (isDev && !host) {
+      wsHost = 'localhost:8080';
+    }
     this.url = `${protocol}//${wsHost}`;
 
     this.setStatus('connecting');
@@ -23,7 +27,6 @@ class SocketService {
 
       this.ws.onopen = () => {
         this.setStatus('connected');
-        this.send({ type: 'init' });
       };
 
       this.ws.onmessage = (event) => {
@@ -67,6 +70,15 @@ class SocketService {
       case 'host-granted':
         eventBus.emit('host-granted');
         break;
+      case 'room-created':
+        eventBus.emit('room-created', data);
+        break;
+      case 'self-registered':
+        eventBus.emit('self-registered', data);
+        break;
+      case 'export-data':
+        eventBus.emit('export-data', data);
+        break;
       case 'error':
         eventBus.emit('error', data.message);
         break;
@@ -84,6 +96,18 @@ class SocketService {
     } else {
       console.warn('WebSocket not connected, message not sent');
     }
+  }
+
+  createRoom(activityName: string): void {
+    this.send({ type: 'create-room', activityName });
+  }
+
+  joinRoom(roomCode: string): void {
+    this.send({ type: 'join-room', roomCode: roomCode.toUpperCase() });
+  }
+
+  selfRegister(roomCode: string, name: string, gender?: string, department?: string): void {
+    this.send({ type: 'self-register', roomCode, name, gender, department });
   }
 
   claimHost(token: string): void {

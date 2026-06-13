@@ -4,6 +4,11 @@ public class Participant {
     private String id;
     private String name;
     private String groupId;
+    private String gender;
+    private String department;
+    private int skill;
+    private String tag;
+    private boolean selfRegistered;
 
     public Participant() {
     }
@@ -11,6 +16,8 @@ public class Participant {
     public Participant(String id, String name) {
         this.id = id;
         this.name = name;
+        this.skill = 0;
+        this.selfRegistered = false;
     }
 
     public String getId() {
@@ -35,5 +42,45 @@ public class Participant {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public int getSkill() {
+        return skill;
+    }
+
+    public void setSkill(int skill) {
+        this.skill = skill;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+
+    public boolean isSelfRegistered() {
+        return selfRegistered;
+    }
+
+    public void setSelfRegistered(boolean selfRegistered) {
+        this.selfRegistered = selfRegistered;
     }
 }

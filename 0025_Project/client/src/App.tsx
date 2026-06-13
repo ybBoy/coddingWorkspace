@@ -7,7 +7,7 @@ import ReplayView from './features/replay/ReplayView';
 import eventBus from './core/EventBus';
 import socket from './core/socket';
 import type {
-  Article, Note, Reply, SocketStatus, NoteType, Paragraph,
+  Article, Note, Reply, SocketStatus, NoteType, Paragraph, Presence,
   LikeUpdatePayload, ReplyLikeUpdatePayload, HighlightUpdatePayload,
   ParagraphSwitchPayload, OnlineCountPayload, ModeratorListPayload,
   DiscussionQueuePayload, TimelineEvent, RoomState, RoomSummary,
@@ -200,7 +200,14 @@ const App: React.FC = () => {
     unsubs.push(eventBus.on('PRESENCE_UPDATED', (payload: OnlineCountPayload) => {
       if (typeof payload.onlineCount === 'number') setOnlineCount(payload.onlineCount);
       if (Array.isArray(payload.names)) setOnlineNames(payload.names);
-      if (Array.isArray(payload.presences)) setPresences(payload.presences);
+      if (Array.isArray(payload.presences)) {
+        setPresences(payload.presences);
+        const me = payload.presences.find((p: Presence) => p.userName === userName);
+        if (me) {
+          setIsModerator(me.isModerator || false);
+          setIsOwner(me.isOwner || false);
+        }
+      }
       if (Array.isArray(payload.typingUsers)) setTypingUsers(payload.typingUsers);
       if (Array.isArray(payload.moderators)) setModerators(payload.moderators);
     }));
@@ -286,6 +293,10 @@ const App: React.FC = () => {
 
     unsubs.push(eventBus.on('REQUEST_JOIN_ROOM', payload => {
       socket.joinRoom(payload.roomId, payload.passcode);
+    }));
+
+    unsubs.push(eventBus.on('REQUEST_LEAVE_ROOM', () => {
+      handleLeaveRoom();
     }));
 
     unsubs.push(eventBus.on('REQUEST_CREATE_ROOM', payload => {
@@ -404,10 +415,21 @@ const App: React.FC = () => {
   }, [presences, userName]);
 
   const handleLeaveRoom = () => {
+    socket.leaveRoom();
     setViewMode('lobby');
     setRoomId('');
     localStorage.removeItem(ROOM_STORAGE_KEY);
-    socket.setRoomId('');
+    setNotes([]);
+    setReplies([]);
+    setDiscussionQueue([]);
+    setPresences([]);
+    setTypingUsers([]);
+    setTimeline([]);
+    setIsOwner(false);
+    setIsModerator(false);
+    setModerators([]);
+    setHighlightParagraphId(null);
+    setSelectedParagraphId(null);
   };
 
   const handleStartReplay = () => {
@@ -440,7 +462,6 @@ const App: React.FC = () => {
         <ReplayView
           timeline={timeline}
           article={article}
-          notes={notes}
           currentIndex={replayIndex}
           setCurrentIndex={setReplayIndex}
           onExit={handleExitReplay}
@@ -456,7 +477,7 @@ const App: React.FC = () => {
         article={article}
         isModerator={isModerator}
         isOwner={isOwner}
-        setIsModerator={(want) => eventBus.emit('REQUEST_SET_MODERATOR', { moderator: want })}
+        setIsModerator={() => {}}
         moderators={moderators}
         userName={userName}
         setUserName={setUserName}

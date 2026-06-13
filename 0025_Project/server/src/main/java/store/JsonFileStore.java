@@ -56,7 +56,17 @@ public class JsonFileStore {
     }
 
     public synchronized void saveRooms(List<Room> rooms) {
-        StoreData data = new StoreData(rooms);
+        List<Room> roomsCopy = new ArrayList<>();
+        for (Room r : rooms) {
+            if (r != null) {
+                Room copy = gson.fromJson(gson.toJson(r), Room.class);
+                if (copy.getPresences() != null) {
+                    copy.getPresences().clear();
+                }
+                roomsCopy.add(copy);
+            }
+        }
+        StoreData data = new StoreData(roomsCopy);
         try (Writer writer = new OutputStreamWriter(
                 new FileOutputStream(dataFile), StandardCharsets.UTF_8)) {
             gson.toJson(data, writer);

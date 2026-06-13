@@ -142,6 +142,16 @@ class SocketClient {
     });
   }
 
+  leaveRoom(): void {
+    const roomId = this.roomId;
+    this.sendRaw({
+      type: 'LEAVE_ROOM',
+      payload: { roomId },
+      sender: this.userName
+    });
+    this.roomId = '';
+  }
+
   setModerator(moderator: boolean, target?: string): void {
     this.sendRaw({
       type: 'SET_MODERATOR',

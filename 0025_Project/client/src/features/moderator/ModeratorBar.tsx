@@ -33,10 +33,11 @@ const STATUS_META: Record<SocketStatus, { label: string; cls: string }> = {
 const ModeratorBar: React.FC<Props> = ({
   article, isModerator, isOwner, setIsModerator, moderators,
   userName, setUserName, socketStatus, onlineCount, onlineNames,
-  typingUsers, roomName, ownerName,
+  typingUsers, roomName, ownerName, presences,
   onOpenNotesMobile, onLeaveRoom, onStartReplay
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showModPanel, setShowModPanel] = useState(false);
   const currentIdx = article ? article.paragraphs.findIndex(p => p.id === article.currentParagraphId) : -1;
   const total = article?.paragraphs.length || 0;
   const canPrev = currentIdx > 0;
@@ -47,6 +48,13 @@ const ModeratorBar: React.FC<Props> = ({
   const typingText = typingUsers && typingUsers.length > 0
     ? typingUsers.slice(0, 3).join('、') + (typingUsers.length > 3 ? ` 等${typingUsers.length}人` : '') + ' 正在输入…'
     : '';
+
+  const onlinePresences = (presences || []).filter(p => p.userName !== userName);
+  const moderatorSet = new Set(moderators || []);
+
+  const handleToggleMod = (target: string, makeMod: boolean) => {
+    eventBus.emit('REQUEST_SET_MODERATOR', { moderator: makeMod, target });
+  };
 
   return (
     <header className="topbar">
@@ -124,6 +132,11 @@ const ModeratorBar: React.FC<Props> = ({
           </button>
           {showMenu && (
             <div className="topbar__dropdown" onClick={() => setShowMenu(false)}>
+              {isOwner && (
+                <button className="topbar__menuitem" onClick={() => setShowModPanel(v => !v)}>
+                  👑 管理主持人
+                </button>
+              )}
               <button className="topbar__menuitem" onClick={() => { eventBus.emit('REQUEST_EXPORT_MD'); }}>
                 📄 导出 Markdown
               </button>
@@ -140,6 +153,35 @@ const ModeratorBar: React.FC<Props> = ({
           )}
         </div>
 
+        {showModPanel && isOwner && (
+          <div className="mod-panel">
+            <div className="mod-panel__header">
+              <span>👑 管理主持人</span>
+              <button className="mod-panel__close" onClick={() => setShowModPanel(false)}>✕</button>
+            </div>
+            <div className="mod-panel__body">
+              {onlinePresences.length === 0 && (
+                <div className="mod-panel__empty">暂无其他在线用户</div>
+              )}
+              {onlinePresences.map(p => (
+                <div key={p.userName} className="mod-panel__row">
+                  <span className="mod-panel__name">
+                    {p.isOwner && '👑 '}{p.isModerator && '🎙️ '}{p.userName}
+                  </span>
+                  {!p.isOwner && (
+                    <button
+                      className={`btn btn--xs ${p.isModerator ? 'btn--warn' : 'btn--primary'}`}
+                      onClick={() => handleToggleMod(p.userName, !p.isModerator)}
+                    >
+                      {p.isModerator ? '取消主持' : '设为主持人'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <label className="name-input">
           <span className="name-input__label">昵称</span>
           <input
@@ -151,17 +193,13 @@ const ModeratorBar: React.FC<Props> = ({
           />
         </label>
 
-        <label className="switch-wrap" title={isModerator ? '当前为主持人身份' : '切换为主持人（需房主授权）'}>
-          <input
-            type="checkbox"
-            checked={isModerator}
-            onChange={e => setIsModerator(e.target.checked)}
-          />
-          <span className="switch-wrap__slider" />
-          <span className="switch-wrap__text">
-            {isOwner ? '👑 房主' : isModerator ? '🎙️ 主持人' : '主持人模式'}
-          </span>
-        </label>
+        <div className="role-badge" title={
+          isOwner ? '你是房主，拥有所有权限' :
+          isModerator ? '你是主持人，可控制阅读进度' :
+          '主持人权限由房主授予'
+        }>
+          {isOwner ? '👑 房主' : isModerator ? '🎙️ 主持人' : '👤 读者'}
+        </div>
 
         <button className="icon-btn notes-toggle" onClick={onOpenNotesMobile} aria-label="打开批注">
           💬

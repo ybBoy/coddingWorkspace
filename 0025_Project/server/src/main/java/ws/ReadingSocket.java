@@ -193,10 +193,23 @@ public class ReadingSocket extends WebSocketServer {
                 broadcastRoomPresence(room.getId());
                 break;
             }
+            case "LEAVE_ROOM": {
+                String roomId = connRoomMap.remove(conn);
+                if (roomId != null && userName != null) {
+                    service.leaveRoom(roomId, userName);
+                    broadcastRoomPresence(roomId);
+                }
+                break;
+            }
             case "JOIN_ROOM": {
                 Map<String, Object> p = (Map<String, Object>) msg.payload;
                 String roomId = p.get("roomId") != null ? p.get("roomId").toString() : "default";
                 String passcode = p.get("passcode") != null ? p.get("passcode").toString() : "";
+                String prevRoom = connRoomMap.get(conn);
+                if (prevRoom != null && !prevRoom.equals(roomId)) {
+                    service.leaveRoom(prevRoom, userName);
+                    broadcastRoomPresence(prevRoom);
+                }
                 boolean ok = service.joinRoom(roomId, userName, passcode);
                 if (ok) {
                     connRoomMap.put(conn, roomId);
@@ -212,11 +225,13 @@ public class ReadingSocket extends WebSocketServer {
                 if (msg.payload != null) {
                     String name = msg.payload.toString().trim();
                     if (!name.isEmpty()) {
-                        String oldRoom = connRoomMap.get(conn);
-                        userNames.put(conn, name);
-                        if (oldRoom != null) {
-                            broadcastRoomPresence(oldRoom);
+                        String oldName = userNames.get(conn);
+                        String roomId = connRoomMap.get(conn);
+                        if (roomId != null && oldName != null && !oldName.equals(name)) {
+                            service.renameUser(roomId, oldName, name);
+                            broadcastRoomState(roomId);
                         }
+                        userNames.put(conn, name);
                     }
                 }
                 break;

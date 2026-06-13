@@ -21,6 +21,9 @@ public class RoomService {
             if (data.getRooms() != null) {
                 for (Room r : data.getRooms()) {
                     if (r != null && r.getId() != null) {
+                        if (r.getPresences() != null) {
+                            r.getPresences().clear();
+                        }
                         rooms.put(r.getId(), r);
                     }
                 }
@@ -149,6 +152,8 @@ public class RoomService {
         data.put("noteId", noteId);
         data.put("parentReplyId", parentReplyId);
         data.put("content", content);
+        data.put("author", author);
+        data.put("createdAt", reply.getCreatedAt());
         addTimelineEvent(room, TimelineEvent.EventType.REPLY_ADDED, author, data);
         persist();
         return reply;
@@ -187,6 +192,10 @@ public class RoomService {
                 } else {
                     reply.addLike(user);
                 }
+                Map<String, Object> data = new HashMap<>();
+                data.put("replyId", replyId);
+                data.put("liked", likes.contains(user));
+                addTimelineEvent(room, TimelineEvent.EventType.LIKE, user, data);
                 persist();
                 return true;
             }
@@ -348,6 +357,53 @@ public class RoomService {
         return true;
     }
 
+    public synchronized boolean renameUser(String roomId, String oldName, String newName) {
+        Room room = rooms.get(roomId);
+        if (room == null) return false;
+        if (oldName == null || newName == null || oldName.equals(newName)) return false;
+        if (room.getPresence(newName) != null) return false;
+
+        Presence p = room.getPresence(oldName);
+        if (p != null) {
+            room.removePresence(oldName);
+            p.setUserName(newName);
+            room.setPresence(newName, p);
+        }
+
+        if (oldName.equals(room.getOwnerName())) {
+            room.setOwnerName(newName);
+        }
+
+        for (Note note : room.getNotes()) {
+            if (oldName.equals(note.getAuthor())) {
+                note.setAuthor(newName);
+            }
+            if (note.getLikes() != null) {
+                if (note.getLikes().remove(oldName)) {
+                    note.getLikes().add(newName);
+                }
+            }
+        }
+
+        for (Reply reply : room.getReplies()) {
+            if (oldName.equals(reply.getAuthor())) {
+                reply.setAuthor(newName);
+            }
+            if (reply.getLikes() != null) {
+                if (reply.getLikes().remove(oldName)) {
+                    reply.getLikes().add(newName);
+                }
+            }
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("oldName", oldName);
+        data.put("newName", newName);
+        addTimelineEvent(room, TimelineEvent.EventType.USER_RENAMED, newName, data);
+        persist();
+        return true;
+    }
+
     public Article importArticle(String roomId, String title, String author, String rawText, String userName) {
         Room room = rooms.get(roomId);
         if (room == null) return null;
@@ -357,7 +413,8 @@ public class RoomService {
         String[] parts = rawText.split("\\n\\s*\\n");
         List<Paragraph> paragraphs = new ArrayList<>();
         int idx = 0;
-        String roomPrefix = roomId + "_";
+        long ts = System.currentTimeMillis();
+        String roomPrefix = roomId + "_" + ts + "_";
         for (String part : parts) {
             String trimmed = part.trim();
             if (!trimmed.isEmpty()) {
@@ -367,16 +424,22 @@ public class RoomService {
         }
         if (paragraphs.isEmpty()) return null;
 
-        Article newArticle = new Article(roomPrefix + "art_" + System.currentTimeMillis(),
+        Article newArticle = new Article(roomPrefix + "art",
                 title != null ? title : "导入文章",
                 author != null ? author : "",
                 paragraphs);
+        newArticle.setCurrentParagraphId(paragraphs.get(0).getId());
         room.setArticle(newArticle);
+
+        room.getNotes().clear();
+        room.getReplies().clear();
+        room.getDiscussionQueue().clear();
 
         Map<String, Object> data = new HashMap<>();
         data.put("articleId", newArticle.getId());
         data.put("title", newArticle.getTitle());
         data.put("paragraphCount", paragraphs.size());
+        data.put("clearedOldData", true);
         addTimelineEvent(room, TimelineEvent.EventType.ARTICLE_UPDATED, userName, data);
         persist();
         return newArticle;

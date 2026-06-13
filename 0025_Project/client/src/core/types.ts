@@ -3,7 +3,7 @@ export type NoteType = 'THOUGHT' | 'QUESTION' | 'SUPPLEMENT';
 export type TimelineEventType =
   | 'JOIN' | 'LEAVE' | 'NOTE_ADDED' | 'REPLY_ADDED' | 'LIKE'
   | 'HIGHLIGHT' | 'PARAGRAPH_SWITCH' | 'DISCUSSION_QUEUE_UPDATED'
-  | 'TYPING_START' | 'TYPING_END' | 'ARTICLE_UPDATED';
+  | 'TYPING_START' | 'TYPING_END' | 'ARTICLE_UPDATED' | 'USER_RENAMED';
 
 export interface Paragraph {
   id: string;
@@ -179,6 +179,7 @@ export interface EventMap {
   REQUEST_MOVE_PREV: void;
   REQUEST_SET_MODERATOR: { moderator: boolean; target?: string };
   REQUEST_JOIN_ROOM: { roomId: string; passcode?: string };
+  REQUEST_LEAVE_ROOM: void;
   REQUEST_CREATE_ROOM: { name: string; passcode?: string };
   REQUEST_LIST_ROOMS: void;
   REQUEST_PRESENCE: { paragraphId?: string; typing?: boolean };

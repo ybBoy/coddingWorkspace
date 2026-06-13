@@ -6,6 +6,7 @@ interface StatsCardsProps {
   booths: Booth[]
   peakBooths: string[]
   todayTotal?: number
+  timeRange?: '10min' | 'today' | 'all'
 }
 
 function StatsCards({
@@ -14,6 +15,7 @@ function StatsCards({
   booths,
   peakBooths,
   todayTotal = 0,
+  timeRange = 'all',
 }: StatsCardsProps) {
   const totalCheckins = Object.values(boothStats).reduce(
     (sum, count) => sum + count,
@@ -29,6 +31,13 @@ function StatsCards({
 
   const peakCount = peakBooths.length
 
+  const rangeLabel =
+    timeRange === '10min'
+      ? '最近10分钟签到数'
+      : timeRange === 'today'
+      ? '今日签到数'
+      : '累计签到人数'
+
   const cards = [
     {
       icon: '📅',
@@ -38,7 +47,7 @@ function StatsCards({
     {
       icon: '👥',
       value: totalCheckins,
-      label: '累计签到人数',
+      label: rangeLabel,
     },
     {
       icon: '🏢',

@@ -10,6 +10,7 @@ import {
   EVENT_FILTER_CHANGE,
   EVENT_RANGE_STATS,
   EVENT_PEAK_ALERT,
+  EVENT_EXPORT_RECORDS,
 } from '../core/EventBus'
 
 type TimeRange = '10min' | 'today' | 'all'
@@ -33,8 +34,10 @@ function DashboardPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('all')
   const [todayTotal, setTodayTotal] = useState<number>(0)
   const [soundEnabled, setSoundEnabled] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const prevPeakRef = useRef<Set<string>>(new Set())
   const audioCtxRef = useRef<AudioContext | null>(null)
+  const exportCallbackRef = useRef<((records: CheckInRecord[]) => void) | null>(null)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -97,6 +100,12 @@ function DashboardPage() {
     [playPeakAlert]
   )
 
+  const timeRangeRef = useRef<TimeRange>('all')
+
+  useEffect(() => {
+    timeRangeRef.current = timeRange
+  }, [timeRange])
+
   useEffect(() => {
     const handleStatsRefresh = (data: SnapshotData) => {
       if (!data) return
@@ -106,11 +115,13 @@ function DashboardPage() {
         detectNewPeaks(data.peakBooths)
       }
       if (data.todayTotal !== undefined) setTodayTotal(data.todayTotal)
-      if (timeRange === 'all') {
+
+      const currentRange = timeRangeRef.current
+      if (currentRange === 'all') {
         if (data.boothStats) setBoothStats(data.boothStats)
         if (data.projectStats) setProjectStats(data.projectStats)
         if (data.records) setRecords(data.records)
-      } else if (timeRange === 'today') {
+      } else if (currentRange === 'today') {
         if (data.todayBoothStats) setBoothStats(data.todayBoothStats)
         if (data.todayProjectStats) setProjectStats(data.todayProjectStats)
         if (data.records) {
@@ -118,11 +129,14 @@ function DashboardPage() {
           todayStart.setHours(0, 0, 0, 0)
           setRecords(data.records.filter((r) => r.timestamp >= todayStart.getTime()))
         }
+        socket.requestRecordsByRange(currentRange)
+      } else {
+        socket.requestRecordsByRange(currentRange)
       }
     }
 
     const handleRecordsUpdate = (newRecords: CheckInRecord[]) => {
-      if (Array.isArray(newRecords) && timeRange === 'all') {
+      if (Array.isArray(newRecords) && timeRangeRef.current === 'all') {
         setRecords(newRecords)
       }
     }
@@ -132,10 +146,19 @@ function DashboardPage() {
     }
 
     const handleRangeStats = (data: RangeStatsData) => {
-      if (data.range === timeRange) {
+      if (data.range === timeRangeRef.current) {
         if (data.records) setRecords(data.records)
         if (data.boothStats) setBoothStats(data.boothStats)
         if (data.projectStats) setProjectStats(data.projectStats)
+      }
+    }
+
+    const handleExportRecords = (allRecords: CheckInRecord[]) => {
+      if (exportCallbackRef.current && Array.isArray(allRecords)) {
+        const cb = exportCallbackRef.current
+        exportCallbackRef.current = null
+        setExporting(false)
+        cb(allRecords)
       }
     }
 
@@ -143,6 +166,7 @@ function DashboardPage() {
     const unsub2 = eventBus.on(EVENT_RECORDS_UPDATE, handleRecordsUpdate)
     const unsub3 = eventBus.on(EVENT_FILTER_CHANGE, handleFilterChange)
     const unsub4 = eventBus.on(EVENT_RANGE_STATS, handleRangeStats)
+    const unsub5 = eventBus.on(EVENT_EXPORT_RECORDS, handleExportRecords)
 
     socket.connect()
     socket.requestStats()
@@ -152,8 +176,9 @@ function DashboardPage() {
       unsub2()
       unsub3()
       unsub4()
+      unsub5()
     }
-  }, [timeRange, detectNewPeaks])
+  }, [detectNewPeaks])
 
   useEffect(() => {
     if (timeRange === '10min' || timeRange === 'today') {
@@ -175,11 +200,11 @@ function DashboardPage() {
     })
   }
 
-  const exportCSV = () => {
+  const doExport = (exportRecords: CheckInRecord[]) => {
     const rows = [
       ['签到时间', '展位', '姓名', '手机尾号', '感兴趣项目'],
     ]
-    records.forEach((r) => {
+    exportRecords.forEach((r) => {
       const booth = booths.find((b) => b.id === r.boothId)
       rows.push([
         new Date(r.timestamp).toLocaleString('zh-CN'),
@@ -219,6 +244,23 @@ function DashboardPage() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  const exportCSV = () => {
+    if (exporting) return
+    setExporting(true)
+    exportCallbackRef.current = doExport
+    const timeoutId = setTimeout(() => {
+      if (exportCallbackRef.current === doExport) {
+        exportCallbackRef.current = null
+        setExporting(false)
+      }
+    }, 10000)
+    exportCallbackRef.current = (records: CheckInRecord[]) => {
+      clearTimeout(timeoutId)
+      doExport(records)
+    }
+    socket.requestExportRecords()
   }
 
   const sortedBoothStats = Object.entries(boothStats)
@@ -295,8 +337,8 @@ function DashboardPage() {
           >
             {soundEnabled ? '🔊 提示音开' : '🔇 提示音关'}
           </button>
-          <button className="btn-secondary" onClick={exportCSV}>
-            📥 导出 CSV
+          <button className="btn-secondary" onClick={exportCSV} disabled={exporting}>
+            {exporting ? '⏳ 导出中...' : '📥 导出 CSV'}
           </button>
         </div>
       </div>
@@ -307,6 +349,7 @@ function DashboardPage() {
         booths={booths}
         peakBooths={peakBooths}
         todayTotal={todayTotal}
+        timeRange={timeRange}
       />
 
       <div className="two-col-grid">

@@ -73,6 +73,8 @@ public class ExpoSocket extends WebSocketServer {
                 sendSnapshot(conn);
             } else if ("getRecordsByRange".equals(type)) {
                 handleGetRecordsByRange(conn, payload);
+            } else if ("exportRecords".equals(type)) {
+                handleExportRecords(conn);
             } else {
                 sendError(conn, "未知的消息类型: " + type, null);
             }
@@ -131,6 +133,22 @@ public class ExpoSocket extends WebSocketServer {
         message.put("type", "checkInAck");
         message.put("payload", payload);
         conn.send(gson.toJson(message));
+    }
+
+    private void handleExportRecords(WebSocket conn) {
+        try {
+            List<CheckInRecord> allRecords = expoService.getAllRecords();
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("records", allRecords);
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("type", "exportRecords");
+            message.put("payload", payload);
+            conn.send(gson.toJson(message));
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(conn, "导出记录失败: " + e.getMessage(), null);
+        }
     }
 
     private void handleGetRecordsByRange(WebSocket conn, JsonElement payload) {

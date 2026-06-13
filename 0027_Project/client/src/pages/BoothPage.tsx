@@ -23,8 +23,8 @@ function BoothPage() {
   const [records, setRecords] = useState<CheckInRecord[]>([])
   const [todayBoothStats, setTodayBoothStats] = useState<Record<string, number>>({})
   const [showQR, setShowQR] = useState(false)
-  const [qrDataUrl, setQrDataUrl] = useState('')
-  const qrGeneratedRef = useRef<Set<string>>(new Set())
+  const [qrDataUrlMap, setQrDataUrlMap] = useState<Record<string, string>>({})
+  const qrGeneratingRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -66,20 +66,22 @@ function BoothPage() {
 
   useEffect(() => {
     if (showQR && selectedBoothId) {
-      if (qrGeneratedRef.current.has(selectedBoothId) && qrDataUrl) {
+      if (qrDataUrlMap[selectedBoothId] || qrGeneratingRef.current.has(selectedBoothId)) {
         return
       }
+      qrGeneratingRef.current.add(selectedBoothId)
       const url = `${window.location.origin}${window.location.pathname}?booth=${selectedBoothId}`
       QRCode.toDataURL(url, { width: 200, margin: 2 })
         .then((dataUrl) => {
-          setQrDataUrl(dataUrl)
-          qrGeneratedRef.current.add(selectedBoothId)
+          setQrDataUrlMap((prev) => ({ ...prev, [selectedBoothId]: dataUrl }))
+          qrGeneratingRef.current.delete(selectedBoothId)
         })
         .catch((err) => {
           console.error('QRCode generation failed:', err)
+          qrGeneratingRef.current.delete(selectedBoothId)
         })
     }
-  }, [showQR, selectedBoothId, qrDataUrl])
+  }, [showQR, selectedBoothId, qrDataUrlMap])
 
   const todayCount = todayBoothStats[selectedBoothId] || 0
 
@@ -129,12 +131,12 @@ function BoothPage() {
           </select>
         </div>
 
-        {showQR && qrDataUrl && (
+        {showQR && qrDataUrlMap[selectedBoothId] && (
           <div className="qr-popup">
             <div className="qr-card">
               <h3 style={{ marginBottom: '12px' }}>{selectedBoothName} 签到二维码</h3>
               <img
-                src={qrDataUrl}
+                src={qrDataUrlMap[selectedBoothId]}
                 alt="展位签到二维码"
                 style={{ width: '200px', height: '200px' }}
               />

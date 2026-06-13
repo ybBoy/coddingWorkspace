@@ -6,6 +6,7 @@ import {
   EVENT_STATS_REFRESH,
   EVENT_RECORDS_UPDATE,
   EVENT_RANGE_STATS,
+  EVENT_EXPORT_RECORDS,
 } from './EventBus'
 
 export interface Booth {
@@ -52,6 +53,7 @@ type WSMessageType =
   | 'checkInAck'
   | 'statsUpdate'
   | 'rangeStats'
+  | 'exportRecords'
   | 'error'
 
 interface WSMessage {
@@ -149,6 +151,9 @@ class WSocket {
       case 'rangeStats':
         eventBus.emit(EVENT_RANGE_STATS, payload)
         break
+      case 'exportRecords':
+        eventBus.emit(EVENT_EXPORT_RECORDS, payload.records)
+        break
       case 'error':
         eventBus.emit(EVENT_CHECKIN_ERROR, payload)
         console.error('[WSocket] Server error:', payload)
@@ -235,6 +240,19 @@ class WSocket {
       JSON.stringify({
         type: 'getRecordsByRange',
         payload: { range },
+      })
+    )
+  }
+
+  requestExportRecords(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('[WSocket] Cannot send: not connected')
+      return
+    }
+
+    this.ws.send(
+      JSON.stringify({
+        type: 'exportRecords',
       })
     )
   }

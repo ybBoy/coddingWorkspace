@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import domain.Budget;
 import domain.Expense;
 import domain.LedgerConfig;
+import domain.RecurringTemplate;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
@@ -95,6 +96,21 @@ public class LedgerSocket {
                     YearMonth month = parseYearMonth(payload);
                     sessionMonths.put(session, month);
                     sendFullState(session, month);
+                    break;
+                case "ADD_TEMPLATE":
+                    handleAddTemplate(session, payload);
+                    break;
+                case "DELETE_TEMPLATE":
+                    handleDeleteTemplate(session, payload);
+                    break;
+                case "APPLY_TEMPLATES":
+                    handleApplyTemplates(session, payload);
+                    break;
+                case "GET_COMPARISON":
+                    handleGetComparison(session, payload);
+                    break;
+                case "GET_BUDGET_TREND":
+                    handleGetBudgetTrend(session, payload);
                     break;
                 default:
                     System.err.println("Unknown message type: " + type);
@@ -264,6 +280,98 @@ public class LedgerSocket {
         session.getBasicRemote().sendText(objectMapper.writeValueAsString(response));
     }
 
+    private void handleAddTemplate(Session session, JsonNode payload) {
+        String name = payload.path("name").asText();
+        BigDecimal amount = new BigDecimal(payload.path("amount").asText());
+        String category = payload.path("category").asText();
+        String payer = payload.path("payer").asText();
+        String remark = payload.path("remark").asText();
+
+        RecurringTemplate template = new RecurringTemplate(name, amount, category, payer, remark);
+        ledgerService.addTemplate(template);
+        broadcastFullState();
+    }
+
+    private void handleDeleteTemplate(Session session, JsonNode payload) {
+        String id = payload.path("id").asText();
+        ledgerService.deleteTemplate(id);
+        broadcastFullState();
+    }
+
+    private void handleApplyTemplates(Session session, JsonNode payload) {
+        YearMonth targetMonth = parseYearMonth(payload);
+        ledgerService.applyTemplates(targetMonth);
+        sessionMonths.put(session, targetMonth);
+        broadcastFullState();
+    }
+
+    private void handleGetComparison(Session session, JsonNode payload) throws IOException {
+        YearMonth current = parseYearMonth(payload);
+        YearMonth previous = current.minusMonths(1);
+        java.util.Map<String, Object> comparison = ledgerService.getMonthComparison(current, previous);
+
+        ObjectNode response = objectMapper.createObjectNode();
+        response.put("type", "COMPARISON_RESULT");
+
+        ObjectNode compNode = objectMapper.createObjectNode();
+        compNode.put("currentTotal", (String) comparison.get("currentTotal"));
+        compNode.put("previousTotal", (String) comparison.get("previousTotal"));
+        compNode.put("totalDiff", (String) comparison.get("totalDiff"));
+
+        ObjectNode catChanges = objectMapper.createObjectNode();
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, java.util.Map<String, String>> cc = (java.util.Map<String, java.util.Map<String, String>>) comparison.get("categoryChanges");
+        cc.forEach((cat, vals) -> {
+            ObjectNode n = objectMapper.createObjectNode();
+            vals.forEach(n::put);
+            catChanges.set(cat, n);
+        });
+        compNode.set("categoryChanges", catChanges);
+
+        ObjectNode payerChanges = objectMapper.createObjectNode();
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, java.util.Map<String, String>> pc = (java.util.Map<String, java.util.Map<String, String>>) comparison.get("payerChanges");
+        pc.forEach((payer, vals) -> {
+            ObjectNode n = objectMapper.createObjectNode();
+            vals.forEach(n::put);
+            payerChanges.set(payer, n);
+        });
+        compNode.set("payerChanges", payerChanges);
+
+        response.set("payload", compNode);
+        session.getBasicRemote().sendText(objectMapper.writeValueAsString(response));
+    }
+
+    private void handleGetBudgetTrend(Session session, JsonNode payload) throws IOException {
+        int months = payload.path("months").asInt(6);
+        java.util.List<java.util.Map<String, Object>> trend = ledgerService.getBudgetTrend(months);
+
+        ObjectNode response = objectMapper.createObjectNode();
+        response.put("type", "BUDGET_TREND_RESULT");
+
+        ArrayNode trendArray = objectMapper.createArrayNode();
+        for (java.util.Map<String, Object> monthData : trend) {
+            ObjectNode mNode = objectMapper.createObjectNode();
+            mNode.put("year", (Integer) monthData.get("year"));
+            mNode.put("month", (Integer) monthData.get("month"));
+            @SuppressWarnings("unchecked")
+            java.util.List<java.util.Map<String, Object>> cats = (java.util.List<java.util.Map<String, Object>>) monthData.get("categories");
+            ArrayNode catArray = objectMapper.createArrayNode();
+            for (java.util.Map<String, Object> ct : cats) {
+                ObjectNode cNode = objectMapper.createObjectNode();
+                cNode.put("category", (String) ct.get("category"));
+                cNode.put("budget", (String) ct.get("budget"));
+                cNode.put("spent", (String) ct.get("spent"));
+                cNode.put("ratio", (Double) ct.get("ratio"));
+                catArray.add(cNode);
+            }
+            mNode.set("categories", catArray);
+            trendArray.add(mNode);
+        }
+        response.set("payload", trendArray);
+        session.getBasicRemote().sendText(objectMapper.writeValueAsString(response));
+    }
+
     private String escapeCsv(String value) {
         if (value == null) return "";
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
@@ -391,6 +499,19 @@ public class LedgerSocket {
         for (String p : cfg.getPayers()) payerArray.add(p);
         cfgNode.set("payers", payerArray);
         state.set("config", cfgNode);
+
+        ArrayNode templatesArray = objectMapper.createArrayNode();
+        for (RecurringTemplate t : ledgerService.getAllTemplates()) {
+            ObjectNode tNode = objectMapper.createObjectNode();
+            tNode.put("id", t.getId());
+            tNode.put("name", t.getName());
+            tNode.put("amount", t.getAmount().toString());
+            tNode.put("category", t.getCategory());
+            tNode.put("payer", t.getPayer());
+            tNode.put("remark", t.getRemark());
+            templatesArray.add(tNode);
+        }
+        state.set("templates", templatesArray);
 
         return state;
     }

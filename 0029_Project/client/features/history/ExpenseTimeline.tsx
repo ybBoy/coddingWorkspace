@@ -1,16 +1,22 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Expense } from '../../shared/types'
 import { eventBus } from '../../shared/EventBus'
+import ExpenseFilter from '../filter/ExpenseFilter'
 
 interface ExpenseTimelineProps {
   monthExpenses: Expense[]
   currentMonth: string
+  categories: string[]
+  payers: string[]
 }
 
-const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ monthExpenses, currentMonth }) => {
-  const displayExpenses = [...monthExpenses]
+const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ monthExpenses, currentMonth, categories, payers }) => {
+  const [filteredExpenses, setFilteredExpenses] = useState<Expense[] | null>(null)
+
+  const displayExpenses = (filteredExpenses || [...monthExpenses])
     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
     .slice(0, 20)
+
   const formatTime = (timeStr: string): string => {
     const date = new Date(timeStr)
     const month = date.getMonth() + 1
@@ -65,15 +71,27 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ monthExpenses, curren
     return `${date.getMonth() + 1}月${date.getDate()}日`
   }
 
+  const isFiltering = filteredExpenses !== null
+
   return (
     <div className="card">
       <h3 className="card-title">
         本月记录
-        <span className="card-subtitle">（最多20条 · {currentMonth}）</span>
+        <span className="card-subtitle">
+          （{isFiltering ? `筛选 ${displayExpenses.length}` : `最多20条`} · {currentMonth}）
+        </span>
       </h3>
+      <ExpenseFilter
+        expenses={monthExpenses}
+        categories={categories}
+        payers={payers}
+        onFilter={setFilteredExpenses}
+      />
       <div className="timeline">
         {displayExpenses.length === 0 ? (
-          <div className="empty-state">暂无记录，开始记第一笔吧~</div>
+          <div className="empty-state">
+            {isFiltering ? '没有匹配的记录' : '暂无记录，开始记第一笔吧~'}
+          </div>
         ) : (
           Object.entries(groupedByDate).map(([dateKey, dayExpenses]) => {
             const dayTotal = dayExpenses.reduce(

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   LedgerState, ConnectionStatus, MonthInfo, NewExpenseData, Budget,
-  EditExpenseData, WarningCategory, ToastData, Expense, ExportRequest, LedgerConfig
+  EditExpenseData, WarningCategory, ToastData, Expense, ExportRequest, LedgerConfig,
+  ComparisonResult, BudgetTrendMonth
 } from '../shared/types'
 import { eventBus } from '../shared/EventBus'
 import { socketClient } from '../shared/socketClient'
@@ -12,12 +13,17 @@ import BudgetEditor from '../features/budget/BudgetEditor'
 import ExpenseTimeline from '../features/history/ExpenseTimeline'
 import ExportPanel from '../features/config/ExportPanel'
 import ConfigPanel from '../features/config/ConfigPanel'
+import TemplatePanel from '../features/template/TemplatePanel'
+import ComparisonPanel from '../features/analysis/ComparisonPanel'
+import BudgetTrendPanel from '../features/analysis/BudgetTrendPanel'
 
 const DEFAULT_CONFIG: LedgerConfig = {
   ledgerName: '🏠 家庭账本',
   categories: ['餐饮', '购物', '交通', '娱乐', '医疗', '教育', '住房', '通讯', '其他'],
   payers: ['爸爸', '妈妈', '孩子', '共同']
 }
+
+const IDENTITY_KEY = 'ledger_user_identity'
 
 const now = new Date()
 const initialYear = now.getFullYear()
@@ -34,7 +40,8 @@ const App: React.FC = () => {
     budgets: [],
     payerStats: [],
     warningCategories: [],
-    config: DEFAULT_CONFIG
+    config: DEFAULT_CONFIG,
+    templates: []
   })
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const [selectedYear, setSelectedYear] = useState(initialYear)
@@ -42,6 +49,12 @@ const App: React.FC = () => {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [showExport, setShowExport] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const [showComparison, setShowComparison] = useState(false)
+  const [showTrend, setShowTrend] = useState(false)
+  const [userIdentity, setUserIdentity] = useState<string>(() => {
+    try { return localStorage.getItem(IDENTITY_KEY) || '' } catch { return '' }
+  })
+  const [showIdentityPicker, setShowIdentityPicker] = useState(false)
   const [toasts, setToasts] = useState<{ id: number; data: ToastData }[]>([])
   const toastIdRef = useRef(0)
 
@@ -193,6 +206,54 @@ const App: React.FC = () => {
       setShowConfig(false)
     })
 
+    const unsubTemplateAdded = eventBus.on('template:added', (data) => {
+      socketClient.send({
+        type: 'ADD_TEMPLATE',
+        payload: data
+      })
+      addToast({ message: '模板已添加', type: 'success' })
+    })
+
+    const unsubTemplateDeleted = eventBus.on('template:deleted', (id: string) => {
+      socketClient.send({
+        type: 'DELETE_TEMPLATE',
+        payload: { id }
+      })
+      addToast({ message: '模板已删除', type: 'success' })
+    })
+
+    const unsubTemplatesApply = eventBus.on('templates:apply', (info: MonthInfo) => {
+      socketClient.send({
+        type: 'APPLY_TEMPLATES',
+        payload: { year: info.year, month: info.month }
+      })
+      addToast({ message: '模板账单已生成', type: 'success' })
+    })
+
+    const unsubComparisonOpen = eventBus.on('comparison:open', () => {
+      setShowComparison(true)
+      socketClient.send({
+        type: 'GET_COMPARISON',
+        payload: { year: selectedYear, month: selectedMonth }
+      })
+    })
+
+    const unsubComparisonClose = eventBus.on('comparison:close', () => {
+      setShowComparison(false)
+    })
+
+    const unsubTrendOpen = eventBus.on('trend:open', () => {
+      setShowTrend(true)
+      socketClient.send({
+        type: 'GET_BUDGET_TREND',
+        payload: { months: 6 }
+      })
+    })
+
+    const unsubTrendClose = eventBus.on('trend:close', () => {
+      setShowTrend(false)
+    })
+
     const unsubToast = eventBus.on('toast:show', (data: ToastData) => {
       addToast(data)
     })
@@ -216,6 +277,13 @@ const App: React.FC = () => {
       unsubConfigUpdated()
       unsubConfigOpen()
       unsubConfigClose()
+      unsubTemplateAdded()
+      unsubTemplateDeleted()
+      unsubTemplatesApply()
+      unsubComparisonOpen()
+      unsubComparisonClose()
+      unsubTrendOpen()
+      unsubTrendClose()
       unsubToast()
       socketClient.disconnect()
     }
@@ -237,6 +305,12 @@ const App: React.FC = () => {
       case 'disconnected': return '已断开'
       default: return '未知'
     }
+  }
+
+  const handleSelectIdentity = (payer: string) => {
+    setUserIdentity(payer)
+    try { localStorage.setItem(IDENTITY_KEY, payer) } catch {}
+    setShowIdentityPicker(false)
   }
 
   const years = Array.from({ length: 5 }, (_, i) => initialYear - 2 + i)
@@ -271,6 +345,37 @@ const App: React.FC = () => {
               <span className="pending-badge">{pendingCount} 条待同步</span>
             )}
           </span>
+          <div className="identity-picker-wrapper">
+            <button
+              type="button"
+              className="identity-btn"
+              onClick={() => setShowIdentityPicker(!showIdentityPicker)}
+              title="切换身份"
+            >
+              {userIdentity ? `${userIdentity}` : '选择身份'}
+            </button>
+            {showIdentityPicker && (
+              <div className="identity-dropdown">
+                {config.payers.map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`identity-option ${p === userIdentity ? 'active' : ''}`}
+                    onClick={() => handleSelectIdentity(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="identity-option identity-clear"
+                  onClick={() => handleSelectIdentity('')}
+                >
+                  不指定
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="header-center">
           {(warningOver > 0 || warningNear > 0) && (
@@ -290,6 +395,22 @@ const App: React.FC = () => {
         </div>
         <div className="header-right">
           <div className="header-actions">
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={() => eventBus.emit('comparison:open', undefined)}
+              title="月度对比"
+            >
+              📊
+            </button>
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={() => eventBus.emit('trend:open', undefined)}
+              title="预算趋势"
+            >
+              📈
+            </button>
             <button
               type="button"
               className="btn-icon"
@@ -348,7 +469,14 @@ const App: React.FC = () => {
 
       <main className="app-main">
         <aside className="sidebar">
-          <ExpenseForm categories={config.categories} payers={config.payers} />
+          <ExpenseForm categories={config.categories} payers={config.payers} defaultPayer={userIdentity} />
+          <TemplatePanel
+            templates={state.templates || []}
+            categories={config.categories}
+            payers={config.payers}
+            currentYear={selectedYear}
+            currentMonth={selectedMonth}
+          />
           <BudgetEditor budgets={state.budgets} categories={config.categories} />
         </aside>
 
@@ -362,6 +490,8 @@ const App: React.FC = () => {
           <ExpenseTimeline
             monthExpenses={state.monthExpenses}
             currentMonth={formatMonthDisplay(selectedYear, selectedMonth)}
+            categories={config.categories}
+            payers={config.payers}
           />
         </section>
       </main>
@@ -374,6 +504,12 @@ const App: React.FC = () => {
       )}
       {showConfig && (
         <ConfigPanel currentConfig={config} />
+      )}
+      {showComparison && (
+        <ComparisonPanel />
+      )}
+      {showTrend && (
+        <BudgetTrendPanel />
       )}
 
       <div className="toast-container">

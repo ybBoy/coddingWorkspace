@@ -4,6 +4,7 @@ import domain.Budget;
 import domain.Expense;
 import domain.LedgerConfig;
 import domain.LedgerSnapshot;
+import domain.RecurringTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,11 +18,13 @@ import java.util.stream.Collectors;
 public class LedgerService {
     private final List<Expense> expenses;
     private final Map<String, Budget> budgets;
+    private final List<RecurringTemplate> templates;
     private LedgerConfig config;
 
     public LedgerService() {
         this.expenses = new CopyOnWriteArrayList<>();
         this.budgets = new ConcurrentHashMap<>();
+        this.templates = new CopyOnWriteArrayList<>();
         this.config = new LedgerConfig();
     }
 
@@ -36,6 +39,10 @@ public class LedgerService {
                 budgets.put(budget.getCategory(), budget);
             }
         }
+        templates.clear();
+        if (snapshot.getTemplates() != null) {
+            templates.addAll(snapshot.getTemplates());
+        }
         if (snapshot.getConfig() != null) {
             this.config = snapshot.getConfig();
         } else {
@@ -47,7 +54,8 @@ public class LedgerService {
         return new LedgerSnapshot(
                 new ArrayList<>(expenses),
                 new ArrayList<>(budgets.values()),
-                config
+                config,
+                new ArrayList<>(templates)
         );
     }
 
@@ -185,5 +193,101 @@ public class LedgerService {
         if (newConfig.getPayers() != null && !newConfig.getPayers().isEmpty()) {
             this.config.setPayers(new ArrayList<>(newConfig.getPayers()));
         }
+    }
+
+    public RecurringTemplate addTemplate(RecurringTemplate template) {
+        templates.add(template);
+        return template;
+    }
+
+    public boolean deleteTemplate(String id) {
+        return templates.removeIf(t -> t.getId().equals(id));
+    }
+
+    public List<RecurringTemplate> getAllTemplates() {
+        return new ArrayList<>(templates);
+    }
+
+    public List<String> applyTemplates(YearMonth month) {
+        List<String> addedIds = new ArrayList<>();
+        for (RecurringTemplate t : templates) {
+            Expense expense = new Expense(t.getAmount(), t.getCategory(), t.getPayer(), t.getRemark(), month.atDay(1).atStartOfDay());
+            expenses.add(expense);
+            addedIds.add(expense.getId());
+        }
+        return addedIds;
+    }
+
+    public Map<String, Object> getMonthComparison(YearMonth current, YearMonth previous) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        BigDecimal currentTotal = getMonthlyTotal(current);
+        BigDecimal prevTotal = getMonthlyTotal(previous);
+        result.put("currentTotal", currentTotal.toString());
+        result.put("previousTotal", prevTotal.toString());
+        result.put("totalDiff", currentTotal.subtract(prevTotal).toString());
+
+        Map<String, BigDecimal> currentCats = getCategoryTotals(current);
+        Map<String, BigDecimal> prevCats = getCategoryTotals(previous);
+        Set<String> allCats = new LinkedHashSet<>();
+        allCats.addAll(prevCats.keySet());
+        allCats.addAll(currentCats.keySet());
+        Map<String, Map<String, String>> categoryChanges = new LinkedHashMap<>();
+        for (String cat : allCats) {
+            BigDecimal cur = currentCats.getOrDefault(cat, BigDecimal.ZERO);
+            BigDecimal prev = prevCats.getOrDefault(cat, BigDecimal.ZERO);
+            Map<String, String> change = new LinkedHashMap<>();
+            change.put("current", cur.toString());
+            change.put("previous", prev.toString());
+            change.put("diff", cur.subtract(prev).toString());
+            categoryChanges.put(cat, change);
+        }
+        result.put("categoryChanges", categoryChanges);
+
+        Map<String, BigDecimal> currentPayers = getPayerTotals(current);
+        Map<String, BigDecimal> prevPayers = getPayerTotals(previous);
+        Set<String> allPayers = new LinkedHashSet<>();
+        allPayers.addAll(prevPayers.keySet());
+        allPayers.addAll(currentPayers.keySet());
+        Map<String, Map<String, String>> payerChanges = new LinkedHashMap<>();
+        for (String payer : allPayers) {
+            BigDecimal cur = currentPayers.getOrDefault(payer, BigDecimal.ZERO);
+            BigDecimal prev = prevPayers.getOrDefault(payer, BigDecimal.ZERO);
+            Map<String, String> change = new LinkedHashMap<>();
+            change.put("current", cur.toString());
+            change.put("previous", prev.toString());
+            change.put("diff", cur.subtract(prev).toString());
+            payerChanges.put(payer, change);
+        }
+        result.put("payerChanges", payerChanges);
+
+        return result;
+    }
+
+    public List<Map<String, Object>> getBudgetTrend(int months) {
+        List<Map<String, Object>> trend = new ArrayList<>();
+        YearMonth start = YearMonth.now().minusMonths(months - 1);
+        for (int i = 0; i < months; i++) {
+            YearMonth ym = start.plusMonths(i);
+            Map<String, Object> monthData = new LinkedHashMap<>();
+            monthData.put("year", ym.getYear());
+            monthData.put("month", ym.getMonthValue());
+            Map<String, BigDecimal> catTotals = getCategoryTotals(ym);
+            List<Map<String, Object>> catTrends = new ArrayList<>();
+            for (Budget budget : budgets.values()) {
+                BigDecimal spent = catTotals.getOrDefault(budget.getCategory(), BigDecimal.ZERO);
+                Map<String, Object> ct = new LinkedHashMap<>();
+                ct.put("category", budget.getCategory());
+                ct.put("budget", budget.getAmount().toString());
+                ct.put("spent", spent.toString());
+                ct.put("ratio", budget.getAmount().compareTo(BigDecimal.ZERO) > 0
+                        ? spent.multiply(new BigDecimal("100")).divide(budget.getAmount(), 2, java.math.RoundingMode.HALF_UP).doubleValue()
+                        : 0.0);
+                catTrends.add(ct);
+            }
+            monthData.put("categories", catTrends);
+            trend.add(monthData);
+        }
+        return trend;
     }
 }

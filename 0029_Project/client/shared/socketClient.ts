@@ -1,11 +1,12 @@
-import { LedgerState, OutgoingMessage, ConnectionStatus, ExportResult } from './types'
+import { LedgerState, OutgoingMessage, ConnectionStatus, ExportResult, ComparisonResult, BudgetTrendMonth } from './types'
 import { eventBus } from './EventBus'
 
 const QUEUE_KEY = 'ledger_offline_queue'
 
 const WRITE_TYPES = new Set([
   'ADD_EXPENSE', 'EDIT_EXPENSE', 'DELETE_EXPENSE',
-  'SET_BUDGET', 'REMOVE_BUDGET', 'UPDATE_CONFIG'
+  'SET_BUDGET', 'REMOVE_BUDGET', 'UPDATE_CONFIG',
+  'ADD_TEMPLATE', 'DELETE_TEMPLATE', 'APPLY_TEMPLATES'
 ])
 
 class SocketClient {
@@ -41,6 +42,10 @@ class SocketClient {
         const data = JSON.parse(event.data)
         if (data.type === 'EXPORT_RESULT') {
           eventBus.emit('export:result', data.payload as ExportResult)
+        } else if (data.type === 'COMPARISON_RESULT') {
+          eventBus.emit('comparison:result', data.payload as ComparisonResult)
+        } else if (data.type === 'BUDGET_TREND_RESULT') {
+          eventBus.emit('trend:result', data.payload as BudgetTrendMonth[])
         } else {
           eventBus.emit('state:updated', data as LedgerState)
         }

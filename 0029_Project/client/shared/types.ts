@@ -50,6 +50,37 @@ export interface LedgerState {
   payerStats: PayerStat[]
   warningCategories: WarningCategory[]
   config: LedgerConfig
+  templates: RecurringTemplate[]
+}
+
+export interface RecurringTemplate {
+  id: string
+  name: string
+  amount: string
+  category: string
+  payer: string
+  remark: string
+}
+
+export interface ComparisonResult {
+  currentTotal: string
+  previousTotal: string
+  totalDiff: string
+  categoryChanges: Record<string, { current: string; previous: string; diff: string }>
+  payerChanges: Record<string, { current: string; previous: string; diff: string }>
+}
+
+export interface BudgetTrendMonth {
+  year: number
+  month: number
+  categories: BudgetTrendCategory[]
+}
+
+export interface BudgetTrendCategory {
+  category: string
+  budget: string
+  spent: string
+  ratio: number
 }
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
@@ -111,6 +142,15 @@ export type EventType =
   | 'export:open'
   | 'export:close'
   | 'toast:show'
+  | 'template:added'
+  | 'template:deleted'
+  | 'templates:apply'
+  | 'comparison:open'
+  | 'comparison:close'
+  | 'comparison:result'
+  | 'trend:open'
+  | 'trend:close'
+  | 'trend:result'
 
 export interface ToastData {
   message: string
@@ -136,11 +176,20 @@ export interface EventMap {
   'export:open': void
   'export:close': void
   'toast:show': ToastData
+  'template:added': { name: string; amount: string; category: string; payer: string; remark: string }
+  'template:deleted': string
+  'templates:apply': MonthInfo
+  'comparison:open': void
+  'comparison:close': void
+  'comparison:result': ComparisonResult
+  'trend:open': void
+  'trend:close': void
+  'trend:result': BudgetTrendMonth[]
 }
 
 export type EventHandler<T extends EventType> = (data: EventMap[T]) => void
 
 export interface OutgoingMessage {
-  type: 'ADD_EXPENSE' | 'DELETE_EXPENSE' | 'EDIT_EXPENSE' | 'SET_BUDGET' | 'REMOVE_BUDGET' | 'GET_STATE' | 'EXPORT_MONTH' | 'UPDATE_CONFIG'
+  type: 'ADD_EXPENSE' | 'DELETE_EXPENSE' | 'EDIT_EXPENSE' | 'SET_BUDGET' | 'REMOVE_BUDGET' | 'GET_STATE' | 'EXPORT_MONTH' | 'UPDATE_CONFIG' | 'ADD_TEMPLATE' | 'DELETE_TEMPLATE' | 'APPLY_TEMPLATES' | 'GET_COMPARISON' | 'GET_BUDGET_TREND'
   payload: any
 }

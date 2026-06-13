@@ -11,13 +11,14 @@ interface FormData {
 interface ExpenseFormProps {
   categories: string[]
   payers: string[]
+  defaultPayer?: string
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ categories, payers }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ categories, payers, defaultPayer }) => {
   const [formData, setFormData] = useState<FormData>({
     amount: '',
     category: categories[0] || '',
-    payer: payers[0] || '',
+    payer: defaultPayer || payers[0] || '',
     remark: ''
   })
 
@@ -25,9 +26,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ categories, payers }) => {
     setFormData(prev => ({
       ...prev,
       category: categories.includes(prev.category) ? prev.category : (categories[0] || ''),
-      payer: payers.includes(prev.payer) ? prev.payer : (payers[0] || '')
+      payer: defaultPayer && payers.includes(defaultPayer) ? defaultPayer : (payers.includes(prev.payer) ? prev.payer : (payers[0] || ''))
     }))
-  }, [categories, payers])
+  }, [categories, payers, defaultPayer])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -52,7 +53,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ categories, payers }) => {
     setFormData({
       amount: '',
       category: categories[0] || '',
-      payer: payers[0] || '',
+      payer: defaultPayer && payers.includes(defaultPayer) ? defaultPayer : (payers[0] || ''),
       remark: ''
     })
   }

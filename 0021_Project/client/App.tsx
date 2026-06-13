@@ -2,21 +2,18 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SessionList from './SessionList';
 import BookingPanel from './BookingPanel';
 import CheckInPanel from './CheckInPanel';
-import { Session, Booking, WSMessage, ActivityItem } from './types';
+import LoginPanel from './LoginPanel';
+import AdminPanel from './AdminPanel';
+import {
+  Session,
+  Booking,
+  WSMessage,
+  ActivityItem,
+  User,
+  LoginForm,
+  AdminSessionForm,
+} from './types';
 import { eventBus, EVENTS } from './EventBus';
-
-// App 主应用组件
-// 职责：
-//   1. 管理 WebSocket 连接状态（兼容 React StrictMode 开发模式下的双重 mount）
-//   2. 管理全局状态：场次列表、预约列表、活动动态
-//   3. 订阅 EventBus 事件，将用户操作通过 WebSocket 发送给后端
-//   4. 接收后端 WebSocket 消息，更新状态并通过 EventBus 通知组件
-//   5. 整体页面布局
-//
-// 数据流：
-//   用户操作 → 子组件 emit EventBus 事件 → App 订阅 → WebSocket 发送 → Java 后端
-//   Java 后端 → WebSocket 推送 → App 接收 → 更新 state → 子组件渲染
-//   同时通过 EventBus 发出 SESSIONS_UPDATED / ACTIVITY_RECEIVED 事件
 
 const App: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -24,130 +21,224 @@ const App: React.FC = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
-
-  // 组件正常在线时，连接异常断开允许重连；真正卸载时置为 false，避免 close() 触发的 onclose 再安排重连
   const shouldReconnectRef = useRef(true);
-  // 保存最新的 handleMessage，避免闭包陈旧
   const messageHandlerRef = useRef<((msg: WSMessage) => void) | null>(null);
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId) || null;
 
-  // ============ 消息处理 ============
-  const handleMessage = useCallback((msg: WSMessage) => {
-    switch (msg.type) {
-      case 'init':
-      case 'sessions':
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        if (msg.payload.bookings) {
-          setBookings(msg.payload.bookings);
-        }
-        if (msg.type === 'init' && msg.payload.sessions && msg.payload.sessions.length > 0) {
-          setSelectedSessionId(msg.payload.sessions[0].id);
-        }
-        break;
+  const isAdmin = currentUser?.role === 'admin';
 
-      case 'bookingOk':
-        if (msg.payload.booking) {
-          setBookings((prev) => {
-            const index = prev.findIndex((b) => b.id === msg.payload.booking.id);
-            if (index >= 0) {
-              const next = [...prev];
-              next[index] = msg.payload.booking;
-              return next;
-            }
-            return [...prev, msg.payload.booking];
-          });
-        }
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        break;
+  const myBookings = currentUser
+    ? bookings.filter((b) => b.employeeId === currentUser.employeeId && b.status !== 'cancelled')
+    : [];
 
-      case 'bookingFail':
-        alert(msg.payload?.message || '预约失败');
-        break;
-
-      case 'cancelOk':
-        if (msg.payload.bookingId) {
-          setBookings((prev) =>
-            prev.map((b) =>
-              b.id === msg.payload.bookingId
-                ? { ...b, status: 'cancelled' as const }
-                : b
-            )
-          );
-        }
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        break;
-
-      case 'checkInOk':
-        if (msg.payload.bookingId) {
-          setBookings((prev) =>
-            prev.map((b) =>
-              b.id === msg.payload.bookingId
-                ? { ...b, status: 'checkedIn' as const }
-                : b
-            )
-          );
-        }
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        break;
-
-      case 'activity':
-        if (msg.payload.activity) {
-          setActivities((prev) => {
-            const next = [msg.payload.activity, ...prev];
-            return next.slice(0, 10);
-          });
-          eventBus.emit(EVENTS.ACTIVITY_RECEIVED, msg.payload.activity);
-        }
-        if (msg.payload.sessions) {
-          setSessions(msg.payload.sessions);
-          eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
-        }
-        if (msg.payload.bookings) {
-          setBookings(msg.payload.bookings);
-        }
-        break;
-
-      case 'error':
-        alert(msg.payload?.message || '操作失败');
-        break;
-    }
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'warning' = 'info') => {
+    const div = document.createElement('div');
+    div.className = 'app-toast';
+    div.textContent = message;
+    div.style.cssText = `
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 8px;
+      background: ${type === 'success' ? '#188038' : type === 'warning' ? '#e37400' : '#1a73e8'};
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: toastSlideIn 0.3s ease;
+    `;
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      @keyframes toastSlideIn {
+        from { opacity: 0; transform: translate(-50%, -20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+      }
+      @keyframes toastFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(styleEl);
+    document.body.appendChild(div);
+    setTimeout(() => {
+      div.style.animation = 'toastFadeOut 0.3s ease forwards';
+      setTimeout(() => {
+        if (div.parentNode) div.parentNode.removeChild(div);
+        if (styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+      }, 300);
+    }, 3000);
   }, []);
 
-  // 始终把最新的 handleMessage 挂到 ref 上
+  const handleMessage = useCallback(
+    (msg: WSMessage) => {
+      switch (msg.type) {
+        case 'init':
+        case 'sessions':
+          if (msg.payload.sessions) {
+            setSessions(msg.payload.sessions);
+            eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+          }
+          if (msg.payload.bookings) {
+            setBookings(msg.payload.bookings);
+          }
+          if (msg.type === 'init' && msg.payload.sessions && msg.payload.sessions.length > 0) {
+            setSelectedSessionId(msg.payload.sessions[0].id);
+          }
+          break;
+
+        case 'loginOk':
+          if (msg.payload.user) {
+            setCurrentUser(msg.payload.user);
+            eventBus.emit(EVENTS.USER_UPDATED, msg.payload.user);
+            showToast(
+              `登录成功！欢迎，${msg.payload.user.userName}${isAdmin ? '（管理员）' : ''}`,
+              'success'
+            );
+          }
+          break;
+
+        case 'loginFail':
+          alert(msg.payload?.message || '登录失败');
+          break;
+
+        case 'sessionOk':
+          if (msg.payload.sessions) {
+            setSessions(msg.payload.sessions);
+            eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+            showToast(msg.payload.message || '操作成功', 'success');
+          }
+          break;
+
+        case 'bookingOk':
+          if (msg.payload.booking) {
+            setBookings((prev) => {
+              const index = prev.findIndex((b) => b.id === msg.payload.booking.id);
+              if (index >= 0) {
+                const next = [...prev];
+                next[index] = msg.payload.booking;
+                return next;
+              }
+              return [...prev, msg.payload.booking];
+            });
+          }
+          if (msg.payload.sessions) {
+            setSessions(msg.payload.sessions);
+            eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+          }
+          break;
+
+        case 'bookingFail':
+          alert(msg.payload?.message || '预约失败');
+          break;
+
+        case 'cancelOk':
+          if (msg.payload.bookingId) {
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === msg.payload.bookingId ? { ...b, status: 'cancelled' as const } : b
+              )
+            );
+          }
+          if (msg.payload.sessions) {
+            setSessions(msg.payload.sessions);
+            eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+          }
+          break;
+
+        case 'checkInOk':
+          if (msg.payload.bookingId) {
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === msg.payload.bookingId ? { ...b, status: 'checkedIn' as const } : b
+              )
+            );
+          }
+          if (msg.payload.sessions) {
+            setSessions(msg.payload.sessions);
+            eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+          }
+          break;
+
+        case 'exportCsvOk':
+          if (msg.payload.filename && msg.payload.base64Content) {
+            try {
+              const binaryStr = atob(msg.payload.base64Content);
+              const bytes = new Uint8Array(binaryStr.length);
+              for (let i = 0; i < binaryStr.length; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+              }
+              const blob = new Blob([bytes], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = msg.payload.filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              showToast(`已导出 ${msg.payload.filename}`, 'success');
+            } catch (e) {
+              console.error('下载CSV失败:', e);
+              alert('下载CSV失败');
+            }
+          }
+          break;
+
+        case 'activity':
+          if (msg.payload.activity) {
+            const activity: ActivityItem = msg.payload.activity;
+            setActivities((prev) => {
+              const next = [activity, ...prev];
+              return next.slice(0, 10);
+            });
+            eventBus.emit(EVENTS.ACTIVITY_RECEIVED, activity);
+
+            if (activity.promoted && currentUser) {
+              const promotedMatch = activity.message.match(
+                new RegExp(`${currentUser.userName}\\s*\\(${currentUser.employeeId}\\)`)
+              );
+              if (promotedMatch) {
+                showToast('🎉 恭喜！您已从候补转为正式预约', 'success');
+              }
+            }
+          }
+          if (msg.payload.sessions) {
+            setSessions(msg.payload.sessions);
+            eventBus.emit(EVENTS.SESSIONS_UPDATED, msg.payload.sessions);
+          }
+          if (msg.payload.bookings) {
+            setBookings(msg.payload.bookings);
+          }
+          break;
+
+        case 'error':
+          alert(msg.payload?.message || '操作失败');
+          break;
+      }
+    },
+    [isAdmin, showToast, currentUser]
+  );
+
   useEffect(() => {
     messageHandlerRef.current = handleMessage;
   }, [handleMessage]);
 
-  // ============ 连接逻辑 ============
   const connectWebSocket = useCallback(() => {
-    // 每次建立新连接前重置"允许重连"标志（StrictMode 下第一次 cleanup 会把它置 false，第二次 mount 要恢复）
     shouldReconnectRef.current = true;
 
-    // 如果已经存在活跃连接，先关闭再建，避免多连接
     if (wsRef.current) {
       try {
-        // 先清掉 onclose，防止手动 close 触发重连逻辑
         wsRef.current.onclose = null as any;
         wsRef.current.close();
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
       wsRef.current = null;
     }
 
@@ -162,7 +253,19 @@ const App: React.FC = () => {
         console.log('WebSocket 连接成功');
         setConnected(true);
         eventBus.emit(EVENTS.CONNECTION_CHANGED, true);
-        ws.send(JSON.stringify({ type: 'init', payload: {} }));
+        if (currentUser) {
+          ws.send(
+            JSON.stringify({
+              type: 'login',
+              payload: {
+                employeeId: currentUser.employeeId,
+                userName: currentUser.userName,
+              },
+            })
+          );
+        } else {
+          ws.send(JSON.stringify({ type: 'init', payload: {} }));
+        }
       };
 
       ws.onmessage = (event) => {
@@ -184,7 +287,6 @@ const App: React.FC = () => {
           clearTimeout(reconnectTimerRef.current);
           reconnectTimerRef.current = null;
         }
-        // 仅在组件仍"活着"时安排重连；真正卸载（shouldReconnectRef=false）时不再重连
         if (shouldReconnectRef.current) {
           reconnectTimerRef.current = window.setTimeout(() => {
             console.log('尝试重连 WebSocket...');
@@ -199,10 +301,8 @@ const App: React.FC = () => {
     } catch (e) {
       console.error('创建 WebSocket 失败:', e);
     }
-  }, []);
+  }, [currentUser]);
 
-  // 清理 WebSocket 与重连定时器
-  // 注意：必须先置 shouldReconnectRef=false，再关闭连接，否则 onclose 里仍会安排重连
   const cleanupWebSocket = useCallback(() => {
     shouldReconnectRef.current = false;
     if (reconnectTimerRef.current) {
@@ -211,17 +311,13 @@ const App: React.FC = () => {
     }
     if (wsRef.current) {
       try {
-        // 先清掉 onclose，防止手动 close 触发重连逻辑
         wsRef.current.onclose = null as any;
         wsRef.current.close();
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
       wsRef.current = null;
     }
   }, []);
 
-  // ============ 发送消息 ============
   const sendMessage = useCallback((type: string, payload: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type, payload }));
@@ -230,18 +326,27 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // ============ 初始化 / 清理（兼容 StrictMode）============
+  const handleLogout = useCallback(() => {
+    setCurrentUser(null);
+    eventBus.emit(EVENTS.USER_UPDATED, null);
+    showToast('已退出登录', 'info');
+  }, [showToast]);
+
   useEffect(() => {
-    // 无论 StrictMode 是否启用，首次 mount 都建连接；
-    // connectWebSocket 内部会先关闭旧连接再建新的，保证单连接；
-    // cleanupWebSocket 会置 shouldReconnectRef=false，防止 onclose 触发额外重连。
     connectWebSocket();
 
-    // EventBus 订阅
-    const handleBookingRequest = (data: { sessionId: string; userName: string }) => {
+    const handleLoginRequest = (data: LoginForm) => {
+      sendMessage('login', data);
+    };
+    const handleBookingRequest = (data: {
+      sessionId: string;
+      userName: string;
+      employeeId: string;
+      phone?: string;
+    }) => {
       sendMessage('booking', data);
     };
-    const handleCancelRequest = (data: { bookingId: string; userName: string }) => {
+    const handleCancelRequest = (data: { bookingId: string; employeeId: string }) => {
       sendMessage('cancel', data);
     };
     const handleCheckInRequest = (data: { bookingId: string }) => {
@@ -250,27 +355,48 @@ const App: React.FC = () => {
     const handleSessionSelected = (id: string) => {
       setSelectedSessionId(id);
     };
+    const handleSessionAddRequest = (data: AdminSessionForm) => {
+      sendMessage('sessionAdd', data);
+    };
+    const handleSessionUpdateRequest = (data: AdminSessionForm) => {
+      sendMessage('sessionUpdate', data);
+    };
+    const handleSessionCloseRequest = (data: { sessionId: string }) => {
+      sendMessage('sessionClose', data);
+    };
+    const handleExportCsvRequest = (data: { sessionId: string }) => {
+      sendMessage('exportCsv', data);
+    };
 
+    eventBus.on(EVENTS.LOGIN_REQUEST, handleLoginRequest);
     eventBus.on(EVENTS.BOOKING_REQUEST, handleBookingRequest);
     eventBus.on(EVENTS.CANCEL_REQUEST, handleCancelRequest);
     eventBus.on(EVENTS.CHECKIN_REQUEST, handleCheckInRequest);
     eventBus.on(EVENTS.SESSION_SELECTED, handleSessionSelected);
+    eventBus.on(EVENTS.SESSION_ADD_REQUEST, handleSessionAddRequest);
+    eventBus.on(EVENTS.SESSION_UPDATE_REQUEST, handleSessionUpdateRequest);
+    eventBus.on(EVENTS.SESSION_CLOSE_REQUEST, handleSessionCloseRequest);
+    eventBus.on(EVENTS.EXPORT_CSV_REQUEST, handleExportCsvRequest);
 
     return () => {
+      eventBus.off(EVENTS.LOGIN_REQUEST, handleLoginRequest);
       eventBus.off(EVENTS.BOOKING_REQUEST, handleBookingRequest);
       eventBus.off(EVENTS.CANCEL_REQUEST, handleCancelRequest);
       eventBus.off(EVENTS.CHECKIN_REQUEST, handleCheckInRequest);
       eventBus.off(EVENTS.SESSION_SELECTED, handleSessionSelected);
+      eventBus.off(EVENTS.SESSION_ADD_REQUEST, handleSessionAddRequest);
+      eventBus.off(EVENTS.SESSION_UPDATE_REQUEST, handleSessionUpdateRequest);
+      eventBus.off(EVENTS.SESSION_CLOSE_REQUEST, handleSessionCloseRequest);
+      eventBus.off(EVENTS.EXPORT_CSV_REQUEST, handleExportCsvRequest);
 
-      // 真正卸载或 StrictMode 模拟卸载时统一清理；
-      // 注意内部先 shouldReconnectRef=false 再 close，避免 onclose 再安排重连
       cleanupWebSocket();
     };
-    // 依赖 connectWebSocket/sendMessage 都是 useCallback，空依赖，所以这里只跑一次
   }, [connectWebSocket, sendMessage, cleanupWebSocket]);
 
-  // ============ 样式相关 ============
-  const getActivityStyle = (type: string) => {
+  const getActivityStyle = (type: string, promoted?: boolean) => {
+    if (promoted) {
+      return { color: '#188038', icon: '🎉' };
+    }
     switch (type) {
       case 'booking':
         return { color: '#1a73e8', icon: '📝' };
@@ -281,13 +407,12 @@ const App: React.FC = () => {
       case 'waitlist':
         return { color: '#e37400', icon: '⏳' };
       case 'autoPromote':
-        return { color: '#1a73e8', icon: '⬆️' };
+        return { color: '#188038', icon: '⬆️' };
       default:
         return { color: '#5f6368', icon: '📢' };
     }
   };
 
-  // 获取今天日期用于标题
   const todayLabel = new Date().toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -295,9 +420,12 @@ const App: React.FC = () => {
     weekday: 'long',
   });
 
+  if (!currentUser) {
+    return <LoginPanel connected={connected} />;
+  }
+
   return (
     <div className="app-container">
-      {/* 顶部标题栏 */}
       <header className="app-header">
         <div className="header-left">
           <h1>🏋️ 实时预约签到系统</h1>
@@ -308,25 +436,44 @@ const App: React.FC = () => {
             <span className="status-dot"></span>
             {connected ? '已连接' : '连接断开'}
           </span>
+          <span className="user-info">
+            <span className="user-name">
+              {currentUser.userName}（{currentUser.employeeId}）
+            </span>
+            {isAdmin && <span className="role-badge">管理员</span>}
+            <button className="btn-logout" onClick={handleLogout}>
+              退出
+            </button>
+          </span>
         </div>
       </header>
 
-      {/* 主体三栏布局 */}
+      {isAdmin && (
+        <div className="admin-bar">
+          <AdminPanel sessions={sessions} currentUser={currentUser} />
+        </div>
+      )}
+
       <main className="app-main">
         <aside className="col-left">
           <SessionList sessions={sessions} selectedId={selectedSessionId} />
         </aside>
 
         <section className="col-center">
-          <BookingPanel session={selectedSession} myBookings={bookings} />
+          <BookingPanel
+            session={selectedSession}
+            myBookings={myBookings}
+            currentUser={currentUser}
+          />
         </section>
 
-        <aside className="col-right">
-          <CheckInPanel session={selectedSession} bookings={bookings} />
-        </aside>
+        {isAdmin && (
+          <aside className="col-right">
+            <CheckInPanel session={selectedSession} bookings={bookings} />
+          </aside>
+        )}
       </main>
 
-      {/* 底部活动动态 */}
       <footer className="app-footer">
         <div className="activity-panel">
           <h3>📢 最近动态</h3>
@@ -335,13 +482,17 @@ const App: React.FC = () => {
               <p className="no-activity">暂无动态，预约或签到后这里会显示记录</p>
             )}
             {activities.map((item) => {
-              const style = getActivityStyle(item.type);
+              const style = getActivityStyle(item.type, item.promoted);
               return (
-                <div key={item.id} className="activity-item">
+                <div
+                  key={item.id}
+                  className={`activity-item ${item.promoted ? 'activity-promoted' : ''}`}
+                >
                   <span className="activity-icon">{style.icon}</span>
                   <span className="activity-time">{item.time}</span>
                   <span className="activity-text" style={{ color: style.color }}>
                     {item.message}
+                    {item.promoted && <span className="promoted-badge">NEW</span>}
                   </span>
                 </div>
               );
@@ -357,8 +508,6 @@ const App: React.FC = () => {
           height: 100vh;
           background: #f5f7fa;
         }
-
-        /* 顶部 */
         .app-header {
           display: flex;
           justify-content: space-between;
@@ -384,6 +533,11 @@ const App: React.FC = () => {
           background: #e8f0fe;
           padding: 3px 10px;
           border-radius: 4px;
+        }
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
         }
         .connection-status {
           display: flex;
@@ -411,8 +565,41 @@ const App: React.FC = () => {
         .connection-status.offline .status-dot {
           background: #d93025;
         }
-
-        /* 主体三栏 */
+        .user-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+        }
+        .user-name {
+          color: #202124;
+        }
+        .role-badge {
+          background: #fef7e0;
+          color: #e37400;
+          font-size: 11px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-weight: 500;
+        }
+        .btn-logout {
+          background: #f1f3f4;
+          color: #5f6368;
+          border: none;
+          padding: 4px 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-logout:hover {
+          background: #e8eaed;
+        }
+        .admin-bar {
+          padding: 0 16px;
+          background: #f5f7fa;
+          flex-shrink: 0;
+        }
         .app-main {
           flex: 1;
           display: flex;
@@ -432,8 +619,6 @@ const App: React.FC = () => {
           flex: 0 0 300px;
           min-width: 0;
         }
-
-        /* 底部动态 */
         .app-footer {
           flex-shrink: 0;
           padding: 0 16px 16px;
@@ -465,6 +650,18 @@ const App: React.FC = () => {
           gap: 8px;
           font-size: 13px;
           padding: 2px 0;
+          border-left: 3px solid transparent;
+          padding-left: 4px;
+          margin-left: -4px;
+        }
+        .activity-item.activity-promoted {
+          background: linear-gradient(90deg, #e6f4ea, transparent);
+          border-left-color: #188038;
+          animation: promotedPulse 2s ease-out;
+        }
+        @keyframes promotedPulse {
+          0% { background-color: #d2f0d8; }
+          100% { background: linear-gradient(90deg, #e6f4ea, transparent); }
         }
         .activity-icon {
           font-size: 14px;
@@ -477,6 +674,20 @@ const App: React.FC = () => {
         .activity-text {
           flex: 1;
           font-weight: 500;
+          position: relative;
+        }
+        .promoted-badge {
+          margin-left: 8px;
+          background: #188038;
+          color: white;
+          font-size: 10px;
+          padding: 1px 6px;
+          border-radius: 3px;
+          animation: badgeBlink 1.5s ease-in-out 3;
+        }
+        @keyframes badgeBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
         }
         .no-activity {
           text-align: center;
@@ -485,8 +696,6 @@ const App: React.FC = () => {
           padding: 30px 0;
           margin: 0;
         }
-
-        /* 适配 iPad 横屏及以上 */
         @media (max-width: 1024px) {
           .col-left {
             flex: 0 0 240px;
@@ -495,7 +704,6 @@ const App: React.FC = () => {
             flex: 0 0 260px;
           }
         }
-
         @media (max-width: 768px) {
           .app-main {
             flex-direction: column;

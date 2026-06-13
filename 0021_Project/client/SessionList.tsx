@@ -30,11 +30,16 @@ const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId }) => {
           return (
             <div
               key={session.id}
-              className={`session-card ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''}`}
+              className={`session-card ${isSelected ? 'selected' : ''} ${isFull ? 'full' : ''} ${
+                session.status === 'closed' ? 'closed' : ''
+              }`}
               onClick={() => handleSelect(session.id)}
             >
               <div className="session-header">
-                <span className="session-name">{session.name}</span>
+                <span className="session-name">
+                  {session.name}
+                  {session.status === 'closed' && <span className="badge-closed">已关闭</span>}
+                </span>
                 <span className="session-time">
                   {session.startTime} - {session.endTime}
                 </span>
@@ -106,6 +111,23 @@ const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId }) => {
         }
         .session-card.full {
           opacity: 0.8;
+        }
+        .session-card.closed {
+          opacity: 0.5;
+          background: #f1f3f4;
+        }
+        .session-card.closed:hover {
+          border-color: #dadce0;
+          background: #f1f3f4;
+        }
+        .badge-closed {
+          margin-left: 6px;
+          background: #d93025;
+          color: white;
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-weight: normal;
         }
         .session-header {
           display: flex;

@@ -54,6 +54,8 @@ export const eventBus = new EventBus();
 
 // 事件类型常量
 export const EVENTS = {
+  // 用户登录
+  LOGIN_REQUEST: 'login:request',
   // 用户发起预约
   BOOKING_REQUEST: 'booking:request',
   // 用户取消预约
@@ -62,12 +64,20 @@ export const EVENTS = {
   CHECKIN_REQUEST: 'checkin:request',
   // 场次选择变化
   SESSION_SELECTED: 'session:selected',
+  // 场次管理（新增/修改/关闭）
+  SESSION_ADD_REQUEST: 'session:add:request',
+  SESSION_UPDATE_REQUEST: 'session:update:request',
+  SESSION_CLOSE_REQUEST: 'session:close:request',
+  // 导出签到统计 CSV
+  EXPORT_CSV_REQUEST: 'export:csv:request',
   // 收到服务端场次更新
   SESSIONS_UPDATED: 'sessions:updated',
   // 收到活动动态
   ACTIVITY_RECEIVED: 'activity:received',
   // 连接状态变化
   CONNECTION_CHANGED: 'connection:changed',
+  // 用户登录状态变化
+  USER_UPDATED: 'user:updated',
 };
 
 export default eventBus;

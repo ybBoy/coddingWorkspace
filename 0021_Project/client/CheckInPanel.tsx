@@ -2,9 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Session, Booking } from './types';
 import { eventBus, EVENTS } from './EventBus';
 
-// CheckInPanel 签到面板组件
-// 职责：工作人员使用，搜索姓名并标记签到
-// 交互：输入姓名搜索 → 显示匹配的预约 → 点击签到按钮 → EventBus 发出 CHECKIN_REQUEST
+// CheckInPanel 签到面板组件（仅管理员可见）
+// 职责：工作人员使用，搜索姓名/工号并标记签到
+// 交互：输入关键词搜索 → 显示匹配的预约 → 点击签到按钮 → EventBus 发出 CHECKIN_REQUEST
 // 接收：当前选中的 session 和该场次的所有预约列表
 
 interface CheckInPanelProps {
@@ -13,20 +13,21 @@ interface CheckInPanelProps {
 }
 
 const CheckInPanel: React.FC<CheckInPanelProps> = ({ session, bookings }) => {
-  const [searchName, setSearchName] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
 
-  // 筛选当前场次的预约，并按姓名搜索过滤
+  // 筛选当前场次的预约，并按关键词搜索过滤（支持姓名或工号）
   const filteredBookings = useMemo(() => {
     if (!session) return [];
     const sessionBookings = bookings.filter(
       (b) => b.sessionId === session.id && b.status !== 'cancelled'
     );
-    if (!searchName.trim()) return sessionBookings;
-    const keyword = searchName.trim().toLowerCase();
+    if (!searchKeyword.trim()) return sessionBookings;
+    const keyword = searchKeyword.trim().toLowerCase();
     return sessionBookings.filter((b) =>
-      b.userName.toLowerCase().includes(keyword)
+      b.userName.toLowerCase().includes(keyword) ||
+      (b.employeeId && b.employeeId.toLowerCase().includes(keyword))
     );
-  }, [session, bookings, searchName]);
+  }, [session, bookings, searchKeyword]);
 
   // 按状态排序：已签到 > 已预约 > 候补
   const sortedBookings = useMemo(() => {
@@ -51,7 +52,7 @@ const CheckInPanel: React.FC<CheckInPanelProps> = ({ session, bookings }) => {
 
   return (
     <div className="checkin-panel">
-      <h2>✅ 签到管理</h2>
+      <h2>✅ 签到管理（管理员）</h2>
 
       {!session ? (
         <div className="placeholder">
@@ -79,9 +80,9 @@ const CheckInPanel: React.FC<CheckInPanelProps> = ({ session, bookings }) => {
           <div className="search-box">
             <input
               type="text"
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              placeholder="🔍 输入姓名搜索..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="🔍 输入姓名或工号搜索..."
             />
           </div>
 
@@ -95,7 +96,10 @@ const CheckInPanel: React.FC<CheckInPanelProps> = ({ session, bookings }) => {
                 className={`booking-item status-${booking.status}`}
               >
                 <div className="booking-info">
-                  <span className="user-name">{booking.userName}</span>
+                  <div className="user-row">
+                    <span className="user-name">{booking.userName}</span>
+                    <span className="user-emp-id">({booking.employeeId})</span>
+                  </div>
                   <span className={`status-tag tag-${booking.status}`}>
                     {booking.status === 'booked' && '已预约'}
                     {booking.status === 'waitlist' && '候补中'}
@@ -120,7 +124,7 @@ const CheckInPanel: React.FC<CheckInPanelProps> = ({ session, bookings }) => {
 
           <div className="list-footer">
             共 {totalCount} 条记录
-            {searchName && ` (匹配 ${sortedBookings.length} 条)`}
+            {searchKeyword && ` (匹配 ${sortedBookings.length} 条)`}
           </div>
         </div>
       )}
@@ -234,17 +238,27 @@ const CheckInPanel: React.FC<CheckInPanelProps> = ({ session, bookings }) => {
         }
         .booking-info {
           display: flex;
-          align-items: center;
-          gap: 8px;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .user-row {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
         }
         .user-name {
           font-size: 14px;
           font-weight: 500;
         }
+        .user-emp-id {
+          font-size: 12px;
+          color: #5f6368;
+        }
         .status-tag {
           font-size: 11px;
           padding: 2px 6px;
           border-radius: 4px;
+          align-self: flex-start;
         }
         .tag-booked {
           background: #e8f0fe;

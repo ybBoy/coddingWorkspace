@@ -1,6 +1,7 @@
 package com.booking.websocket;
 
 import com.booking.model.Booking;
+import com.booking.model.User;
 import com.booking.service.BookingService;
 import com.booking.store.FileStore;
 import com.google.gson.Gson;
@@ -8,6 +9,8 @@ import com.google.gson.Gson;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -16,19 +19,25 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * BookingWebSocket WebSocket 处理器
  * 职责：
  *   1. 管理所有客户端连接
- *   2. 接收前端发来的消息（预约/取消/签到/初始化）
- *   3. 调用 BookingService 处理业务逻辑
- *   4. 将结果和更新广播给所有连接的客户端
- *   5. 生成活动动态并推送
+ *   2. 用户登录与角色识别
+ *   3. 接收前端发来的消息（登录/预约/取消/签到/场次管理/导出）
+ *   4. 调用 BookingService 处理业务逻辑，鉴权
+ *   5. 将结果和更新广播给所有连接的客户端
+ *   6. 生成活动动态并推送
  *
  * 注意：这里的 Session 是 javax.websocket.Session（WebSocket 连接会话），
  *      业务场次模型 com.booking.model.Session 使用全限定名以避免命名冲突。
  *
  * 消息格式（JSON）：
- *   { type: "booking", payload: { sessionId, userName } }
- *   { type: "cancel", payload: { bookingId, userName } }
- *   { type: "checkin", payload: { bookingId } }
- *   { type: "init", payload: {} }
+ *   { type: "login",     payload: { employeeId, userName } }
+ *   { type: "init",      payload: {} }
+ *   { type: "booking",   payload: { sessionId, employeeId, userName, phone } }
+ *   { type: "cancel",    payload: { bookingId, employeeId } }
+ *   { type: "checkin",   payload: { bookingId } }
+ *   { type: "sessionAdd",    payload: { name, date, startTime, endTime, capacity } }
+ *   { type: "sessionUpdate", payload: { sessionId, name, startTime, endTime, capacity } }
+ *   { type: "sessionClose",  payload: { sessionId } }
+ *   { type: "exportCsv",     payload: { sessionId } }
  *
  * 数据流：
  *   前端 → WebSocket 消息 → BookingWebSocket 解析 → BookingService 处理
@@ -67,6 +76,7 @@ public class BookingWebSocket {
     @OnClose
     public void onClose(Session session, CloseReason reason) {
         wsSessions.remove(session);
+        bookingService.logout(session.getId());
         System.out.println("[WebSocket] 连接断开: " + session.getId() + "，当前连接数: " + wsSessions.size());
     }
 
@@ -81,6 +91,9 @@ public class BookingWebSocket {
             Map<String, Object> payload = (Map<String, Object>) msg.get("payload");
 
             switch (type) {
+                case "login":
+                    handleLogin(session, payload);
+                    break;
                 case "init":
                     handleInit(session);
                     break;
@@ -92,6 +105,18 @@ public class BookingWebSocket {
                     break;
                 case "checkin":
                     handleCheckIn(session, payload);
+                    break;
+                case "sessionAdd":
+                    handleSessionAdd(session, payload);
+                    break;
+                case "sessionUpdate":
+                    handleSessionUpdate(session, payload);
+                    break;
+                case "sessionClose":
+                    handleSessionClose(session, payload);
+                    break;
+                case "exportCsv":
+                    handleExportCsv(session, payload);
                     break;
                 default:
                     sendError(session, "未知消息类型: " + type);
@@ -111,31 +136,94 @@ public class BookingWebSocket {
         System.err.println("[WebSocket] 连接错误: " + session.getId() + " - " + error.getMessage());
     }
 
+    // ========== 权限辅助 ==========
+    private User requireLogin(Session session) {
+        User user = bookingService.getUserByWs(session.getId());
+        if (user == null) {
+            throw new SecurityException("请先登录");
+        }
+        return user;
+    }
+
+    private User requireAdmin(Session session) {
+        User user = requireLogin(session);
+        if (!user.isAdmin()) {
+            throw new SecurityException("需要管理员权限");
+        }
+        return user;
+    }
+
     // ========== 消息处理方法 ==========
+
+    /**
+     * 登录
+     */
+    private void handleLogin(Session session, Map<String, Object> payload) {
+        String employeeId = (String) payload.get("employeeId");
+        String userName = (String) payload.get("userName");
+
+        if (employeeId == null || employeeId.trim().isEmpty()) {
+            sendError(session, "工号不能为空");
+            return;
+        }
+        if (userName == null || userName.trim().isEmpty()) {
+            sendError(session, "姓名不能为空");
+            return;
+        }
+
+        try {
+            User user = bookingService.login(employeeId, userName, session.getId());
+            Map<String, Object> okPayload = new HashMap<>();
+            okPayload.put("user", user);
+            okPayload.put("sessions", bookingService.getAllSessions());
+            okPayload.put("bookings", bookingService.getAllBookings());
+            sendMessage(session, "loginOk", okPayload);
+            System.out.println("[WebSocket] 登录成功: " + employeeId + " / " + userName
+                    + " (角色: " + user.getRole() + ")");
+        } catch (Exception e) {
+            sendError(session, e.getMessage());
+        }
+    }
 
     /**
      * 初始化：发送全量数据
      */
     private void handleInit(Session session) {
         Map<String, Object> payload = new HashMap<>();
+        User user = bookingService.getUserByWs(session.getId());
+        if (user != null) {
+            payload.put("user", user);
+        }
         payload.put("sessions", bookingService.getAllSessions());
         payload.put("bookings", bookingService.getAllBookings());
         sendMessage(session, "init", payload);
     }
 
     /**
-     * 处理预约
+     * 处理预约（需要登录）
      */
     private void handleBooking(Session session, Map<String, Object> payload) {
-        String sessionId = (String) payload.get("sessionId");
-        String userName = (String) payload.get("userName");
+        User user = requireLogin(session);
 
-        if (sessionId == null || userName == null || userName.trim().isEmpty()) {
-            sendMessage(session, "bookingFail", Collections.singletonMap("message", "参数不完整"));
+        String sessionId = (String) payload.get("sessionId");
+        String employeeId = (String) payload.get("employeeId");
+        String userName = (String) payload.get("userName");
+        String phone = (String) payload.get("phone");
+
+        if (sessionId == null || employeeId == null || employeeId.trim().isEmpty()
+                || userName == null || userName.trim().isEmpty()) {
+            sendError(session, "参数不完整（需要 sessionId、工号、姓名）");
             return;
         }
 
-        BookingService.BookingResult result = bookingService.book(sessionId, userName.trim());
+        // 普通用户只能以自己的身份预约
+        if (!user.isAdmin() && !employeeId.trim().equals(user.getEmployeeId())) {
+            sendError(session, "只能以自己的工号预约");
+            return;
+        }
+
+        BookingService.BookingResult result = bookingService.book(
+                sessionId, employeeId.trim(), userName.trim(), phone != null ? phone.trim() : null);
 
         if (!result.success) {
             sendMessage(session, "bookingFail", Collections.singletonMap("message", result.message));
@@ -151,10 +239,11 @@ public class BookingWebSocket {
         // 生成活动动态
         SessionInfo sessionInfo = getSessionInfo(sessionId);
         String activityType = result.isWaitlist ? "waitlist" : "booking";
+        String displayName = userName.trim() + "（" + employeeId.trim() + "）";
         String activityMsg = result.isWaitlist
-                ? userName + " 加入了「" + sessionInfo.name + "」的候补队列"
-                : userName + " 预约了「" + sessionInfo.name + "」";
-        broadcastActivity(activityType, userName, sessionInfo.name, activityMsg);
+                ? displayName + " 加入了「" + sessionInfo.name + "」的候补队列"
+                : displayName + " 预约了「" + sessionInfo.name + "」";
+        broadcastActivity(activityType, displayName, sessionInfo.name, activityMsg);
 
         // 广播场次更新给所有客户端
         broadcastSessionsUpdate();
@@ -165,35 +254,44 @@ public class BookingWebSocket {
 
     /**
      * 处理取消预约
-     * 安全校验：必须提供与 booking 记录一致的 userName
+     * 安全校验：普通用户只能取消自己的（工号匹配），管理员可强制取消
      */
     private void handleCancel(Session session, Map<String, Object> payload) {
-        String bookingId = (String) payload.get("bookingId");
-        String userName = (String) payload.get("userName");
+        User user = requireLogin(session);
 
-        if (bookingId == null || userName == null || userName.trim().isEmpty()) {
-            sendMessage(session, "error", Collections.singletonMap("message", "参数不完整"));
+        String bookingId = (String) payload.get("bookingId");
+        String employeeId = (String) payload.get("employeeId");
+
+        if (bookingId == null || employeeId == null || employeeId.trim().isEmpty()) {
+            sendError(session, "参数不完整（需要 bookingId、employeeId）");
             return;
         }
 
         Booking booking = bookingService.getBooking(bookingId);
         if (booking == null) {
-            sendMessage(session, "error", Collections.singletonMap("message", "预约不存在"));
+            sendError(session, "预约不存在");
             return;
         }
 
-        // 安全校验：userName 必须匹配
-        if (!booking.getUserName().equals(userName.trim())) {
-            sendMessage(session, "error", Collections.singletonMap("message", "无权取消他人的预约"));
+        // 普通用户只能取消自己的预约
+        if (!user.isAdmin() && !booking.getEmployeeId().equals(employeeId.trim())) {
+            sendError(session, "无权取消他人的预约");
+            return;
+        }
+        // 普通用户必须用自己的工号取消（不能冒充他人）
+        if (!user.isAdmin() && !employeeId.trim().equals(user.getEmployeeId())) {
+            sendError(session, "只能以自己的工号取消");
             return;
         }
 
         String sessionName = getSessionInfo(booking.getSessionId()).name;
+        String operator = user.getUserName() + "（" + user.getEmployeeId() + "）";
 
-        BookingService.CancelResult result = bookingService.cancelBooking(bookingId);
+        BookingService.CancelResult result = bookingService.cancelBooking(
+                bookingId, employeeId.trim(), operator, user.isAdmin());
 
         if (!result.success) {
-            sendMessage(session, "error", Collections.singletonMap("message", result.message));
+            sendError(session, result.message);
             return;
         }
 
@@ -204,15 +302,18 @@ public class BookingWebSocket {
         sendMessage(session, "cancelOk", okPayload);
 
         // 广播取消活动
-        String cancelMsg = userName + " 取消了「" + sessionName + "」的预约";
-        broadcastActivity("cancel", userName, sessionName, cancelMsg);
+        String displayName = booking.getUserName() + "（" + booking.getEmployeeId() + "）";
+        String cancelMsg = displayName + " 取消了「" + sessionName + "」的预约";
+        broadcastActivity("cancel", displayName, sessionName, cancelMsg);
 
-        // 如果有候补转正，也广播
+        // 如果有候补转正，也广播（带 promoted 标志，前端醒目提示）
         if (result.promotedBooking != null) {
-            String promoteMsg = result.promotedBooking.getUserName()
-                    + " 从候补转为「" + sessionName + "」的正式预约";
-            broadcastActivity("autoPromote", result.promotedBooking.getUserName(),
-                    sessionName, promoteMsg);
+            String promoteName = result.promotedBooking.getUserName()
+                    + "（" + result.promotedBooking.getEmployeeId() + "）";
+            String promoteMsg = promoteName
+                    + " 从候补转为「" + sessionName + "」的正式预约 🎉";
+            broadcastActivity("autoPromote", promoteName,
+                    sessionName, promoteMsg, true);  // promoted=true 标识醒目提示
         }
 
         // 广播场次更新
@@ -223,20 +324,23 @@ public class BookingWebSocket {
     }
 
     /**
-     * 处理签到
+     * 处理签到（需要管理员权限）
      */
     private void handleCheckIn(Session session, Map<String, Object> payload) {
+        User admin = requireAdmin(session);
+
         String bookingId = (String) payload.get("bookingId");
 
         if (bookingId == null) {
-            sendMessage(session, "error", Collections.singletonMap("message", "参数不完整"));
+            sendError(session, "参数不完整");
             return;
         }
 
-        BookingService.CheckInResult result = bookingService.checkIn(bookingId);
+        String operator = admin.getUserName() + "（" + admin.getEmployeeId() + "）";
+        BookingService.CheckInResult result = bookingService.checkIn(bookingId, operator);
 
         if (!result.success) {
-            sendMessage(session, "error", Collections.singletonMap("message", result.message));
+            sendError(session, result.message);
             return;
         }
 
@@ -249,9 +353,11 @@ public class BookingWebSocket {
         // 广播签到动态
         if (result.booking != null) {
             SessionInfo sessionInfo = getSessionInfo(result.booking.getSessionId());
-            String checkInMsg = result.booking.getUserName()
+            String displayName = result.booking.getUserName()
+                    + "（" + result.booking.getEmployeeId() + "）";
+            String checkInMsg = displayName
                     + " 在「" + sessionInfo.name + "」完成签到";
-            broadcastActivity("checkIn", result.booking.getUserName(),
+            broadcastActivity("checkIn", displayName,
                     sessionInfo.name, checkInMsg);
         }
 
@@ -260,6 +366,161 @@ public class BookingWebSocket {
 
         // 保存数据
         saveAsync();
+    }
+
+    /**
+     * 新增场次（管理员）
+     */
+    private void handleSessionAdd(Session session, Map<String, Object> payload) {
+        User admin = requireAdmin(session);
+
+        String name = (String) payload.get("name");
+        String date = (String) payload.get("date");
+        String startTime = (String) payload.get("startTime");
+        String endTime = (String) payload.get("endTime");
+        Object capObj = payload.get("capacity");
+        int capacity = capObj instanceof Number ? ((Number) capObj).intValue() : 10;
+
+        if (name == null || name.trim().isEmpty() || date == null
+                || startTime == null || endTime == null) {
+            sendError(session, "场次信息不完整");
+            return;
+        }
+
+        try {
+            String operator = admin.getUserName() + "（" + admin.getEmployeeId() + "）";
+            com.booking.model.Session s = bookingService.addSessionAdmin(
+                    name.trim(), date.trim(), startTime.trim(), endTime.trim(),
+                    capacity, operator);
+
+            Map<String, Object> okPayload = new HashMap<>();
+            okPayload.put("session", s);
+            okPayload.put("sessions", bookingService.getAllSessions());
+            sendMessage(session, "sessionOk", okPayload);
+
+            String activityMsg = operator + " 新增了场次「" + s.getName() + "」";
+            broadcastActivity("sessionAdd", operator, s.getName(), activityMsg);
+            broadcastSessionsUpdate();
+            saveAsync();
+        } catch (Exception e) {
+            sendError(session, e.getMessage());
+        }
+    }
+
+    /**
+     * 修改场次（管理员）
+     */
+    private void handleSessionUpdate(Session session, Map<String, Object> payload) {
+        User admin = requireAdmin(session);
+
+        String sessionId = (String) payload.get("sessionId");
+        String name = (String) payload.get("name");
+        String startTime = (String) payload.get("startTime");
+        String endTime = (String) payload.get("endTime");
+        Object capObj = payload.get("capacity");
+        Integer capacity = null;
+        if (capObj instanceof Number) {
+            capacity = ((Number) capObj).intValue();
+        }
+
+        if (sessionId == null) {
+            sendError(session, "场次ID不能为空");
+            return;
+        }
+
+        try {
+            String operator = admin.getUserName() + "（" + admin.getEmployeeId() + "）";
+            com.booking.model.Session s = bookingService.updateSessionAdmin(
+                    sessionId, name, startTime, endTime,
+                    capacity != null ? capacity : 0, operator);
+
+            Map<String, Object> okPayload = new HashMap<>();
+            okPayload.put("session", s);
+            okPayload.put("sessions", bookingService.getAllSessions());
+            sendMessage(session, "sessionOk", okPayload);
+
+            String activityMsg = operator + " 修改了场次「" + s.getName() + "」";
+            broadcastActivity("sessionUpdate", operator, s.getName(), activityMsg);
+            broadcastSessionsUpdate();
+            saveAsync();
+        } catch (Exception e) {
+            sendError(session, e.getMessage());
+        }
+    }
+
+    /**
+     * 关闭/开放场次（管理员）
+     */
+    private void handleSessionClose(Session session, Map<String, Object> payload) {
+        User admin = requireAdmin(session);
+
+        String sessionId = (String) payload.get("sessionId");
+        Boolean close = (Boolean) payload.get("close");
+        if (close == null) close = true;
+
+        if (sessionId == null) {
+            sendError(session, "场次ID不能为空");
+            return;
+        }
+
+        try {
+            String operator = admin.getUserName() + "（" + admin.getEmployeeId() + "）";
+            String status = close ? com.booking.model.Session.STATUS_CLOSED
+                                  : com.booking.model.Session.STATUS_ACTIVE;
+            com.booking.model.Session s = bookingService.setSessionStatus(
+                    sessionId, status, operator);
+
+            Map<String, Object> okPayload = new HashMap<>();
+            okPayload.put("session", s);
+            okPayload.put("sessions", bookingService.getAllSessions());
+            sendMessage(session, "sessionOk", okPayload);
+
+            String activityMsg = operator + (close ? " 关闭了 " : " 开放了 ")
+                    + "场次「" + s.getName() + "」";
+            broadcastActivity("sessionStatus", operator, s.getName(), activityMsg);
+            broadcastSessionsUpdate();
+            saveAsync();
+        } catch (Exception e) {
+            sendError(session, e.getMessage());
+        }
+    }
+
+    /**
+     * 导出场次 CSV（管理员）
+     * 返回 base64 编码的 CSV 内容供前端下载
+     */
+    private void handleExportCsv(Session session, Map<String, Object> payload) {
+        User admin = requireAdmin(session);
+
+        String sessionId = (String) payload.get("sessionId");
+        if (sessionId == null) {
+            sendError(session, "场次ID不能为空");
+            return;
+        }
+
+        try {
+            String csv = bookingService.exportSessionCsv(sessionId);
+            com.booking.model.Session s = bookingService.getSession(sessionId);
+            String filename = (s != null ? s.getName() : "签到统计")
+                    + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".csv";
+
+            Map<String, Object> okPayload = new HashMap<>();
+            okPayload.put("sessionId", sessionId);
+            okPayload.put("filename", filename);
+            try {
+                okPayload.put("csvBase64", Base64.getEncoder().encodeToString(
+                        csv.getBytes("UTF-8")));
+            } catch (UnsupportedEncodingException e) {
+                okPayload.put("csvBase64", Base64.getEncoder().encodeToString(
+                        csv.getBytes()));
+            }
+            sendMessage(session, "exportCsvOk", okPayload);
+
+            System.out.println("[WebSocket] " + admin.getUserName()
+                    + " 导出了场次 CSV: " + filename);
+        } catch (Exception e) {
+            sendError(session, e.getMessage());
+        }
     }
 
     // ========== 广播方法 ==========
@@ -277,7 +538,14 @@ public class BookingWebSocket {
     /**
      * 广播活动动态
      */
-    private void broadcastActivity(String type, String userName, String sessionName, String message) {
+    private void broadcastActivity(String type, String userName,
+                                    String sessionName, String message) {
+        broadcastActivity(type, userName, sessionName, message, false);
+    }
+
+    private void broadcastActivity(String type, String userName,
+                                    String sessionName, String message,
+                                    boolean promoted) {
         Map<String, Object> activity = new HashMap<>();
         activity.put("id", "act_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 1000));
         activity.put("time", formatTime(System.currentTimeMillis()));
@@ -285,6 +553,7 @@ public class BookingWebSocket {
         activity.put("userName", userName);
         activity.put("sessionName", sessionName);
         activity.put("message", message);
+        activity.put("promoted", promoted);
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("activity", activity);

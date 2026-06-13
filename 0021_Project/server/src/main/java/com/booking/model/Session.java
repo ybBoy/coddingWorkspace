@@ -6,21 +6,30 @@ import java.util.Date;
 /**
  * Session 活动场次实体类
  * 职责：表示一个活动场次的基本信息和实时统计数据
- * 包含：场次 ID、名称、日期、起止时间、容量、已预约数、已签到数、候补数
+ * 包含：场次 ID、名称、日期、起止时间、容量、状态、创建人
  * date 字段格式：yyyy-MM-dd（如 2026-06-12），用于按当天过滤
+ * status: active（开放预约）、closed（关闭预约）
  */
 public class Session {
+    public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_CLOSED = "closed";
+
     private String id;
     private String name;
     private String date;        // 场次日期 yyyy-MM-dd
     private String startTime;
     private String endTime;
     private int capacity;
+    private String status;      // active / closed
+    private String createdBy;   // 创建人（工号或姓名）
+    private long createdAt;
     private int bookedCount;
     private int checkedInCount;
     private int waitlistCount;
 
     public Session() {
+        this.createdAt = System.currentTimeMillis();
+        this.status = STATUS_ACTIVE;
     }
 
     public Session(String id, String name, String date, String startTime, String endTime, int capacity) {
@@ -30,9 +39,16 @@ public class Session {
         this.startTime = startTime;
         this.endTime = endTime;
         this.capacity = capacity;
+        this.status = STATUS_ACTIVE;
+        this.createdAt = System.currentTimeMillis();
         this.bookedCount = 0;
         this.checkedInCount = 0;
         this.waitlistCount = 0;
+    }
+
+    public Session(String id, String name, String date, String startTime, String endTime, int capacity, String createdBy) {
+        this(id, name, date, startTime, endTime, capacity);
+        this.createdBy = createdBy;
     }
 
     // 判断是否是今天的场次
@@ -57,6 +73,11 @@ public class Session {
     // 剩余名额
     public int getRemainingSpots() {
         return Math.max(0, capacity - bookedCount);
+    }
+
+    // 是否开放预约
+    public boolean isOpenForBooking() {
+        return STATUS_ACTIVE.equals(status);
     }
 
     public String getId() {
@@ -105,6 +126,30 @@ public class Session {
 
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
     }
 
     public int getBookedCount() {

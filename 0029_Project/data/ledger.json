@@ -1,0 +1,26 @@
+{
+  "expenses" : [ {
+    "id" : "35724d22-90c3-4b2f-bb04-9a1412f72ff6",
+    "amount" : 85110,
+    "category" : "餐饮",
+    "payer" : "爸爸",
+    "remark" : "午餐",
+    "time" : "2026-06-13T11:50:57"
+  }, {
+    "id" : "b1c691fb-9ede-4b77-80a8-e32d4bdc9420",
+    "amount" : 300,
+    "category" : "购物",
+    "payer" : "妈妈",
+    "remark" : "买衣服",
+    "time" : "2026-06-13T11:59:45"
+  } ],
+  "budgets" : [ {
+    "category" : "餐饮",
+    "amount" : 100
+  } ],
+  "config" : {
+    "ledgerName" : "\uD83C\uDFE0 家庭账本",
+    "categories" : [ "餐饮", "购物", "交通", "娱乐", "医疗", "教育", "住房", "通讯", "其他" ],
+    "payers" : [ "爸爸", "妈妈", "孩子", "共同" ]
+  }
+}

@@ -2,10 +2,13 @@ package application;
 
 import domain.Budget;
 import domain.Expense;
+import domain.LedgerConfig;
 import domain.LedgerSnapshot;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -14,10 +17,12 @@ import java.util.stream.Collectors;
 public class LedgerService {
     private final List<Expense> expenses;
     private final Map<String, Budget> budgets;
+    private LedgerConfig config;
 
     public LedgerService() {
         this.expenses = new CopyOnWriteArrayList<>();
         this.budgets = new ConcurrentHashMap<>();
+        this.config = new LedgerConfig();
     }
 
     public void restoreFromSnapshot(LedgerSnapshot snapshot) {
@@ -31,12 +36,18 @@ public class LedgerService {
                 budgets.put(budget.getCategory(), budget);
             }
         }
+        if (snapshot.getConfig() != null) {
+            this.config = snapshot.getConfig();
+        } else {
+            this.config = new LedgerConfig();
+        }
     }
 
     public LedgerSnapshot createSnapshot() {
         return new LedgerSnapshot(
                 new ArrayList<>(expenses),
-                new ArrayList<>(budgets.values())
+                new ArrayList<>(budgets.values()),
+                config
         );
     }
 
@@ -47,6 +58,22 @@ public class LedgerService {
 
     public boolean deleteExpense(String id) {
         return expenses.removeIf(e -> e.getId().equals(id));
+    }
+
+    public Expense editExpense(String id, BigDecimal amount, String category, String payer, String remark, String timeStr) {
+        for (Expense expense : expenses) {
+            if (expense.getId().equals(id)) {
+                expense.setAmount(amount);
+                expense.setCategory(category);
+                expense.setPayer(payer);
+                expense.setRemark(remark);
+                if (timeStr != null && !timeStr.isEmpty()) {
+                    expense.setTime(LocalDateTime.parse(timeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                }
+                return expense;
+            }
+        }
+        return null;
     }
 
     public void setBudget(Budget budget) {
@@ -127,5 +154,36 @@ public class LedgerService {
                 .sorted((a, b) -> b.getTime().compareTo(a.getTime()))
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    public Map<String, BigDecimal> getPayerTotals(YearMonth month) {
+        Map<String, BigDecimal> totals = new LinkedHashMap<>();
+        for (Expense e : getExpensesByMonth(month)) {
+            totals.merge(e.getPayer(), e.getAmount(), BigDecimal::add);
+        }
+        return totals.entrySet().stream()
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+    }
+
+    public LedgerConfig getConfig() {
+        return config;
+    }
+
+    public void updateConfig(LedgerConfig newConfig) {
+        if (newConfig.getLedgerName() != null && !newConfig.getLedgerName().trim().isEmpty()) {
+            this.config.setLedgerName(newConfig.getLedgerName());
+        }
+        if (newConfig.getCategories() != null && !newConfig.getCategories().isEmpty()) {
+            this.config.setCategories(new ArrayList<>(newConfig.getCategories()));
+        }
+        if (newConfig.getPayers() != null && !newConfig.getPayers().isEmpty()) {
+            this.config.setPayers(new ArrayList<>(newConfig.getPayers()));
+        }
     }
 }

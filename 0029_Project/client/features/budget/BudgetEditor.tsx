@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { Budget } from '../../shared/types'
 import { eventBus } from '../../shared/EventBus'
-import { CATEGORIES } from '../../shared/constants'
 
 interface BudgetEditorProps {
   budgets: Budget[]
+  categories: string[]
 }
 
-const BudgetEditor: React.FC<BudgetEditorProps> = ({ budgets }) => {
+const BudgetEditor: React.FC<BudgetEditorProps> = ({ budgets, categories }) => {
   const budgetMap = budgets.reduce((acc, b) => {
     acc[b.category] = b.amount
     return acc
@@ -52,7 +52,7 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({ budgets }) => {
     <div className="card">
       <h3 className="card-title">预算设置</h3>
       <div className="budget-list">
-        {CATEGORIES.map(category => {
+        {categories.map(category => {
           const currentAmount = localBudgets[category] || ''
           const savedAmount = budgetMap[category] || '0'
           const hasChanges = currentAmount !== savedAmount

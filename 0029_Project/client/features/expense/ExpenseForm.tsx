@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { eventBus } from '../../shared/EventBus'
-import { CATEGORIES, PAYERS } from '../../shared/constants'
 
 interface FormData {
   amount: string
@@ -9,13 +8,26 @@ interface FormData {
   remark: string
 }
 
-const ExpenseForm: React.FC = () => {
+interface ExpenseFormProps {
+  categories: string[]
+  payers: string[]
+}
+
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ categories, payers }) => {
   const [formData, setFormData] = useState<FormData>({
     amount: '',
-    category: CATEGORIES[0],
-    payer: PAYERS[0],
+    category: categories[0] || '',
+    payer: payers[0] || '',
     remark: ''
   })
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      category: categories.includes(prev.category) ? prev.category : (categories[0] || ''),
+      payer: payers.includes(prev.payer) ? prev.payer : (payers[0] || '')
+    }))
+  }, [categories, payers])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -39,8 +51,8 @@ const ExpenseForm: React.FC = () => {
 
     setFormData({
       amount: '',
-      category: CATEGORIES[0],
-      payer: PAYERS[0],
+      category: categories[0] || '',
+      payer: payers[0] || '',
       remark: ''
     })
   }
@@ -72,7 +84,7 @@ const ExpenseForm: React.FC = () => {
             onChange={handleChange}
             className="form-select"
           >
-            {CATEGORIES.map(cat => (
+            {categories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
@@ -86,7 +98,7 @@ const ExpenseForm: React.FC = () => {
             onChange={handleChange}
             className="form-select"
           >
-            {PAYERS.map(payer => (
+            {payers.map(payer => (
               <option key={payer} value={payer}>{payer}</option>
             ))}
           </select>

@@ -24,6 +24,10 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ recentExpenses, curre
     }
   }
 
+  const handleEdit = (expense: Expense) => {
+    eventBus.emit('editor:open', expense)
+  }
+
   const getCategoryColor = (category: string): string => {
     const colors: Record<string, string> = {
       '餐饮': '#e74c3c',
@@ -100,14 +104,24 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ recentExpenses, curre
                           )}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="btn-delete"
-                        onClick={() => handleDelete(expense.id, expense.remark)}
-                        title="删除"
-                      >
-                        ×
-                      </button>
+                      <div className="timeline-actions">
+                        <button
+                          type="button"
+                          className="btn-edit"
+                          onClick={() => handleEdit(expense)}
+                          title="编辑"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-delete"
+                          onClick={() => handleDelete(expense.id, expense.remark)}
+                          title="删除"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

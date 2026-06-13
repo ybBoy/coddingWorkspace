@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import domain.Budget;
 import domain.Expense;
+import domain.LedgerConfig;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
@@ -76,6 +77,15 @@ public class LedgerSocket {
                 case "REMOVE_BUDGET":
                     handleRemoveBudget(payload);
                     break;
+                case "EDIT_EXPENSE":
+                    handleEditExpense(payload);
+                    break;
+                case "EXPORT_MONTH":
+                    handleExportMonth(session, payload);
+                    break;
+                case "UPDATE_CONFIG":
+                    handleUpdateConfig(payload);
+                    break;
                 case "GET_STATE":
                     YearMonth month = parseYearMonth(payload);
                     sendFullState(session, month);
@@ -120,6 +130,128 @@ public class LedgerSocket {
         String category = payload.path("category").asText();
         ledgerService.removeBudget(category);
         broadcastFullState();
+    }
+
+    private void handleEditExpense(JsonNode payload) {
+        String id = payload.path("id").asText();
+        BigDecimal amount = new BigDecimal(payload.path("amount").asText());
+        String category = payload.path("category").asText();
+        String payer = payload.path("payer").asText();
+        String remark = payload.path("remark").asText();
+        String time = payload.path("time").asText();
+        ledgerService.editExpense(id, amount, category, payer, remark, time);
+        broadcastFullState();
+    }
+
+    private void handleUpdateConfig(JsonNode payload) {
+        String ledgerName = payload.path("ledgerName").asText();
+        java.util.List<String> categories = new java.util.ArrayList<>();
+        JsonNode catNode = payload.path("categories");
+        if (catNode.isArray()) {
+            for (JsonNode node : catNode) {
+                categories.add(node.asText());
+            }
+        }
+        java.util.List<String> payers = new java.util.ArrayList<>();
+        JsonNode payerNode = payload.path("payers");
+        if (payerNode.isArray()) {
+            for (JsonNode node : payerNode) {
+                payers.add(node.asText());
+            }
+        }
+        ledgerService.updateConfig(new LedgerConfig(ledgerName, categories, payers));
+        broadcastFullState();
+    }
+
+    private void handleExportMonth(Session session, JsonNode payload) throws IOException {
+        YearMonth month = parseYearMonth(payload);
+        String format = payload.path("format").asText("csv");
+
+        java.util.List<Expense> expenses = ledgerService.getExpensesByMonth(month);
+        java.util.Map<String, BigDecimal> categoryTotals = ledgerService.getCategoryTotals(month);
+        java.util.Map<String, BigDecimal> payerTotals = ledgerService.getPayerTotals(month);
+
+        ObjectNode result = objectMapper.createObjectNode();
+        result.put("year", month.getYear());
+        result.put("month", month.getMonthValue());
+
+        if ("json".equalsIgnoreCase(format)) {
+            ArrayNode expArray = objectMapper.createArrayNode();
+            for (Expense e : expenses) {
+                ObjectNode exp = objectMapper.createObjectNode();
+                exp.put("id", e.getId());
+                exp.put("amount", e.getAmount().toString());
+                exp.put("category", e.getCategory());
+                exp.put("payer", e.getPayer());
+                exp.put("remark", e.getRemark());
+                exp.put("time", e.getTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                expArray.add(exp);
+            }
+            result.set("expenses", expArray);
+
+            ObjectNode catStats = objectMapper.createObjectNode();
+            categoryTotals.forEach((k, v) -> catStats.put(k, v.toString()));
+            result.set("categoryStats", catStats);
+
+            ObjectNode payerStats = objectMapper.createObjectNode();
+            payerTotals.forEach((k, v) -> payerStats.put(k, v.toString()));
+            result.set("payerStats", payerStats);
+
+            result.put("format", "json");
+        } else {
+            StringBuilder csv = new StringBuilder();
+            csv.append("时间,分类,付款人,金额,备注\n");
+            for (Expense e : expenses) {
+                csv.append(e.getTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).append(",");
+                csv.append(escapeCsv(e.getCategory())).append(",");
+                csv.append(escapeCsv(e.getPayer())).append(",");
+                csv.append(e.getAmount()).append(",");
+                csv.append(escapeCsv(e.getRemark())).append("\n");
+            }
+            csv.append("\n");
+            csv.append("分类汇总\n").append("分类,金额,占比\n");
+            BigDecimal total = ledgerService.getMonthlyTotal(month);
+            for (java.util.Map.Entry<String, BigDecimal> entry : categoryTotals.entrySet()) {
+                csv.append(escapeCsv(entry.getKey())).append(",");
+                csv.append(entry.getValue()).append(",");
+                if (total.compareTo(BigDecimal.ZERO) > 0) {
+                    double pct = entry.getValue().multiply(new BigDecimal("100")).divide(total, 2, java.math.RoundingMode.HALF_UP).doubleValue();
+                    csv.append(pct).append("%");
+                } else {
+                    csv.append("0%");
+                }
+                csv.append("\n");
+            }
+            csv.append("\n");
+            csv.append("成员汇总\n").append("付款人,金额,占比\n");
+            for (java.util.Map.Entry<String, BigDecimal> entry : payerTotals.entrySet()) {
+                csv.append(escapeCsv(entry.getKey())).append(",");
+                csv.append(entry.getValue()).append(",");
+                if (total.compareTo(BigDecimal.ZERO) > 0) {
+                    double pct = entry.getValue().multiply(new BigDecimal("100")).divide(total, 2, java.math.RoundingMode.HALF_UP).doubleValue();
+                    csv.append(pct).append("%");
+                } else {
+                    csv.append("0%");
+                }
+                csv.append("\n");
+            }
+            csv.append("\n").append("本月合计,").append(total.toString());
+            result.put("content", csv.toString());
+            result.put("format", "csv");
+        }
+
+        ObjectNode response = objectMapper.createObjectNode();
+        response.put("type", "EXPORT_RESULT");
+        response.set("payload", result);
+        session.getBasicRemote().sendText(objectMapper.writeValueAsString(response));
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     private YearMonth parseYearMonth(JsonNode payload) {
@@ -204,6 +336,42 @@ public class LedgerSocket {
             budgets.add(bud);
         }
         state.set("budgets", budgets);
+
+        ArrayNode payerStats = objectMapper.createArrayNode();
+        ledgerService.getPayerTotals(month).forEach((payer, amount) -> {
+            ObjectNode p = objectMapper.createObjectNode();
+            p.put("payer", payer);
+            p.put("amount", amount.toString());
+            payerStats.add(p);
+        });
+        state.set("payerStats", payerStats);
+
+        ArrayNode warningCategories = objectMapper.createArrayNode();
+        ledgerService.getCategoryTotalsWithBudgets(month).forEach((category, spent) -> {
+            BigDecimal budget = ledgerService.getBudgetForCategory(category);
+            if (budget.compareTo(BigDecimal.ZERO) > 0) {
+                double ratio = spent.multiply(new BigDecimal("100")).divide(budget, 4, java.math.RoundingMode.HALF_UP).doubleValue();
+                if (ratio >= 80) {
+                    ObjectNode wc = objectMapper.createObjectNode();
+                    wc.put("category", category);
+                    wc.put("ratio", ratio);
+                    wc.put("level", ratio >= 100 ? "over" : "warning");
+                    warningCategories.add(wc);
+                }
+            }
+        });
+        state.set("warningCategories", warningCategories);
+
+        LedgerConfig cfg = ledgerService.getConfig();
+        ObjectNode cfgNode = objectMapper.createObjectNode();
+        cfgNode.put("ledgerName", cfg.getLedgerName());
+        ArrayNode catArray = objectMapper.createArrayNode();
+        for (String c : cfg.getCategories()) catArray.add(c);
+        cfgNode.set("categories", catArray);
+        ArrayNode payerArray = objectMapper.createArrayNode();
+        for (String p : cfg.getPayers()) payerArray.add(p);
+        cfgNode.set("payers", payerArray);
+        state.set("config", cfgNode);
 
         return state;
     }

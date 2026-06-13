@@ -1,11 +1,23 @@
-import React, { useState, useEffect } from 'react'
-import { LedgerState, ConnectionStatus, MonthInfo, NewExpenseData, Budget } from '../shared/types'
+import React, { useState, useEffect, useRef } from 'react'
+import {
+  LedgerState, ConnectionStatus, MonthInfo, NewExpenseData, Budget,
+  EditExpenseData, WarningCategory, ToastData, Expense, ExportRequest, LedgerConfig
+} from '../shared/types'
 import { eventBus } from '../shared/EventBus'
 import { socketClient } from '../shared/socketClient'
 import ExpenseForm from '../features/expense/ExpenseForm'
+import ExpenseEditor from '../features/expense/ExpenseEditor'
 import SummaryPanel from '../features/summary/SummaryPanel'
 import BudgetEditor from '../features/budget/BudgetEditor'
 import ExpenseTimeline from '../features/history/ExpenseTimeline'
+import ExportPanel from '../features/config/ExportPanel'
+import ConfigPanel from '../features/config/ConfigPanel'
+
+const DEFAULT_CONFIG: LedgerConfig = {
+  ledgerName: '🏠 家庭账本',
+  categories: ['餐饮', '购物', '交通', '娱乐', '医疗', '教育', '住房', '通讯', '其他'],
+  payers: ['爸爸', '妈妈', '孩子', '共同']
+}
 
 const now = new Date()
 const initialYear = now.getFullYear()
@@ -19,11 +31,21 @@ const App: React.FC = () => {
     categoryStats: [],
     recentExpenses: [],
     monthExpenses: [],
-    budgets: []
+    budgets: [],
+    payerStats: [],
+    warningCategories: [],
+    config: DEFAULT_CONFIG
   })
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const [selectedYear, setSelectedYear] = useState(initialYear)
   const [selectedMonth, setSelectedMonth] = useState(initialMonth)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [showExport, setShowExport] = useState(false)
+  const [showConfig, setShowConfig] = useState(false)
+  const [toasts, setToasts] = useState<{ id: number; data: ToastData }[]>([])
+  const toastIdRef = useRef(0)
+
+  const config: LedgerConfig = state.config || DEFAULT_CONFIG
 
   const formatMonthDisplay = (year: number, month: number): string => {
     return `${year}年${month}月`
@@ -60,8 +82,31 @@ const App: React.FC = () => {
     eventBus.emit('month:changed', { year: newYear, month: newMonth })
   }
 
+  const addToast = (data: ToastData) => {
+    const id = ++toastIdRef.current
+    setToasts(prev => [...prev, { id, data }])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 3000)
+  }
+
   useEffect(() => {
+    const prevWarnings: WarningCategory[] = []
+
     const unsubState = eventBus.on('state:updated', (newState) => {
+      const newWarnings = newState.warningCategories || []
+      newWarnings.forEach(w => {
+        const existed = prevWarnings.some(pw => pw.category === w.category && pw.level === w.level)
+        if (!existed) {
+          if (w.level === 'over') {
+            addToast({ message: `⚠️「${w.category}」已超预算 ${w.ratio.toFixed(0)}%`, type: 'danger' })
+          } else if (w.level === 'warning') {
+            addToast({ message: `🟠「${w.category}」接近预算 ${w.ratio.toFixed(0)}%`, type: 'warning' })
+          }
+        }
+      })
+      prevWarnings.length = 0
+      prevWarnings.push(...newWarnings)
       setState(newState)
     })
 
@@ -74,6 +119,14 @@ const App: React.FC = () => {
         type: 'ADD_EXPENSE',
         payload: data
       })
+    })
+
+    const unsubExpenseEdited = eventBus.on('expense:edited', (data: EditExpenseData) => {
+      socketClient.send({
+        type: 'EDIT_EXPENSE',
+        payload: data
+      })
+      addToast({ message: '已保存修改', type: 'success' })
     })
 
     const unsubExpenseDeleted = eventBus.on('expense:deleted', (id: string) => {
@@ -101,19 +154,72 @@ const App: React.FC = () => {
       fetchStateForMonth(monthInfo.year, monthInfo.month)
     })
 
+    const unsubEditorOpen = eventBus.on('editor:open', (expense: Expense) => {
+      setEditingExpense(expense)
+    })
+
+    const unsubEditorClose = eventBus.on('editor:close', () => {
+      setEditingExpense(null)
+    })
+
+    const unsubExportOpen = eventBus.on('export:open', () => {
+      setShowExport(true)
+    })
+
+    const unsubExportClose = eventBus.on('export:close', () => {
+      setShowExport(false)
+    })
+
+    const unsubExportRequest = eventBus.on('export:request', (req: ExportRequest) => {
+      socketClient.send({
+        type: 'EXPORT_MONTH',
+        payload: req
+      })
+    })
+
+    const unsubConfigUpdated = eventBus.on('config:updated', (cfg: LedgerConfig) => {
+      socketClient.send({
+        type: 'UPDATE_CONFIG',
+        payload: cfg
+      })
+      addToast({ message: '配置已保存', type: 'success' })
+    })
+
+    const unsubConfigOpen = eventBus.on('config:open', () => {
+      setShowConfig(true)
+    })
+
+    const unsubConfigClose = eventBus.on('config:close', () => {
+      setShowConfig(false)
+    })
+
+    const unsubToast = eventBus.on('toast:show', (data: ToastData) => {
+      addToast(data)
+    })
+
     socketClient.connect()
 
     return () => {
       unsubState()
       unsubConnection()
       unsubExpenseAdded()
+      unsubExpenseEdited()
       unsubExpenseDeleted()
       unsubBudgetChanged()
       unsubBudgetRemoved()
       unsubMonthChanged()
+      unsubEditorOpen()
+      unsubEditorClose()
+      unsubExportOpen()
+      unsubExportClose()
+      unsubExportRequest()
+      unsubConfigUpdated()
+      unsubConfigOpen()
+      unsubConfigClose()
+      unsubToast()
       socketClient.disconnect()
     }
-  }, [])
+  }, [selectedYear, selectedMonth])
 
   const getStatusColor = (): string => {
     switch (connectionStatus) {
@@ -148,17 +254,59 @@ const App: React.FC = () => {
     eventBus.emit('month:changed', { year: selectedYear, month })
   }
 
+  const warningOver = state.warningCategories.filter(w => w.level === 'over').length
+  const warningNear = state.warningCategories.filter(w => w.level === 'warning').length
+
+  const pendingCount = socketClient.getPendingCount()
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1 className="app-title">🏠 家庭账本</h1>
+          <h1 className="app-title">{config.ledgerName}</h1>
           <span className="connection-status">
             <span className="status-dot" style={{ backgroundColor: getStatusColor() }} />
             {getStatusText()}
+            {pendingCount > 0 && (
+              <span className="pending-badge">{pendingCount} 条待同步</span>
+            )}
           </span>
         </div>
+        <div className="header-center">
+          {(warningOver > 0 || warningNear > 0) && (
+            <div className="warnings-banner">
+              {warningOver > 0 && (
+                <span className="warning-chip danger">
+                  <strong>{warningOver}</strong> 个超预算
+                </span>
+              )}
+              {warningNear > 0 && (
+                <span className="warning-chip warning">
+                  <strong>{warningNear}</strong> 个接近预算
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         <div className="header-right">
+          <div className="header-actions">
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={() => eventBus.emit('export:open', undefined)}
+              title="导出月份数据"
+            >
+              📁
+            </button>
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={() => eventBus.emit('config:open', undefined)}
+              title="账本配置"
+            >
+              ⚙️
+            </button>
+          </div>
           <div className="month-selector">
             <button
               type="button"
@@ -200,14 +348,15 @@ const App: React.FC = () => {
 
       <main className="app-main">
         <aside className="sidebar">
-          <ExpenseForm />
-          <BudgetEditor budgets={state.budgets} />
+          <ExpenseForm categories={config.categories} payers={config.payers} />
+          <BudgetEditor budgets={state.budgets} categories={config.categories} />
         </aside>
 
         <section className="content">
           <SummaryPanel
             total={state.summary.total}
             categoryStats={state.categoryStats}
+            payerStats={state.payerStats}
             currentMonth={formatMonthDisplay(selectedYear, selectedMonth)}
           />
           <ExpenseTimeline
@@ -217,6 +366,24 @@ const App: React.FC = () => {
           />
         </section>
       </main>
+
+      {editingExpense && (
+        <ExpenseEditor expense={editingExpense} config={config} />
+      )}
+      {showExport && (
+        <ExportPanel defaultMonth={{ year: selectedYear, month: selectedMonth }} />
+      )}
+      {showConfig && (
+        <ConfigPanel currentConfig={config} />
+      )}
+
+      <div className="toast-container">
+        {toasts.map(({ id, data }) => (
+          <div key={id} className={`toast toast-${data.type}`}>
+            {data.message}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

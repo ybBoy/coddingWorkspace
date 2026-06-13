@@ -69,4 +69,7 @@ export type EventType =
   | 'ONLINE_COUNT'
   | 'PLAYBACK_STATE'
   | 'WS_CONNECTED'
-  | 'WS_DISCONNECTED';
+  | 'WS_DISCONNECTED'
+  | 'APPROVE_AND_PIN'
+  | 'GET_APPROVED'
+  | 'APPROVED_LIST';

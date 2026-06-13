@@ -298,6 +298,15 @@ public class DanmakuService {
         return map;
     }
 
+    public synchronized Message approveAndPinMessage(String id) {
+        Message target = approveMessage(id);
+        if (target != null) {
+            target.setPinned(true);
+            DanmakuWebSocket.broadcast(buildMessage("PIN_UPDATED", target));
+        }
+        return target;
+    }
+
     public Map<String, Object> settingsToMap() {
         Map<String, Object> m = new HashMap<String, Object>();
         m.put("sendingEnabled", settings.isSendingEnabled());

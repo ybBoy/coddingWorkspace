@@ -45,7 +45,7 @@ export const AudiencePanel: React.FC = () => {
     if (!content.trim() || cooldown > 0) return;
     if (!sendingEnabled) { notify('Sending disabled by moderator'); return; }
     const nick = nickname.trim() || 'anonymous';
-    eventBus.emit('SEND_MESSAGE', { content: { content: content.trim(), nickname: nick } });
+    eventBus.emit('SEND_MESSAGE', { content: content.trim(), nickname: nick });
     setContent('');
     setCooldown(3);
   };

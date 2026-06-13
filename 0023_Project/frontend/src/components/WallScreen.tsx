@@ -10,6 +10,7 @@ interface DanmakuItem extends DanmakuMessage {
 }
 
 const MAX_DANMAKU = 30;
+const TOKEN_KEY = 'danmaku_token';
 
 export const WallScreen: React.FC = () => {
   const [danmakus, setDanmakus] = useState<DanmakuItem[]>([]);
@@ -17,6 +18,7 @@ export const WallScreen: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [playbackPaused, setPlaybackPaused] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [isModerator, setIsModerator] = useState(() => !!localStorage.getItem(TOKEN_KEY));
   const trackAvailableAt = useRef<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceCounter = useRef(0);
@@ -113,7 +115,9 @@ export const WallScreen: React.FC = () => {
         pausedQueue.current = [];
       }
     });
-    return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6();
+    const unsub7 = eventBus.on('AUTH_SUCCESS', () => setIsModerator(true));
+    return () => {
+      unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); unsub7();
       removeTimers.current.forEach(t => clearTimeout(t)); removeTimers.current.clear();
     };
   }, [addDanmaku, playbackPaused]);
@@ -127,9 +131,11 @@ export const WallScreen: React.FC = () => {
         <div className="wall-logo">{settings?.eventTitle || 'LIVE DANMAKU'}</div>
         <div className="wall-controls">
           <button className="wall-ctrl-btn" onClick={() => setShowQR(!showQR)} title="QR Code">QR</button>
-          <button className="wall-ctrl-btn" onClick={() => eventBus.emit('TOGGLE_PLAYBACK', { data: { paused: !playbackPaused } })}>
-            {playbackPaused ? 'Resume' : 'Pause'}
-          </button>
+          {isModerator && (
+            <button className="wall-ctrl-btn" onClick={() => eventBus.emit('TOGGLE_PLAYBACK', { paused: !playbackPaused })}>
+              {playbackPaused ? 'Resume' : 'Pause'}
+            </button>
+          )}
           <span className="wall-stats-text">{'Danmaku: ' + danmakus.length + '/' + MAX_DANMAKU}</span>
           <span className={settings?.sendingEnabled !== false ? 'status-on' : 'status-off'}>
             {settings?.sendingEnabled !== false ? 'Sending ON' : 'Sending OFF'}

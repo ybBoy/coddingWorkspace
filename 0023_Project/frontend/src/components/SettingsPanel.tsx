@@ -16,7 +16,7 @@ export const SettingsPanel: React.FC<Props> = ({ settings, token }) => {
   }, [settings]);
 
   const handleSave = () => {
-    eventBus.emit('UPDATE_SETTINGS', { data: form });
+    eventBus.emit('UPDATE_SETTINGS', form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

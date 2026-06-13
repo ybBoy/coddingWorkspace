@@ -55,6 +55,7 @@ export function useWebSocket() {
       case 'OPERATION_LOGS': eventBus.emit('OPERATION_LOGS', data as OperationLog[]); break;
       case 'EXPORT_DONE': eventBus.emit('EXPORT_DONE', data); break;
       case 'BACKUP_DONE': eventBus.emit('BACKUP_DONE'); break;
+      case 'APPROVED_LIST': eventBus.emit('APPROVED_LIST', data as DanmakuMessage[]); break;
     }
   };
 
@@ -83,6 +84,8 @@ export function useWebSocket() {
       ['EXPORT_DATA', () => send('EXPORT_DATA')],
       ['ROTATE_BACKUP', () => send('ROTATE_BACKUP')],
       ['VALIDATE_TOKEN', (d: any) => send('VALIDATE_TOKEN', d)],
+      ['APPROVE_AND_PIN', (d: any) => send('APPROVE_AND_PIN', d)],
+      ['GET_APPROVED', () => send('GET_APPROVED')],
     ] as const;
     const unsubs = events.map(([ev, fn]) => eventBus.on(ev as any, fn));
     return () => {

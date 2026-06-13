@@ -67,12 +67,16 @@ public class DanmakuWebSocket {
                 if (isModerator()) { Map d = (Map) map.get("data"); service.setPlaybackPaused((Boolean) d.get("paused")); }
             } else if ("TOGGLE_PIN".equals(type)) {
                 if (isModerator()) { Map d = (Map) map.get("data"); service.togglePinMessage((String) d.get("id")); }
+            } else if ("APPROVE_AND_PIN".equals(type)) {
+                if (isModerator()) { Map d = (Map) map.get("data"); service.approveAndPinMessage((String) d.get("id")); }
             } else if ("APPROVE_NORMAL_ONLY".equals(type)) {
                 if (isModerator()) service.approveNormalOnly();
             } else if ("UPDATE_SETTINGS".equals(type)) {
                 handleUpdateSettings(map);
             } else if ("GET_LOGS".equals(type)) {
                 if (isModerator()) sendLogs();
+            } else if ("GET_APPROVED".equals(type)) {
+                if (isModerator()) sendApprovedList();
             } else if ("EXPORT_DATA".equals(type)) {
                 if (isModerator()) handleExport();
             } else if ("ROTATE_BACKUP".equals(type)) {
@@ -217,6 +221,10 @@ public class DanmakuWebSocket {
         sendMessage(buildDataMessage("OPERATION_LOGS", service.getRecentLogs()));
     }
 
+    private void sendApprovedList() {
+        sendMessage(buildDataMessage("APPROVED_LIST", service.getApprovedMessages()));
+    }
+
     private void broadcastOnlineCount() {
         Map<String, Object> data = new HashMap<String, Object>();
         data.put("onlineCount", allSessions.size());
@@ -262,7 +270,7 @@ public class DanmakuWebSocket {
         return map;
     }
 
-    private static Map<String, Object> buildDataMessage(String type, Map<String, Object> data) {
+    private static Map<String, Object> buildDataMessage(String type, Object data) {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("type", type);
         map.put("data", data);

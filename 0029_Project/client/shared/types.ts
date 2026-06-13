@@ -23,27 +23,45 @@ export interface Summary {
 }
 
 export interface LedgerState {
+  year: number
+  month: number
   summary: Summary
   categoryStats: CategoryStat[]
-  expenses: Expense[]
+  recentExpenses: Expense[]
+  monthExpenses: Expense[]
   budgets: Budget[]
 }
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
 
+export interface NewExpenseData {
+  amount: string
+  category: string
+  payer: string
+  remark: string
+  time: string
+}
+
+export interface MonthInfo {
+  year: number
+  month: number
+}
+
 export type EventType =
   | 'expense:added'
   | 'expense:deleted'
   | 'budget:changed'
+  | 'budget:removed'
   | 'month:changed'
   | 'state:updated'
   | 'connection:changed'
 
 export interface EventMap {
-  'expense:added': Expense
+  'expense:added': NewExpenseData
   'expense:deleted': string
   'budget:changed': Budget
-  'month:changed': string
+  'budget:removed': string
+  'month:changed': MonthInfo
   'state:updated': LedgerState
   'connection:changed': ConnectionStatus
 }
@@ -51,6 +69,6 @@ export interface EventMap {
 export type EventHandler<T extends EventType> = (data: EventMap[T]) => void
 
 export interface OutgoingMessage {
-  type: 'ADD_EXPENSE' | 'DELETE_EXPENSE' | 'SET_BUDGET' | 'GET_STATE'
+  type: 'ADD_EXPENSE' | 'DELETE_EXPENSE' | 'SET_BUDGET' | 'REMOVE_BUDGET' | 'GET_STATE'
   payload: any
 }

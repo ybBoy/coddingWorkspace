@@ -50,7 +50,15 @@ public class LedgerService {
     }
 
     public void setBudget(Budget budget) {
-        budgets.put(budget.getCategory(), budget);
+        if (budget.getAmount() == null || budget.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            budgets.remove(budget.getCategory());
+        } else {
+            budgets.put(budget.getCategory(), budget);
+        }
+    }
+
+    public boolean removeBudget(String category) {
+        return budgets.remove(category) != null;
     }
 
     public List<Expense> getExpensesByMonth(YearMonth month) {
@@ -73,6 +81,30 @@ public class LedgerService {
         }
         return totals.entrySet().stream()
                 .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+    }
+
+    public Map<String, BigDecimal> getCategoryTotalsWithBudgets(YearMonth month) {
+        Map<String, BigDecimal> totals = new LinkedHashMap<>();
+        for (Budget budget : budgets.values()) {
+            totals.put(budget.getCategory(), BigDecimal.ZERO);
+        }
+        for (Expense e : getExpensesByMonth(month)) {
+            totals.merge(e.getCategory(), e.getAmount(), BigDecimal::add);
+        }
+        return totals.entrySet().stream()
+                .sorted((a, b) -> {
+                    boolean aHasBudget = budgets.containsKey(a.getKey());
+                    boolean bHasBudget = budgets.containsKey(b.getKey());
+                    if (aHasBudget && !bHasBudget) return -1;
+                    if (!aHasBudget && bHasBudget) return 1;
+                    return b.getValue().compareTo(a.getValue());
+                })
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,

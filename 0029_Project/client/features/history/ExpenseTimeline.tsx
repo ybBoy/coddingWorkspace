@@ -1,12 +1,14 @@
 import React from 'react'
 import { Expense } from '../../shared/types'
-import { socketClient } from '../../shared/socketClient'
+import { eventBus } from '../../shared/EventBus'
 
 interface ExpenseTimelineProps {
-  expenses: Expense[]
+  recentExpenses: Expense[]
+  monthExpenses: Expense[]
+  currentMonth: string
 }
 
-const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ expenses }) => {
+const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ recentExpenses, currentMonth }) => {
   const formatTime = (timeStr: string): string => {
     const date = new Date(timeStr)
     const month = date.getMonth() + 1
@@ -18,10 +20,7 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ expenses }) => {
 
   const handleDelete = (id: string, remark: string) => {
     if (confirm(`确定要删除「${remark || '无备注'}」这笔记录吗？`)) {
-      socketClient.send({
-        type: 'DELETE_EXPENSE',
-        payload: { id }
-      })
+      eventBus.emit('expense:deleted', id)
     }
   }
 
@@ -40,7 +39,7 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ expenses }) => {
     return colors[category] || '#7f8c8d'
   }
 
-  const groupedByDate = expenses.reduce((groups, expense) => {
+  const groupedByDate = recentExpenses.reduce((groups, expense) => {
     const dateKey = expense.time.slice(0, 10)
     if (!groups[dateKey]) {
       groups[dateKey] = []
@@ -62,9 +61,12 @@ const ExpenseTimeline: React.FC<ExpenseTimelineProps> = ({ expenses }) => {
 
   return (
     <div className="card">
-      <h3 className="card-title">最近记录</h3>
+      <h3 className="card-title">
+        最近记录
+        <span className="card-subtitle">（最多20条 · {currentMonth}）</span>
+      </h3>
       <div className="timeline">
-        {expenses.length === 0 ? (
+        {recentExpenses.length === 0 ? (
           <div className="empty-state">暂无记录，开始记第一笔吧~</div>
         ) : (
           Object.entries(groupedByDate).map(([dateKey, dayExpenses]) => {

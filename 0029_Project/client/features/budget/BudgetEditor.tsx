@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Budget } from '../../shared/types'
-import { socketClient } from '../../shared/socketClient'
+import { eventBus } from '../../shared/EventBus'
 import { CATEGORIES } from '../../shared/constants'
 
 interface BudgetEditorProps {
@@ -34,18 +34,12 @@ const BudgetEditor: React.FC<BudgetEditorProps> = ({ budgets }) => {
       alert('请输入有效金额')
       return
     }
-    socketClient.send({
-      type: 'SET_BUDGET',
-      payload: { category, amount }
-    })
+    eventBus.emit('budget:changed', { category, amount })
   }
 
   const handleRemove = (category: string) => {
     if (confirm(`确定要移除「${category}」的预算吗？`)) {
-      socketClient.send({
-        type: 'SET_BUDGET',
-        payload: { category, amount: '0' }
-      })
+      eventBus.emit('budget:removed', category)
       setLocalBudgets(prev => {
         const next = { ...prev }
         delete next[category]

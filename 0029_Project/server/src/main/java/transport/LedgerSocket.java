@@ -25,6 +25,7 @@ public class LedgerSocket {
     private static final Set<Session> sessions = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private static LedgerService ledgerService;
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final int RECENT_EXPENSES_LIMIT = 20;
 
     static {
         objectMapper.registerModule(new JavaTimeModule());
@@ -38,7 +39,7 @@ public class LedgerSocket {
     public void onOpen(Session session) {
         sessions.add(session);
         try {
-            sendFullState(session);
+            sendFullState(session, YearMonth.now());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -72,8 +73,12 @@ public class LedgerSocket {
                 case "SET_BUDGET":
                     handleSetBudget(payload);
                     break;
+                case "REMOVE_BUDGET":
+                    handleRemoveBudget(payload);
+                    break;
                 case "GET_STATE":
-                    sendFullState(session);
+                    YearMonth month = parseYearMonth(payload);
+                    sendFullState(session, month);
                     break;
                 default:
                     System.err.println("Unknown message type: " + type);
@@ -111,15 +116,29 @@ public class LedgerSocket {
         broadcastFullState();
     }
 
-    private void sendFullState(Session session) throws IOException {
-        ObjectNode state = buildFullState();
+    private void handleRemoveBudget(JsonNode payload) {
+        String category = payload.path("category").asText();
+        ledgerService.removeBudget(category);
+        broadcastFullState();
+    }
+
+    private YearMonth parseYearMonth(JsonNode payload) {
+        if (payload.has("year") && payload.has("month")) {
+            int year = payload.path("year").asInt();
+            int month = payload.path("month").asInt();
+            return YearMonth.of(year, month);
+        }
+        return YearMonth.now();
+    }
+
+    private void sendFullState(Session session, YearMonth month) throws IOException {
+        ObjectNode state = buildFullState(month);
         session.getBasicRemote().sendText(objectMapper.writeValueAsString(state));
     }
 
     private void broadcastFullState() {
         try {
-            ObjectNode state = buildFullState();
-            String json = objectMapper.writeValueAsString(state);
+            String json = objectMapper.writeValueAsString(buildFullState(YearMonth.now()));
             for (Session session : sessions) {
                 if (session.isOpen()) {
                     session.getBasicRemote().sendText(json);
@@ -130,17 +149,18 @@ public class LedgerSocket {
         }
     }
 
-    private ObjectNode buildFullState() {
-        YearMonth currentMonth = YearMonth.now();
-
+    private ObjectNode buildFullState(YearMonth month) {
         ObjectNode state = objectMapper.createObjectNode();
 
+        state.put("year", month.getYear());
+        state.put("month", month.getMonthValue());
+
         ObjectNode summary = objectMapper.createObjectNode();
-        summary.put("total", ledgerService.getMonthlyTotal(currentMonth).toString());
+        summary.put("total", ledgerService.getMonthlyTotal(month).toString());
         state.set("summary", summary);
 
         ArrayNode categoryStats = objectMapper.createArrayNode();
-        ledgerService.getCategoryTotals(currentMonth).forEach((category, spent) -> {
+        ledgerService.getCategoryTotalsWithBudgets(month).forEach((category, spent) -> {
             ObjectNode cat = objectMapper.createObjectNode();
             BigDecimal budget = ledgerService.getBudgetForCategory(category);
             cat.put("category", category);
@@ -150,8 +170,8 @@ public class LedgerSocket {
         });
         state.set("categoryStats", categoryStats);
 
-        ArrayNode expenses = objectMapper.createArrayNode();
-        for (Expense e : ledgerService.getExpensesByMonth(currentMonth)) {
+        ArrayNode recentExpenses = objectMapper.createArrayNode();
+        for (Expense e : ledgerService.getRecentExpenses(RECENT_EXPENSES_LIMIT)) {
             ObjectNode exp = objectMapper.createObjectNode();
             exp.put("id", e.getId());
             exp.put("amount", e.getAmount().toString());
@@ -159,9 +179,22 @@ public class LedgerSocket {
             exp.put("payer", e.getPayer());
             exp.put("remark", e.getRemark());
             exp.put("time", e.getTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            expenses.add(exp);
+            recentExpenses.add(exp);
         }
-        state.set("expenses", expenses);
+        state.set("recentExpenses", recentExpenses);
+
+        ArrayNode monthExpenses = objectMapper.createArrayNode();
+        for (Expense e : ledgerService.getExpensesByMonth(month)) {
+            ObjectNode exp = objectMapper.createObjectNode();
+            exp.put("id", e.getId());
+            exp.put("amount", e.getAmount().toString());
+            exp.put("category", e.getCategory());
+            exp.put("payer", e.getPayer());
+            exp.put("remark", e.getRemark());
+            exp.put("time", e.getTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            monthExpenses.add(exp);
+        }
+        state.set("monthExpenses", monthExpenses);
 
         ArrayNode budgets = objectMapper.createArrayNode();
         for (Budget b : ledgerService.getAllBudgets()) {

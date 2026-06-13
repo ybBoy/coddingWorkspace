@@ -5,9 +5,10 @@ import { BUDGET_WARNING_THRESHOLD, BUDGET_OVER_THRESHOLD } from '../../shared/co
 interface SummaryPanelProps {
   total: string
   categoryStats: CategoryStat[]
+  currentMonth: string
 }
 
-const SummaryPanel: React.FC<SummaryPanelProps> = ({ total, categoryStats }) => {
+const SummaryPanel: React.FC<SummaryPanelProps> = ({ total, categoryStats, currentMonth }) => {
   const getProgressColor = (spent: number, budget: number): string => {
     if (budget <= 0) return 'var(--primary)'
     const ratio = spent / budget
@@ -33,9 +34,15 @@ const SummaryPanel: React.FC<SummaryPanelProps> = ({ total, categoryStats }) => 
 
   const totalNum = parseFloat(total) || 0
 
+  const hasData = categoryStats.length > 0
+  const hasOnlyZeroSpent = categoryStats.every(s => parseFloat(s.spent) === 0)
+
   return (
     <div className="card">
-      <h3 className="card-title">本月统计</h3>
+      <h3 className="card-title">
+        本月统计
+        <span className="card-subtitle">（{currentMonth}）</span>
+      </h3>
 
       <div className="summary-total">
         <div className="summary-total-label">总支出</div>

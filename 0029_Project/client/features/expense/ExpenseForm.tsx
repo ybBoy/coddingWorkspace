@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { socketClient } from '../../shared/socketClient'
+import { eventBus } from '../../shared/EventBus'
 import { CATEGORIES, PAYERS } from '../../shared/constants'
 
 interface FormData {
@@ -29,15 +29,12 @@ const ExpenseForm: React.FC = () => {
       return
     }
 
-    socketClient.send({
-      type: 'ADD_EXPENSE',
-      payload: {
-        amount: formData.amount,
-        category: formData.category,
-        payer: formData.payer,
-        remark: formData.remark,
-        time: new Date().toISOString().slice(0, 19)
-      }
+    eventBus.emit('expense:added', {
+      amount: formData.amount,
+      category: formData.category,
+      payer: formData.payer,
+      remark: formData.remark,
+      time: new Date().toISOString().slice(0, 19)
     })
 
     setFormData({

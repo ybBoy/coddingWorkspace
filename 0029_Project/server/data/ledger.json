@@ -1,4 +1,14 @@
 {
-  "expenses" : [ ],
-  "budgets" : [ ]
+  "expenses" : [ {
+    "id" : "92cc4281-708e-4272-beed-89537a73e589",
+    "amount" : 85,
+    "category" : "餐饮",
+    "payer" : "爸爸",
+    "remark" : "晚饭买菜晚饭买菜",
+    "time" : "2026-06-13T08:54:12"
+  } ],
+  "budgets" : [ {
+    "category" : "餐饮",
+    "amount" : 100
+  } ]
 }

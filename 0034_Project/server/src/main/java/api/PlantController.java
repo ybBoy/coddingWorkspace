@@ -11,14 +11,21 @@ import service.PlantCareService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PlantController {
     private final PlantCareService service;
     private final ObjectMapper objectMapper;
+    private static final Set<String> VALID_CARE_TYPES = new HashSet<>(
+            Arrays.asList("WATERING", "FERTILIZING", "PRUNING"));
 
     public PlantController(PlantCareService service) {
         this.service = service;
@@ -44,22 +51,22 @@ public class PlantController {
             try {
                 if ("GET".equals(method) && path.equals("/api/plants")) {
                     handleGetPlants(exchange);
+                } else if ("GET".equals(method) && path.equals("/api/plants/needing-water")) {
+                    handleGetNeedingWater(exchange);
+                } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+/care-logs/recent")) {
+                    handleGetRecentCareLogs(exchange, path);
                 } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+")) {
                     handleGetPlant(exchange, path);
                 } else if ("POST".equals(method) && path.equals("/api/plants")) {
                     handleCreatePlant(exchange);
+                } else if ("PUT".equals(method) && path.matches("/api/plants/[^/]+/status")) {
+                    handleUpdateStatus(exchange, path);
                 } else if ("PUT".equals(method) && path.matches("/api/plants/[^/]+")) {
                     handleUpdatePlant(exchange, path);
                 } else if ("DELETE".equals(method) && path.matches("/api/plants/[^/]+")) {
                     handleDeletePlant(exchange, path);
-                } else if ("PUT".equals(method) && path.matches("/api/plants/[^/]+/status")) {
-                    handleUpdateStatus(exchange, path);
                 } else if ("POST".equals(method) && path.matches("/api/plants/[^/]+/care-logs")) {
                     handleAddCareLog(exchange, path);
-                } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+/care-logs/recent")) {
-                    handleGetRecentCareLogs(exchange, path);
-                } else if ("GET".equals(method) && path.equals("/api/plants/needing-water")) {
-                    handleGetNeedingWater(exchange);
                 } else {
                     sendResponse(exchange, 404, "{\"error\":\"Not found\"}");
                 }
@@ -98,6 +105,11 @@ public class PlantController {
 
     private void handleCreatePlant(HttpExchange exchange) throws IOException {
         Plant plant = readBody(exchange, Plant.class);
+        String validationError = validatePlant(plant);
+        if (validationError != null) {
+            sendResponse(exchange, 400, "{\"error\":\"" + validationError + "\"}");
+            return;
+        }
         Plant created = service.addPlant(plant);
         sendJsonResponse(exchange, 201, created);
     }
@@ -105,6 +117,11 @@ public class PlantController {
     private void handleUpdatePlant(HttpExchange exchange, String path) throws IOException {
         String id = extractId(path);
         Plant plant = readBody(exchange, Plant.class);
+        String validationError = validatePlant(plant);
+        if (validationError != null) {
+            sendResponse(exchange, 400, "{\"error\":\"" + validationError + "\"}");
+            return;
+        }
         Plant updated = service.updatePlant(id, plant);
         if (updated != null) {
             sendJsonResponse(exchange, 200, updated);
@@ -140,6 +157,15 @@ public class PlantController {
         Map<String, String> body = readBody(exchange, Map.class);
         String type = body.get("type");
         String note = body.get("note");
+        if (type == null || type.trim().isEmpty()) {
+            sendResponse(exchange, 400, "{\"error\":\"Care type cannot be empty\"}");
+            return;
+        }
+        if (!VALID_CARE_TYPES.contains(type)) {
+            sendResponse(exchange, 400,
+                    "{\"error\":\"Invalid care type. Must be one of: WATERING, FERTILIZING, PRUNING\"}");
+            return;
+        }
         CareLog log = service.addCareLog(id, type, note);
         if (log != null) {
             sendJsonResponse(exchange, 201, log);
@@ -186,18 +212,43 @@ public class PlantController {
         return path.replace("/api/plants/", "").replace("/care-logs/recent", "");
     }
 
+    private String validatePlant(Plant plant) {
+        if (plant == null) {
+            return "Plant data cannot be null";
+        }
+        if (plant.getName() == null || plant.getName().trim().isEmpty()) {
+            return "Plant name cannot be empty";
+        }
+        if (plant.getLocation() == null || plant.getLocation().trim().isEmpty()) {
+            return "Location cannot be empty";
+        }
+        if (plant.getLightRequirement() == null || plant.getLightRequirement().trim().isEmpty()) {
+            return "Light requirement cannot be empty";
+        }
+        if (plant.getWateringIntervalDays() <= 0) {
+            return "Watering interval days must be greater than 0";
+        }
+        return null;
+    }
+
     private Map<String, String> queryToMap(String query) {
         Map<String, String> result = new HashMap<>();
         if (query == null || query.isEmpty()) {
             return result;
         }
-        for (String param : query.split("&")) {
-            String[] pair = param.split("=");
-            if (pair.length == 2) {
-                result.put(pair[0], pair[1]);
-            } else if (pair.length == 1) {
-                result.put(pair[0], "");
+        try {
+            for (String param : query.split("&")) {
+                String[] pair = param.split("=");
+                if (pair.length == 2) {
+                    String key = URLDecoder.decode(pair[0], "UTF-8");
+                    String value = URLDecoder.decode(pair[1], "UTF-8");
+                    result.put(key, value);
+                } else if (pair.length == 1) {
+                    result.put(URLDecoder.decode(pair[0], "UTF-8"), "");
+                }
             }
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("UTF-8 encoding not supported", e);
         }
         return result;
     }

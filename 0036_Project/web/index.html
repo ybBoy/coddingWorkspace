@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的菜谱收藏夹</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🍳 我的菜谱收藏夹</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalCount">0</span>
+                    <span class="stat-label">总菜谱数</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="under30Count">0</span>
+                    <span class="stat-label">30分钟内</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="filteredCount">0</span>
+                    <span class="stat-label">当前筛选</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="add-form">
+            <h2>📝 新增菜谱</h2>
+            <form id="recipeForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">菜名</label>
+                        <input type="text" id="name" name="name" required placeholder="例如：番茄炒蛋">
+                    </div>
+                    <div class="form-group">
+                        <label for="taste">口味</label>
+                        <select id="taste" name="taste" required>
+                            <option value="">请选择</option>
+                            <option value="清淡">清淡</option>
+                            <option value="香辣">香辣</option>
+                            <option value="甜口">甜口</option>
+                            <option value="咸鲜">咸鲜</option>
+                            <option value="酸辣">酸辣</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="estimatedTime">预计用时（分钟）</label>
+                        <input type="number" id="estimatedTime" name="estimatedTime" required min="1" placeholder="例如：15">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="mainIngredients">主要食材</label>
+                    <input type="text" id="mainIngredients" name="mainIngredients" required placeholder="例如：鸡蛋、番茄、葱花">
+                </div>
+                <div class="form-group">
+                    <label for="notes">做法备注</label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="烹饪步骤、小贴士等..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">＋ 添加菜谱</button>
+            </form>
+        </section>
+
+        <section class="filter-section">
+            <div class="filter-group">
+                <label>按口味筛选：</label>
+                <div class="filter-buttons" id="tasteFilters">
+                    <button class="filter-btn active" data-taste="">全部</button>
+                    <button class="filter-btn" data-taste="清淡">清淡</button>
+                    <button class="filter-btn" data-taste="香辣">香辣</button>
+                    <button class="filter-btn" data-taste="甜口">甜口</button>
+                    <button class="filter-btn" data-taste="咸鲜">咸鲜</button>
+                    <button class="filter-btn" data-taste="酸辣">酸辣</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>按用时筛选：</label>
+                <div class="filter-buttons" id="timeFilters">
+                    <button class="filter-btn active" data-time="">全部</button>
+                    <button class="filter-btn" data-time="15">15分钟内</button>
+                    <button class="filter-btn" data-time="30">30分钟内</button>
+                    <button class="filter-btn" data-time="60">1小时内</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="recipes-section">
+            <h2>📋 我的菜谱</h2>
+            <div class="recipes-grid" id="recipesGrid">
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <p>还没有菜谱，快来添加第一道吧！</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑备注</h3>
+                <span class="close" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editRecipeId">
+                <div class="form-group">
+                    <label for="editNotes">做法备注</label>
+                    <textarea id="editNotes" rows="5" placeholder="烹饪步骤、小贴士等..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEdit">取消</button>
+                <button class="btn btn-primary" id="saveEdit">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

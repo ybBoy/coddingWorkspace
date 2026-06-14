@@ -95,4 +95,9 @@ public class FileBeanRepository {
         }
         return removed;
     }
+
+    public void clearAll() {
+        beans.clear();
+        saveToFile();
+    }
 }

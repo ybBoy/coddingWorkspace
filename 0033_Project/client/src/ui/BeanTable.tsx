@@ -6,14 +6,32 @@ interface BeanTableProps {
   beans: CoffeeBean[];
   selectedBeanId: string | null;
   onSelectBean: (bean: CoffeeBean) => void;
+  onEdit: (bean: CoffeeBean) => void;
   onDelete: (id: string) => void;
   recentRecords: StockRecord[];
 }
+
+const getWarningClass = (bean: CoffeeBean): string => {
+  if (bean.stockGrams <= 0) return 'warning-empty';
+  if (bean.stockGrams <= bean.minStockLevel) return 'warning-low';
+  const ratio = bean.stockGrams / bean.minStockLevel;
+  if (ratio <= 1.5) return 'warning-approaching';
+  return '';
+};
+
+const getWarningLabel = (bean: CoffeeBean): string => {
+  if (bean.stockGrams <= 0) return '已耗尽';
+  if (bean.stockGrams <= bean.minStockLevel) return '已不足';
+  const ratio = bean.stockGrams / bean.minStockLevel;
+  if (ratio <= 1.5) return '即将不足';
+  return '正常';
+};
 
 const BeanTable: React.FC<BeanTableProps> = ({
   beans,
   selectedBeanId,
   onSelectBean,
+  onEdit,
   onDelete,
   recentRecords,
 }) => {
@@ -45,18 +63,19 @@ const BeanTable: React.FC<BeanTableProps> = ({
             <th>烘焙程度</th>
             <th>当前库存 (克)</th>
             <th>最低库存线 (克)</th>
-            <th>状态</th>
+            <th>预警状态</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
           {beans.map((bean) => {
-            const isLow = bean.stockGrams <= bean.minStockLevel;
+            const warnClass = getWarningClass(bean);
+            const warnLabel = getWarningLabel(bean);
             const isSelected = selectedBeanId === bean.id;
             return (
               <tr
                 key={bean.id}
-                className={`bean-row ${isLow ? 'low-stock-row' : ''} ${isSelected ? 'selected-row' : ''}`}
+                className={`bean-row ${warnClass ? `row-${warnClass}` : ''} ${isSelected ? 'selected-row' : ''}`}
                 onClick={() => onSelectBean(bean)}
               >
                 <td className="bean-name">{bean.name}</td>
@@ -66,18 +85,22 @@ const BeanTable: React.FC<BeanTableProps> = ({
                     {getRoastLabel(bean.roastLevel)}
                   </span>
                 </td>
-                <td className={`stock-amount ${isLow ? 'low' : ''}`}>
+                <td className={`stock-amount ${bean.stockGrams <= bean.minStockLevel ? 'low' : ''} ${bean.stockGrams <= 0 ? 'empty' : ''}`}>
                   {bean.stockGrams}
                 </td>
                 <td>{bean.minStockLevel}</td>
                 <td>
-                  {isLow ? (
-                    <span className="status-badge status-low">库存不足</span>
-                  ) : (
-                    <span className="status-badge status-normal">正常</span>
-                  )}
+                  <span className={`status-badge ${warnClass ? `status-${warnClass.split('-')[1]}` : 'status-normal'}`}>
+                    {warnLabel}
+                  </span>
                 </td>
                 <td className="action-cell">
+                  <button
+                    className="btn btn-small btn-secondary"
+                    onClick={(e) => { e.stopPropagation(); onEdit(bean); }}
+                  >
+                    编辑
+                  </button>
                   <button
                     className="btn btn-small btn-danger"
                     onClick={(e) => { e.stopPropagation(); onDelete(bean.id); }}
@@ -90,7 +113,7 @@ const BeanTable: React.FC<BeanTableProps> = ({
           })}
           {beans.length === 0 && (
             <tr>
-              <td colSpan={7} className="empty-row">暂无咖啡豆数据</td>
+              <td colSpan={7} className="empty-row">暂无咖啡豆数据，请新增或调整搜索条件</td>
             </tr>
           )}
         </tbody>
@@ -104,8 +127,11 @@ const BeanTable: React.FC<BeanTableProps> = ({
               <tr>
                 <th>时间</th>
                 <th>类型</th>
-                <th>变动数量 (克)</th>
-                <th>变动后库存 (克)</th>
+                <th>操作人</th>
+                <th>变动 (克)</th>
+                <th>变动前</th>
+                <th>变动后</th>
+                <th>备注</th>
               </tr>
             </thead>
             <tbody>
@@ -117,10 +143,13 @@ const BeanTable: React.FC<BeanTableProps> = ({
                       {getRecordTypeLabel(record.type)}
                     </span>
                   </td>
-                  <td className={record.type === 'CONSUME' ? 'consume-amount' : 'restock-amount'}>
-                    {record.type === 'CONSUME' ? '-' : '+'}{record.quantity}
+                  <td className="operator-cell">{record.operator || '-'}</td>
+                  <td className={record.type === 'CONSUME' ? 'consume-amount' : record.type === 'INIT' ? '' : 'restock-amount'}>
+                    {record.type === 'CONSUME' ? '-' : record.type === 'INIT' ? '' : '+'}{record.quantity}
                   </td>
-                  <td>{record.remainingStock}</td>
+                  <td>{record.beforeStock}</td>
+                  <td><strong>{record.afterStock}</strong></td>
+                  <td className="remark-cell">{record.remark || '-'}</td>
                 </tr>
               ))}
             </tbody>

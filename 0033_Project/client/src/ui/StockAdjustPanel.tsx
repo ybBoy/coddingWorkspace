@@ -4,13 +4,15 @@ import { getRoastLabel } from '../constants/roastLevels';
 
 interface StockAdjustPanelProps {
   bean: CoffeeBean | null;
-  onRestock: (id: string, amount: number) => void;
-  onConsume: (id: string, amount: number) => void;
+  onRestock: (id: string, req: any) => void;
+  onConsume: (id: string, req: any) => void;
 }
 
 const StockAdjustPanel: React.FC<StockAdjustPanelProps> = ({ bean, onRestock, onConsume }) => {
   const [mode, setMode] = useState<'restock' | 'consume'>('restock');
   const [amount, setAmount] = useState(100);
+  const [operator, setOperator] = useState('');
+  const [remark, setRemark] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,16 +21,18 @@ const StockAdjustPanel: React.FC<StockAdjustPanelProps> = ({ bean, onRestock, on
       alert('数量必须大于0');
       return;
     }
+    if (mode === 'consume' && amount > bean.stockGrams) {
+      alert('消耗数量不能大于当前库存');
+      return;
+    }
+    const req = { amount, operator: operator.trim() || undefined, remark: remark.trim() || undefined };
     if (mode === 'restock') {
-      onRestock(bean.id, amount);
+      onRestock(bean.id, req);
     } else {
-      if (amount > bean.stockGrams) {
-        alert('消耗数量不能大于当前库存');
-        return;
-      }
-      onConsume(bean.id, amount);
+      onConsume(bean.id, req);
     }
     setAmount(100);
+    setRemark('');
   };
 
   if (!bean) {
@@ -63,7 +67,7 @@ const StockAdjustPanel: React.FC<StockAdjustPanelProps> = ({ bean, onRestock, on
         <div className="stock-display">
           <div className="stock-item">
             <span className="stock-label">当前库存</span>
-            <span className={`stock-value ${bean.stockGrams <= bean.minStockLevel ? 'low' : ''}`}>
+            <span className={`stock-value ${bean.stockGrams <= bean.minStockLevel ? 'low' : ''} ${bean.stockGrams <= 0 ? 'empty' : ''}`}>
               {bean.stockGrams} 克
             </span>
           </div>
@@ -116,6 +120,26 @@ const StockAdjustPanel: React.FC<StockAdjustPanelProps> = ({ bean, onRestock, on
               {num}
             </button>
           ))}
+        </div>
+
+        <div className="form-group">
+          <label>操作人 (选填)</label>
+          <input
+            type="text"
+            placeholder="如：barista_zhang"
+            value={operator}
+            onChange={(e) => setOperator(e.target.value)}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>备注 (选填)</label>
+          <input
+            type="text"
+            placeholder="说明用途或原因"
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
+          />
         </div>
 
         <button

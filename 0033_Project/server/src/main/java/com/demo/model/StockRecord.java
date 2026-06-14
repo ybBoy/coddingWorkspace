@@ -10,7 +10,10 @@ public class StockRecord {
     private String beanId;
     private String type;
     private int quantity;
-    private int remainingStock;
+    private int beforeStock;
+    private int afterStock;
+    private String operator;
+    private String remark;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
@@ -18,12 +21,17 @@ public class StockRecord {
     public StockRecord() {
     }
 
-    public StockRecord(String id, String beanId, String type, int quantity, int remainingStock, LocalDateTime timestamp) {
+    public StockRecord(String id, String beanId, String type, int quantity,
+                       int beforeStock, int afterStock, String operator, String remark,
+                       LocalDateTime timestamp) {
         this.id = id;
         this.beanId = beanId;
         this.type = type;
         this.quantity = quantity;
-        this.remainingStock = remainingStock;
+        this.beforeStock = beforeStock;
+        this.afterStock = afterStock;
+        this.operator = operator;
+        this.remark = remark;
         this.timestamp = timestamp;
     }
 
@@ -59,12 +67,36 @@ public class StockRecord {
         this.quantity = quantity;
     }
 
-    public int getRemainingStock() {
-        return remainingStock;
+    public int getBeforeStock() {
+        return beforeStock;
     }
 
-    public void setRemainingStock(int remainingStock) {
-        this.remainingStock = remainingStock;
+    public void setBeforeStock(int beforeStock) {
+        this.beforeStock = beforeStock;
+    }
+
+    public int getAfterStock() {
+        return afterStock;
+    }
+
+    public void setAfterStock(int afterStock) {
+        this.afterStock = afterStock;
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public void setOperator(String operator) {
+        this.operator = operator;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 
     public LocalDateTime getTimestamp() {

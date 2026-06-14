@@ -7,13 +7,17 @@
     "stockGrams": 1500,
     "minStockLevel": 500,
     "createdAt": "2024-01-15 09:00:00",
+    "lastModified": "2024-01-20 14:30:00",
     "stockRecords": [
       {
         "id": "rec-001",
         "beanId": "bean-001",
         "type": "INIT",
         "quantity": 2000,
-        "remainingStock": 2000,
+        "beforeStock": 0,
+        "afterStock": 2000,
+        "operator": "admin",
+        "remark": "Initial stock setup",
         "timestamp": "2024-01-15 09:00:00"
       },
       {
@@ -21,7 +25,10 @@
         "beanId": "bean-001",
         "type": "CONSUME",
         "quantity": 500,
-        "remainingStock": 1500,
+        "beforeStock": 2000,
+        "afterStock": 1500,
+        "operator": "barista_zhang",
+        "remark": "Morning espresso batch",
         "timestamp": "2024-01-20 14:30:00"
       }
     ]
@@ -34,13 +41,17 @@
     "stockGrams": 800,
     "minStockLevel": 1000,
     "createdAt": "2024-02-10 10:00:00",
+    "lastModified": "2024-02-18 16:45:00",
     "stockRecords": [
       {
         "id": "rec-003",
         "beanId": "bean-002",
         "type": "INIT",
         "quantity": 1500,
-        "remainingStock": 1500,
+        "beforeStock": 0,
+        "afterStock": 1500,
+        "operator": "admin",
+        "remark": "Initial stock setup",
         "timestamp": "2024-02-10 10:00:00"
       },
       {
@@ -48,7 +59,10 @@
         "beanId": "bean-002",
         "type": "CONSUME",
         "quantity": 700,
-        "remainingStock": 800,
+        "beforeStock": 1500,
+        "afterStock": 800,
+        "operator": "barista_li",
+        "remark": "Weekend peak hours",
         "timestamp": "2024-02-18 16:45:00"
       }
     ]
@@ -61,13 +75,17 @@
     "stockGrams": 2000,
     "minStockLevel": 800,
     "createdAt": "2024-03-05 08:30:00",
+    "lastModified": "2024-03-05 08:30:00",
     "stockRecords": [
       {
         "id": "rec-005",
         "beanId": "bean-003",
         "type": "INIT",
         "quantity": 2000,
-        "remainingStock": 2000,
+        "beforeStock": 0,
+        "afterStock": 2000,
+        "operator": "admin",
+        "remark": "Initial stock setup",
         "timestamp": "2024-03-05 08:30:00"
       }
     ]
@@ -80,13 +98,17 @@
     "stockGrams": 300,
     "minStockLevel": 600,
     "createdAt": "2024-01-20 11:00:00",
+    "lastModified": "2024-02-25 15:00:00",
     "stockRecords": [
       {
         "id": "rec-006",
         "beanId": "bean-004",
         "type": "INIT",
         "quantity": 1000,
-        "remainingStock": 1000,
+        "beforeStock": 0,
+        "afterStock": 1000,
+        "operator": "admin",
+        "remark": "Initial stock setup",
         "timestamp": "2024-01-20 11:00:00"
       },
       {
@@ -94,7 +116,10 @@
         "beanId": "bean-004",
         "type": "CONSUME",
         "quantity": 700,
-        "remainingStock": 300,
+        "beforeStock": 1000,
+        "afterStock": 300,
+        "operator": "barista_wang",
+        "remark": "Pour over special menu",
         "timestamp": "2024-02-25 15:00:00"
       }
     ]
@@ -107,14 +132,86 @@
     "stockGrams": 1200,
     "minStockLevel": 400,
     "createdAt": "2024-02-28 09:15:00",
+    "lastModified": "2024-02-28 09:15:00",
     "stockRecords": [
       {
         "id": "rec-008",
         "beanId": "bean-005",
         "type": "INIT",
         "quantity": 1200,
-        "remainingStock": 1200,
+        "beforeStock": 0,
+        "afterStock": 1200,
+        "operator": "admin",
+        "remark": "Initial stock setup",
         "timestamp": "2024-02-28 09:15:00"
+      }
+    ]
+  },
+  {
+    "id": "bean-006",
+    "name": "Sumatra Mandheling",
+    "origin": "Indonesia",
+    "roastLevel": "DARK",
+    "stockGrams": 0,
+    "minStockLevel": 500,
+    "createdAt": "2024-01-10 10:00:00",
+    "lastModified": "2024-03-01 11:00:00",
+    "stockRecords": [
+      {
+        "id": "rec-009",
+        "beanId": "bean-006",
+        "type": "INIT",
+        "quantity": 1000,
+        "beforeStock": 0,
+        "afterStock": 1000,
+        "operator": "admin",
+        "remark": "Initial stock setup",
+        "timestamp": "2024-01-10 10:00:00"
+      },
+      {
+        "id": "rec-010",
+        "beanId": "bean-006",
+        "type": "CONSUME",
+        "quantity": 1000,
+        "beforeStock": 1000,
+        "afterStock": 0,
+        "operator": "barista_chen",
+        "remark": "Fully consumed, need restock urgently",
+        "timestamp": "2024-03-01 11:00:00"
+      }
+    ]
+  },
+  {
+    "id": "bean-007",
+    "name": "Costa Rica Tarrazu",
+    "origin": "Costa Rica",
+    "roastLevel": "LIGHT",
+    "stockGrams": 600,
+    "minStockLevel": 400,
+    "createdAt": "2024-03-10 08:00:00",
+    "lastModified": "2024-03-12 10:00:00",
+    "stockRecords": [
+      {
+        "id": "rec-011",
+        "beanId": "bean-007",
+        "type": "INIT",
+        "quantity": 800,
+        "beforeStock": 0,
+        "afterStock": 800,
+        "operator": "admin",
+        "remark": "Initial stock setup",
+        "timestamp": "2024-03-10 08:00:00"
+      },
+      {
+        "id": "rec-012",
+        "beanId": "bean-007",
+        "type": "CONSUME",
+        "quantity": 200,
+        "beforeStock": 800,
+        "afterStock": 600,
+        "operator": "barista_zhao",
+        "remark": "Tasting event",
+        "timestamp": "2024-03-12 10:00:00"
       }
     ]
   }

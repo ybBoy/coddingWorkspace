@@ -3,6 +3,7 @@ package controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import model.Book;
 import service.BookService;
+import service.BookService.ValidationResult;
 import spark.Request;
 import spark.Response;
 
@@ -22,38 +23,70 @@ public class BookController {
     public String listBooks(Request req, Response res) {
         res.type("application/json");
         String status = req.queryParams("status");
-        List<Book> list = (status == null || status.isEmpty())
-                ? service.listAll()
-                : service.listByStatus(status);
+        String keyword = req.queryParams("keyword");
+        String sortBy = req.queryParams("sortBy");
+        List<Book> list = service.query(status, keyword, sortBy);
         return toJson(list);
     }
 
     public String createBook(Request req, Response res) throws Exception {
         res.type("application/json");
-        res.status(201);
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = mapper.readValue(req.body(), HashMap.class);
+        Map<String, String> body = parseBody(req);
         String title = body.get("title");
         String author = body.get("author");
         String status = body.get("status");
         String remark = body.get("remark");
-        if (title == null || author == null || status == null) {
+
+        ValidationResult vr = service.validate(title, author, status, remark);
+        if (!vr.valid) {
             res.status(400);
-            return errorJson("缺少必填字段");
+            return errorJson(vr.message);
         }
-        Book book = service.create(title.trim(), author.trim(), status, remark == null ? "" : remark);
-        return toJson(book);
+        try {
+            Book book = service.create(title, author, status, remark);
+            res.status(201);
+            return toJson(book);
+        } catch (Exception e) {
+            res.status(500);
+            return errorJson("保存失败：" + e.getMessage());
+        }
+    }
+
+    public String updateBook(Request req, Response res) throws Exception {
+        res.type("application/json");
+        String id = req.params(":id");
+        Map<String, String> body = parseBody(req);
+        String title = body.get("title");
+        String author = body.get("author");
+        String status = body.get("status");
+        String remark = body.get("remark");
+
+        ValidationResult vr = service.validate(title, author, status, remark);
+        if (!vr.valid) {
+            res.status(400);
+            return errorJson(vr.message);
+        }
+        try {
+            Book book = service.updateBook(id, title, author, status, remark);
+            if (book == null) {
+                res.status(404);
+                return errorJson("书籍不存在");
+            }
+            return toJson(book);
+        } catch (Exception e) {
+            res.status(500);
+            return errorJson("保存失败：" + e.getMessage());
+        }
     }
 
     public String updateStatus(Request req, Response res) throws Exception {
         res.type("application/json");
         String id = req.params(":id");
-        @SuppressWarnings("unchecked")
-        Map<String, String> body = mapper.readValue(req.body(), HashMap.class);
+        Map<String, String> body = parseBody(req);
         String status = body.get("status");
-        if (status == null) {
+        if (status == null || !BookService.VALID_STATUSES.contains(status)) {
             res.status(400);
-            return errorJson("缺少 status 字段");
+            return errorJson("阅读状态非法");
         }
         Book book = service.updateStatus(id, status);
         if (book == null) {
@@ -72,6 +105,15 @@ public class BookController {
             return errorJson("书籍不存在");
         }
         return "{\"ok\":true}";
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, String> parseBody(Request req) throws Exception {
+        String bodyStr = req.body();
+        if (bodyStr == null || bodyStr.isEmpty()) {
+            return new HashMap<String, String>();
+        }
+        return mapper.readValue(bodyStr, HashMap.class);
     }
 
     private String toJson(Object obj) {

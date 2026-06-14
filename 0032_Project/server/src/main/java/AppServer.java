@@ -23,6 +23,7 @@ public class AppServer {
             path("/books", () -> {
                 get("", controller::listBooks);
                 post("", controller::createBook);
+                put("/:id", controller::updateBook);
                 put("/:id/status", controller::updateStatus);
                 delete("/:id", controller::deleteBook);
             });

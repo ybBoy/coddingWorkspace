@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运动打卡记录</title>
+    <link rel="stylesheet" href="checkin.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏃 运动打卡记录</h1>
+            <p class="subtitle">每天运动一点点，健康生活每一天</p>
+        </header>
+
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-value" id="weekMinutes">0</div>
+                <div class="stat-label">本周运动(分钟)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="streakDays">0</div>
+                <div class="stat-label">连续打卡(天)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="filteredCount">0</div>
+                <div class="stat-label">当前记录数</div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2>✏️ 新增打卡记录</h2>
+            <form id="checkinForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="checkinDate">日期</label>
+                        <input type="date" id="checkinDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exerciseType">运动类型</label>
+                        <select id="exerciseType" required>
+                            <option value="">请选择</option>
+                            <option value="跑步">🏃 跑步</option>
+                            <option value="骑行">🚴 骑行</option>
+                            <option value="游泳">🏊 游泳</option>
+                            <option value="瑜伽">🧘 瑜伽</option>
+                            <option value="力量训练">🏋️ 力量训练</option>
+                            <option value="快走">🚶 快走</option>
+                            <option value="跳绳">⏱️ 跳绳</option>
+                            <option value="其他">🎯 其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">时长(分钟)</label>
+                        <input type="number" id="duration" min="1" max="480" placeholder="30" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mood">心情</label>
+                        <select id="mood" required>
+                            <option value="很棒">😄 很棒</option>
+                            <option value="不错">😊 不错</option>
+                            <option value="一般">😐 一般</option>
+                            <option value="疲惫">😫 疲惫</option>
+                            <option value="酸痛">💪 酸痛</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-group-wide">
+                        <label for="note">备注</label>
+                        <input type="text" id="note" placeholder="今天跑了5公里，感觉很好..." maxlength="100">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">保存打卡</button>
+                    <button type="button" class="btn-secondary" id="resetForm">重置</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="filter-section">
+            <div class="filter-row">
+                <label>运动类型筛选：</label>
+                <div class="filter-buttons" id="filterButtons">
+                    <button class="filter-btn active" data-type="all">全部</button>
+                    <button class="filter-btn" data-type="跑步">跑步</button>
+                    <button class="filter-btn" data-type="骑行">骑行</button>
+                    <button class="filter-btn" data-type="游泳">游泳</button>
+                    <button class="filter-btn" data-type="瑜伽">瑜伽</button>
+                    <button class="filter-btn" data-type="力量训练">力量训练</button>
+                    <button class="filter-btn" data-type="快走">快走</button>
+                    <button class="filter-btn" data-type="跳绳">跳绳</button>
+                    <button class="filter-btn" data-type="其他">其他</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="records-section">
+            <h2>📋 打卡记录</h2>
+            <div id="recordsList" class="records-list">
+            </div>
+            <div id="emptyState" class="empty-state">
+                <p>还没有打卡记录，开始今天的第一次运动吧！</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>修改记录</h3>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editMood">心情</label>
+                    <select id="editMood">
+                        <option value="很棒">😄 很棒</option>
+                        <option value="不错">😊 不错</option>
+                        <option value="一般">😐 一般</option>
+                        <option value="疲惫">😫 疲惫</option>
+                        <option value="酸痛">💪 酸痛</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editNote">备注</label>
+                    <input type="text" id="editNote" maxlength="100">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">保存修改</button>
+                    <button type="button" class="btn-secondary" id="cancelEdit">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="checkin.js"></script>
+</body>
+</html>

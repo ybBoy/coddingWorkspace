@@ -75,3 +75,25 @@ export interface TimelineGroup {
   date: string;
   logs: CareLog[];
 }
+
+export interface TaskItem {
+  plantId: string;
+  plantName: string;
+  taskType: 'WATERING' | 'NEGLECTED' | 'STATUS';
+  reason: string;
+  icon: string;
+}
+
+export interface BatchCareRequest {
+  plantIds: string[];
+  type: CareType;
+  note?: string;
+}
+
+export interface PlantTemplate {
+  key: string;
+  name: string;
+  lightRequirement: string;
+  wateringIntervalDays: number;
+  defaultStatus: string;
+}

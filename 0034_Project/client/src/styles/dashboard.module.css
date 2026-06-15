@@ -69,6 +69,15 @@
   border-color: #ffffff;
 }
 
+.batchGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 .actionGroup {
   display: flex;
   gap: 8px;
@@ -483,4 +492,21 @@
 .dialogConfirmBtn:hover {
   background: #1b4332;
   transform: translateY(-1px);
+}
+
+.dialogSubTitle {
+  font-size: 13px;
+  font-weight: normal;
+  color: #52796f;
+  margin-left: 8px;
+}
+
+.searchHint {
+  background: #fff8e6;
+  border: 1px solid #ffe58f;
+  color: #876800;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
 }

@@ -1,4 +1,7 @@
-import { Plant, CareLog, CreatePlantRequest, AddCareLogRequest, UpdateStatusRequest, UpdatePhotoRequest, PlantStatistics } from '../types';
+import {
+  Plant, CareLog, CreatePlantRequest, AddCareLogRequest, UpdateStatusRequest,
+  UpdatePhotoRequest, PlantStatistics, TaskItem, BatchCareRequest, PlantTemplate
+} from '../types';
 
 const BASE_URL = 'http://localhost:8088/api';
 
@@ -23,8 +26,12 @@ export const plantApi = {
     return handleResponse<Plant[]>(response);
   },
 
-  async getPlantsSortedByUrgency(): Promise<Plant[]> {
-    const response = await fetch(`${BASE_URL}/plants/sorted`);
+  async getPlantsSortedByUrgency(location?: string, status?: string): Promise<Plant[]> {
+    const params = new URLSearchParams();
+    if (location) params.append('location', location);
+    if (status) params.append('status', status);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${BASE_URL}/plants/sorted${query}`);
     return handleResponse<Plant[]>(response);
   },
 
@@ -132,6 +139,28 @@ export const plantApi = {
       body: JSON.stringify(plants),
     });
     return handleResponse<{ message: string }>(response);
+  },
+
+  async getTodayTasks(): Promise<TaskItem[]> {
+    const response = await fetch(`${BASE_URL}/tasks/today`);
+    return handleResponse<TaskItem[]>(response);
+  },
+
+  async addCareLogsBatch(plantIds: string[], type: string, note: string): Promise<CareLog[]> {
+    const body: BatchCareRequest = { plantIds, type: type as any, note };
+    const response = await fetch(`${BASE_URL}/plants/care-logs/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    return handleResponse<CareLog[]>(response);
+  },
+
+  async getPlantTemplates(): Promise<PlantTemplate[]> {
+    const response = await fetch(`${BASE_URL}/plants/templates`);
+    return handleResponse<PlantTemplate[]>(response);
   },
 };
 

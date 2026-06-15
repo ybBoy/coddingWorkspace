@@ -5,19 +5,25 @@ import styles from '../../styles/plantCardList.module.css';
 interface PlantCardListProps {
   plants: Plant[];
   selectedPlantId: string | null;
+  selectedPlantIds: Set<string>;
   onSelectPlant: (plant: Plant) => void;
   onCareAction: (plantId: string, type: CareType) => void;
   onEdit: (plant: Plant) => void;
   onDelete: (plantId: string) => void;
+  onToggleSelect: (plantId: string) => void;
+  highlightPlantId: string | null;
 }
 
 const PlantCardList: React.FC<PlantCardListProps> = ({
   plants,
   selectedPlantId,
+  selectedPlantIds,
   onSelectPlant,
   onCareAction,
   onEdit,
   onDelete,
+  onToggleSelect,
+  highlightPlantId,
 }) => {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '从未浇水';
@@ -154,6 +160,11 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
     }
   };
 
+  const handleToggleSelect = (e: React.MouseEvent, plantId: string) => {
+    e.stopPropagation();
+    onToggleSelect(plantId);
+  };
+
   if (plants.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -174,9 +185,19 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
         return (
           <div
             key={plant.id}
-            className={`${styles.card} ${selectedPlantId === plant.id ? styles.selectedCard : ''}`}
+            className={`${styles.card} ${selectedPlantId === plant.id ? styles.selectedCard : ''} ${
+              highlightPlantId === plant.id ? styles.highlightedCard : ''
+            } ${selectedPlantIds.has(plant.id) ? styles.checkedCard : ''}`}
             onClick={() => onSelectPlant(plant)}
+            id={`plant-card-${plant.id}`}
           >
+            <div
+              className={styles.checkbox}
+              onClick={(e) => handleToggleSelect(e, plant.id)}
+              title={selectedPlantIds.has(plant.id) ? '取消选择' : '选择'}
+            >
+              {selectedPlantIds.has(plant.id) ? '☑️' : '⬜'}
+            </div>
             {needsWater && (
               <div className={styles.waterAlert}>
                 <span className={styles.alertIcon}>💧</span>

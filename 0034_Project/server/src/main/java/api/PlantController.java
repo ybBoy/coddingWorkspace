@@ -6,11 +6,14 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import domain.BatchCareRequest;
 import domain.CareLog;
 import domain.CareType;
 import domain.Plant;
 import domain.PlantStatistics;
 import domain.PlantStatus;
+import domain.PlantTemplate;
+import domain.TaskItem;
 import service.PlantCareService;
 
 import java.io.IOException;
@@ -67,8 +70,14 @@ public class PlantController {
                     handleGetNeedingWater(exchange);
                 } else if ("GET".equals(method) && path.equals("/api/plants/export")) {
                     handleExportPlants(exchange);
+                } else if ("GET".equals(method) && path.equals("/api/plants/templates")) {
+                    handleGetPlantTemplates(exchange);
                 } else if ("POST".equals(method) && path.equals("/api/plants/import")) {
                     handleImportPlants(exchange);
+                } else if ("POST".equals(method) && path.equals("/api/plants/care-logs/batch")) {
+                    handleBatchCareLogs(exchange);
+                } else if ("GET".equals(method) && path.equals("/api/tasks/today")) {
+                    handleGetTodayTasks(exchange);
                 } else if ("GET".equals(method) && path.equals("/api/statistics")) {
                     handleGetStatistics(exchange);
                 } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+/timeline")) {
@@ -268,6 +277,37 @@ public class PlantController {
     private void handleGetStatistics(HttpExchange exchange) throws IOException {
         PlantStatistics stats = service.getStatistics();
         sendJsonResponse(exchange, 200, stats);
+    }
+
+    private void handleGetTodayTasks(HttpExchange exchange) throws IOException {
+        List<TaskItem> tasks = service.getTodayTasks();
+        sendJsonResponse(exchange, 200, tasks);
+    }
+
+    private void handleBatchCareLogs(HttpExchange exchange) throws IOException {
+        BatchCareRequest req = readBody(exchange, BatchCareRequest.class);
+        if (req.getPlantIds() == null || req.getPlantIds().isEmpty()) {
+            sendResponse(exchange, 400, "{\"error\":\"plantIds cannot be empty\"}");
+            return;
+        }
+        String typeStr = req.getType();
+        if (typeStr == null || typeStr.trim().isEmpty()) {
+            sendResponse(exchange, 400, "{\"error\":\"Care type cannot be empty\"}");
+            return;
+        }
+        if (!VALID_CARE_TYPES.contains(typeStr)) {
+            sendResponse(exchange, 400,
+                    "{\"error\":\"Invalid care type. Must be one of: WATERING, FERTILIZING, PRUNING\"}");
+            return;
+        }
+        CareType type = CareType.valueOf(typeStr);
+        List<CareLog> created = service.addCareLogsBatch(req.getPlantIds(), type, req.getNote());
+        sendJsonResponse(exchange, 201, created);
+    }
+
+    private void handleGetPlantTemplates(HttpExchange exchange) throws IOException {
+        List<PlantTemplate> templates = service.getPlantTemplates();
+        sendJsonResponse(exchange, 200, templates);
     }
 
     private void handleExportPlants(HttpExchange exchange) throws IOException {

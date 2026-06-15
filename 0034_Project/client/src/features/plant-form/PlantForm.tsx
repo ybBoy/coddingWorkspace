@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plant, CreatePlantRequest, PLANT_STATUS_OPTIONS } from '../../types';
+import { Plant, CreatePlantRequest, PLANT_STATUS_OPTIONS, PlantTemplate } from '../../types';
+import { plantApi } from '../../api/plantApi';
 import styles from '../../styles/plantForm.module.css';
 
 interface PlantFormProps {
@@ -21,6 +22,20 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [templates, setTemplates] = useState<PlantTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const data = await plantApi.getPlantTemplates();
+        setTemplates(data);
+      } catch (err) {
+        console.error('Error loading templates:', err);
+      }
+    };
+    loadTemplates();
+  }, []);
 
   useEffect(() => {
     if (plant) {
@@ -126,10 +141,44 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
     }
   };
 
+  const handleTemplateSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const templateKey = e.target.value;
+    setSelectedTemplate(templateKey);
+    if (!templateKey) return;
+    const template = templates.find((t) => t.key === templateKey);
+    if (template) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name || template.name,
+        lightRequirement: template.lightRequirement,
+        wateringIntervalDays: template.wateringIntervalDays,
+        status: template.defaultStatus,
+      }));
+    }
+  };
+
   return (
     <div className={styles.formContainer}>
       <h2 className={styles.formTitle}>{plant ? '编辑植物' : '新增植物'}</h2>
       <form onSubmit={handleSubmit} className={styles.form}>
+        {!plant && templates.length > 0 && (
+          <div className={styles.formGroup}>
+            <label className={styles.label}>植物模板</label>
+            <select
+              value={selectedTemplate}
+              onChange={handleTemplateSelect}
+              className={styles.select}
+            >
+              <option value="">选择模板（可选）</option>
+              {templates.map((tpl) => (
+                <option key={tpl.key} value={tpl.key}>
+                  {tpl.name}（{tpl.lightRequirement}，{tpl.wateringIntervalDays}天浇水）
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className={styles.formGroup}>
           <label className={styles.label}>植物照片</label>
           <div className={styles.photoUploadArea}>

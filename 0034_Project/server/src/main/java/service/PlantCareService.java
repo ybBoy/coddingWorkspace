@@ -5,6 +5,8 @@ import domain.CareType;
 import domain.Plant;
 import domain.PlantStatistics;
 import domain.PlantStatus;
+import domain.PlantTemplate;
+import domain.TaskItem;
 import persistence.PlantJsonStore;
 
 import java.time.LocalDateTime;
@@ -236,5 +238,60 @@ public class PlantCareService {
 
     public List<Plant> exportPlants() {
         return new ArrayList<>(plants.values());
+    }
+
+    public List<TaskItem> getTodayTasks() {
+        List<TaskItem> tasks = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime monthAgo = now.minusDays(30);
+
+        for (Plant plant : plants.values()) {
+            if (plant.needsWatering()) {
+                long daysOverdue = -plant.getDaysUntilNextWatering();
+                String reason;
+                if (plant.getLastWateredTime() == null) {
+                    reason = "从未浇过水";
+                } else if (daysOverdue <= 0) {
+                    reason = "今天需要浇水";
+                } else {
+                    reason = "已逾期 " + daysOverdue + " 天";
+                }
+                tasks.add(new TaskItem(plant.getId(), plant.getName(), "WATERING", reason, "💧"));
+            }
+
+            if (plant.getLastCareTime().isBefore(monthAgo)) {
+                long days = ChronoUnit.DAYS.between(plant.getLastCareTime(), now);
+                tasks.add(new TaskItem(plant.getId(), plant.getName(), "NEGLECTED",
+                        "已 " + days + " 天未养护", "⚠️"));
+            }
+
+            if (plant.getStatus() == PlantStatus.SICK || plant.getStatus() == PlantStatus.NEEDS_ATTENTION) {
+                tasks.add(new TaskItem(plant.getId(), plant.getName(), "STATUS",
+                        "状态：" + plant.getStatus().getLabel(), "🏷️"));
+            }
+        }
+        return tasks;
+    }
+
+    public List<CareLog> addCareLogsBatch(List<String> plantIds, CareType type, String note) {
+        List<CareLog> created = new ArrayList<>();
+        for (String plantId : plantIds) {
+            CareLog log = addCareLog(plantId, type, note);
+            if (log != null) {
+                created.add(log);
+            }
+        }
+        return created;
+    }
+
+    public List<PlantTemplate> getPlantTemplates() {
+        List<PlantTemplate> templates = new ArrayList<>();
+        templates.add(new PlantTemplate("pothos", "绿萝", "散射光", 7, PlantStatus.HEALTHY));
+        templates.add(new PlantTemplate("succulent", "多肉", "全日照", 14, PlantStatus.HEALTHY));
+        templates.add(new PlantTemplate("monstera", "龟背竹", "散射光", 10, PlantStatus.HEALTHY));
+        templates.add(new PlantTemplate("money-tree", "发财树", "半日照", 14, PlantStatus.HEALTHY));
+        templates.add(new PlantTemplate("spider-plant", "吊兰", "半日照", 5, PlantStatus.HEALTHY));
+        templates.add(new PlantTemplate("snake-plant", "虎皮兰", "耐阴", 20, PlantStatus.HEALTHY));
+        return templates;
     }
 }

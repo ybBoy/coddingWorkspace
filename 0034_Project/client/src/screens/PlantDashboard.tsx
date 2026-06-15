@@ -4,7 +4,8 @@ import PlantCardList from '../features/plant-list/PlantCardList';
 import CareLogPanel from '../features/care-log/CareLogPanel';
 import CareTimeline from '../features/care-log/CareTimeline';
 import StatisticsPanel from '../features/statistics/StatisticsPanel';
-import { Plant, CareLog, CareType, CreatePlantRequest, PLANT_STATUS_OPTIONS } from '../types';
+import TodayTasksPanel from '../features/today-tasks/TodayTasksPanel';
+import { Plant, CareLog, CareType, CreatePlantRequest, PLANT_STATUS_OPTIONS, CARE_TYPE_OPTIONS } from '../types';
 import { plantApi } from '../api/plantApi';
 import styles from '../styles/dashboard.module.css';
 
@@ -55,15 +56,19 @@ const PlantDashboard: React.FC = () => {
   const [selectedPlantLogs, setSelectedPlantLogs] = useState<CareLog[]>([]);
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [careNoteInput, setCareNoteInput] = useState<string>('');
   const [showCareNoteDialog, setShowCareNoteDialog] = useState<{ plantId: string; type: CareType } | null>(null);
+  const [showBatchDialog, setShowBatchDialog] = useState<CareType | null>(null);
   const [showInfoMessage, setShowInfoMessage] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('default');
   const [showStatistics, setShowStatistics] = useState<boolean>(false);
   const [detailView, setDetailView] = useState<DetailView>('logs');
   const [importError, setImportError] = useState<string | null>(null);
+  const [selectedPlantIds, setSelectedPlantIds] = useState<Set<string>>(new Set());
+  const [highlightPlantId, setHighlightPlantId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const locations = [...new Set(plants.map((p) => p.location))].filter(Boolean);
@@ -71,12 +76,23 @@ const PlantDashboard: React.FC = () => {
 
   const needsWaterCount = plants.filter((p) => p.needsWatering).length;
 
+  const filteredPlants = plants.filter((p) => {
+    if (!searchKeyword.trim()) return true;
+    const kw = searchKeyword.toLowerCase().trim();
+    return (
+      p.name.toLowerCase().includes(kw) ||
+      p.location.toLowerCase().includes(kw) ||
+      p.lightRequirement.toLowerCase().includes(kw) ||
+      p.status.toLowerCase().includes(kw)
+    );
+  });
+
   const loadPlants = useCallback(async () => {
     try {
       setLoading(true);
       let data: Plant[];
       if (sortMode === 'urgency') {
-        data = await plantApi.getPlantsSortedByUrgency();
+        data = await plantApi.getPlantsSortedByUrgency(locationFilter, statusFilter);
       } else {
         data = await plantApi.getAllPlants(locationFilter, statusFilter);
       }
@@ -162,6 +178,11 @@ const PlantDashboard: React.FC = () => {
       if (editingPlant?.id === plantId) {
         setEditingPlant(null);
       }
+      setSelectedPlantIds((prev) => {
+        const next = new Set(prev);
+        next.delete(plantId);
+        return next;
+      });
       await loadPlants();
     } catch (err) {
       setError('删除植物失败');
@@ -198,9 +219,67 @@ const PlantDashboard: React.FC = () => {
     setCareNoteInput('');
   };
 
+  const handleToggleSelect = (plantId: string) => {
+    setSelectedPlantIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(plantId)) {
+        next.delete(plantId);
+      } else {
+        next.add(plantId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllVisible = () => {
+    const visibleIds = filteredPlants.map((p) => p.id);
+    const allSelected = visibleIds.every((id) => selectedPlantIds.has(id));
+    if (allSelected) {
+      setSelectedPlantIds(new Set());
+    } else {
+      setSelectedPlantIds(new Set(visibleIds));
+    }
+  };
+
+  const handleBatchAction = (type: CareType) => {
+    if (selectedPlantIds.size === 0) {
+      setShowInfoMessage('请先选择要养护的植物（点击卡片左上角复选框）');
+      return;
+    }
+    setShowBatchDialog(type);
+    setCareNoteInput('');
+  };
+
+  const confirmBatchAction = async () => {
+    if (!showBatchDialog || selectedPlantIds.size === 0) return;
+    const type = showBatchDialog;
+    try {
+      const ids = Array.from(selectedPlantIds);
+      await plantApi.addCareLogsBatch(ids, type, careNoteInput || '');
+      setSelectedPlantIds(new Set());
+      setShowInfoMessage(`已为 ${ids.length} 盆植物记录${CARE_TYPE_OPTIONS.find((c) => c.value === type)?.label || ''}`);
+      await loadPlants();
+      if (selectedPlant && selectedPlantIds.has(selectedPlant.id)) {
+        await loadCareLogs(selectedPlant.id);
+      }
+    } catch (err) {
+      setError('批量记录失败');
+      console.error('Batch care error:', err);
+    } finally {
+      setShowBatchDialog(null);
+      setCareNoteInput('');
+    }
+  };
+
+  const cancelBatchAction = () => {
+    setShowBatchDialog(null);
+    setCareNoteInput('');
+  };
+
   const handleClearFilters = () => {
     setLocationFilter('');
     setStatusFilter('');
+    setSearchKeyword('');
   };
 
   const handleShowNeedingWater = () => {
@@ -267,6 +346,15 @@ const PlantDashboard: React.FC = () => {
     setSortMode(mode);
   };
 
+  const handleLocatePlant = (plantId: string) => {
+    const el = document.getElementById(`plant-card-${plantId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightPlantId(plantId);
+      setTimeout(() => setHighlightPlantId(null), 2000);
+    }
+  };
+
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
@@ -298,6 +386,23 @@ const PlantDashboard: React.FC = () => {
               onClick={() => handleSortChange('urgency')}
             >
               ⚡ 按紧急程度
+            </button>
+          </div>
+          <div className={styles.batchGroup}>
+            <span className={styles.sortLabel}>
+              批量{selectedPlantIds.size > 0 ? `（${selectedPlantIds.size}）` : ''}
+            </span>
+            <button className={styles.toolBtn} onClick={() => handleBatchAction('WATERING')}>
+              💧 批量浇水
+            </button>
+            <button className={styles.toolBtn} onClick={() => handleBatchAction('FERTILIZING')}>
+              🌱 批量施肥
+            </button>
+            <button className={styles.toolBtn} onClick={() => handleBatchAction('PRUNING')}>
+              ✂️ 批量修剪
+            </button>
+            <button className={styles.toolBtn} onClick={handleSelectAllVisible}>
+              {filteredPlants.length > 0 && filteredPlants.every((p) => selectedPlantIds.has(p.id)) ? '取消全选' : '全选可见'}
             </button>
           </div>
           <div className={styles.actionGroup}>
@@ -351,6 +456,17 @@ const PlantDashboard: React.FC = () => {
             <h3 className={styles.filterTitle}>🔍 筛选植物</h3>
 
             <div className={styles.filterGroup}>
+              <label className={styles.filterLabel}>搜索</label>
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className={styles.filterSelect}
+                placeholder="名称/位置/光照/状态"
+              />
+            </div>
+
+            <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>按位置</label>
               <select
                 value={locationFilter}
@@ -382,12 +498,14 @@ const PlantDashboard: React.FC = () => {
               </select>
             </div>
 
-            {(locationFilter || statusFilter) && (
+            {(locationFilter || statusFilter || searchKeyword) && (
               <button onClick={handleClearFilters} className={styles.clearFilterBtn}>
                 清除筛选
               </button>
             )}
           </div>
+
+          <TodayTasksPanel onLocatePlant={handleLocatePlant} />
 
           {showStatistics && (
             <div className={styles.statisticsSection}>
@@ -404,13 +522,22 @@ const PlantDashboard: React.FC = () => {
             </div>
           ) : (
             <>
+              {searchKeyword && (
+                <div className={styles.searchHint}>
+                  搜索「{searchKeyword}」找到 {filteredPlants.length} 盆植物
+                </div>
+              )}
+
               <PlantCardList
-                plants={plants}
+                plants={filteredPlants}
                 selectedPlantId={selectedPlant?.id || null}
+                selectedPlantIds={selectedPlantIds}
+                highlightPlantId={highlightPlantId}
                 onSelectPlant={handleSelectPlant}
                 onCareAction={handleCareAction}
                 onEdit={handleEditPlant}
                 onDelete={handleDeletePlant}
+                onToggleSelect={handleToggleSelect}
               />
 
               {selectedPlant && (
@@ -467,6 +594,33 @@ const PlantDashboard: React.FC = () => {
                 取消
               </button>
               <button className={styles.dialogConfirmBtn} onClick={confirmCareAction}>
+                确认记录
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBatchDialog && (
+        <div className={styles.dialogOverlay}>
+          <div className={styles.dialog}>
+            <h3 className={styles.dialogTitle}>
+              批量记录
+              {showBatchDialog === 'WATERING' ? '浇水' : showBatchDialog === 'FERTILIZING' ? '施肥' : '修剪'}
+              <span className={styles.dialogSubTitle}>（已选 {selectedPlantIds.size} 盆）</span>
+            </h3>
+            <textarea
+              className={styles.dialogTextarea}
+              placeholder="添加备注（可选）..."
+              value={careNoteInput}
+              onChange={(e) => setCareNoteInput(e.target.value)}
+              rows={3}
+            />
+            <div className={styles.dialogButtons}>
+              <button className={styles.dialogCancelBtn} onClick={cancelBatchAction}>
+                取消
+              </button>
+              <button className={styles.dialogConfirmBtn} onClick={confirmBatchAction}>
                 确认记录
               </button>
             </div>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭维修记录本</title>
+    <link rel="stylesheet" href="home-repair.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>🔧 家庭维修记录本</h1>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">总费用</span>
+                        <span class="stat-value cost" id="totalCost">¥0.00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">待处理</span>
+                        <span class="stat-value pending" id="pendingCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="form-section">
+            <div class="form-card">
+                <h2>➕ 新增维修记录</h2>
+                <form id="repairForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemName">物品名称 *</label>
+                            <input type="text" id="itemName" name="itemName" placeholder="如：空调、洗衣机、水龙头" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cost">维修费用 (元)</label>
+                            <input type="number" id="cost" name="cost" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="problemDescription">问题描述 *</label>
+                        <textarea id="problemDescription" name="problemDescription" rows="2" placeholder="请详细描述问题..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="remark">备注</label>
+                        <textarea id="remark" name="remark" rows="2" placeholder="可选，如：联系电话、维修师傅等..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">添加记录</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="filter-section">
+            <div class="filter-bar">
+                <span class="filter-label">筛选：</span>
+                <button class="filter-btn active" data-status="all">全部</button>
+                <button class="filter-btn" data-status="PENDING">待处理</button>
+                <button class="filter-btn" data-status="IN_PROGRESS">维修中</button>
+                <button class="filter-btn" data-status="COMPLETED">已完成</button>
+            </div>
+        </section>
+
+        <section class="list-section">
+            <div id="repairList" class="repair-list">
+                <div class="empty-state">
+                    <p>📋 暂无维修记录</p>
+                    <p class="empty-tip">添加第一条记录开始使用吧！</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑记录</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>处理状态</label>
+                    <select id="editStatus">
+                        <option value="PENDING">待处理</option>
+                        <option value="IN_PROGRESS">维修中</option>
+                        <option value="COMPLETED">已完成</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="editRemark" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="home-repair.js"></script>
+</body>
+</html>

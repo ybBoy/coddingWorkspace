@@ -2,6 +2,7 @@ package service;
 
 import domain.FitnessCheckin;
 import storage.CheckinFileStore;
+import storage.SettingsStore;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -10,10 +11,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FitnessService {
     private final Map<String, FitnessCheckin> records = new ConcurrentHashMap<>();
     private final CheckinFileStore fileStore;
+    private final SettingsStore settingsStore;
+    private int weeklyGoal;
 
-    public FitnessService(CheckinFileStore fileStore) {
+    public FitnessService(CheckinFileStore fileStore, SettingsStore settingsStore) {
         this.fileStore = fileStore;
+        this.settingsStore = settingsStore;
         loadFromFile();
+        this.weeklyGoal = settingsStore.loadWeeklyGoal();
     }
 
     private void loadFromFile() {
@@ -53,10 +58,20 @@ public class FitnessService {
         return result;
     }
 
-    public boolean updateCheckin(String id, String mood, String note) {
+    public boolean updateCheckin(String id, LocalDate checkinDate, String exerciseType,
+                                 Integer duration, String mood, String note) {
         FitnessCheckin checkin = records.get(id);
         if (checkin == null) {
             return false;
+        }
+        if (checkinDate != null) {
+            checkin.setCheckinDate(checkinDate);
+        }
+        if (exerciseType != null && !exerciseType.isEmpty()) {
+            checkin.setExerciseType(exerciseType);
+        }
+        if (duration != null) {
+            checkin.setDuration(duration);
         }
         if (mood != null && !mood.isEmpty()) {
             checkin.setMood(mood);
@@ -128,5 +143,50 @@ public class FitnessService {
         }
 
         return streak;
+    }
+
+    public int getWeeklyGoal() {
+        return weeklyGoal;
+    }
+
+    public void setWeeklyGoal(int minutes) {
+        if (minutes <= 0 || minutes > 10080) {
+            return;
+        }
+        this.weeklyGoal = minutes;
+        settingsStore.saveWeeklyGoal(minutes);
+    }
+
+    public int importCheckins(List<FitnessCheckin> importList, boolean overwrite) {
+        if (importList == null || importList.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        if (overwrite) {
+            records.clear();
+        }
+
+        for (FitnessCheckin checkin : importList) {
+            if (checkin.getCheckinDate() == null || checkin.getExerciseType() == null
+                    || checkin.getDuration() <= 0) {
+                continue;
+            }
+            String id = checkin.getId();
+            if (id == null || id.isEmpty()) {
+                id = UUID.randomUUID().toString();
+                checkin.setId(id);
+            }
+            if (checkin.getMood() == null) {
+                checkin.setMood("一般");
+            }
+            records.put(id, checkin);
+            count++;
+        }
+
+        if (count > 0) {
+            saveToFile();
+        }
+        return count;
     }
 }

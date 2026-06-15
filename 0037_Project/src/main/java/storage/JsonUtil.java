@@ -145,7 +145,7 @@ public class JsonUtil {
         return "{\"success\":true,\"message\":\"" + escape(message) + "\"}";
     }
 
-    private static class JsonParser {
+    static class JsonParser {
         private final String src;
         private int pos;
 

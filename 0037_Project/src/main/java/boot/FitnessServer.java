@@ -5,6 +5,7 @@ import http.CheckinHandler;
 import http.StaticFileHandler;
 import service.FitnessService;
 import storage.CheckinFileStore;
+import storage.SettingsStore;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -24,11 +25,13 @@ public class FitnessServer {
             System.out.println("数据文件: " + dataFile);
 
             CheckinFileStore fileStore = new CheckinFileStore(dataFile);
-            FitnessService service = new FitnessService(fileStore);
+            String settingsFile = projectDir + File.separator + "data" + File.separator + "settings.json";
+            SettingsStore settingsStore = new SettingsStore(settingsFile);
+            FitnessService service = new FitnessService(fileStore, settingsStore);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
 
-            server.createContext("/api/checkin", new CheckinHandler(service));
+            server.createContext("/api/", new CheckinHandler(service));
             server.createContext("/", new StaticFileHandler(staticDir));
 
             server.setExecutor(Executors.newFixedThreadPool(10));

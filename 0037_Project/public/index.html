@@ -14,9 +14,16 @@
         </header>
 
         <section class="stats-section">
-            <div class="stat-card">
+            <div class="stat-card stat-card-goal">
                 <div class="stat-value" id="weekMinutes">0</div>
-                <div class="stat-label">本周运动(分钟)</div>
+                <div class="stat-label">
+                    本周运动 / <span id="weekGoal">150</span> 分钟
+                    <span class="goal-edit" id="goalEditBtn" title="修改目标">⚙️</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0%</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="streakDays">0</div>
@@ -31,6 +38,7 @@
         <section class="form-section">
             <h2>✏️ 新增打卡记录</h2>
             <form id="checkinForm">
+                <div class="form-error" id="formError"></div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="checkinDate">日期</label>
@@ -72,16 +80,53 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">保存打卡</button>
+                    <button type="submit" class="btn-primary" id="submitBtn">保存打卡</button>
                     <button type="button" class="btn-secondary" id="resetForm">重置</button>
                 </div>
             </form>
         </section>
 
+        <section class="calendar-section">
+            <div class="calendar-header">
+                <h2>📅 月历视图</h2>
+                <div class="calendar-nav">
+                    <button class="btn-icon" id="prevMonth">‹</button>
+                    <span id="calendarTitle">2026年6月</span>
+                    <button class="btn-icon" id="nextMonth">›</button>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-weekday">一</div>
+                <div class="calendar-weekday">二</div>
+                <div class="calendar-weekday">三</div>
+                <div class="calendar-weekday">四</div>
+                <div class="calendar-weekday">五</div>
+                <div class="calendar-weekday">六</div>
+                <div class="calendar-weekday">日</div>
+            </div>
+            <div class="calendar-days" id="calendarDays"></div>
+            <div class="calendar-legend">
+                <span class="legend-dot legend-dot-active"></span>
+                <span>有运动记录</span>
+                <span class="legend-dot legend-dot-today"></span>
+                <span>今天</span>
+            </div>
+        </section>
+
         <section class="filter-section">
             <div class="filter-row">
-                <label>运动类型筛选：</label>
-                <div class="filter-buttons" id="filterButtons">
+                <label>时间范围：</label>
+                <div class="filter-buttons" id="timeFilterButtons">
+                    <button class="filter-btn active" data-time="7">最近7天</button>
+                    <button class="filter-btn" data-time="30">最近30天</button>
+                    <button class="filter-btn" data-time="week">本周</button>
+                    <button class="filter-btn" data-time="month">本月</button>
+                    <button class="filter-btn" data-time="all">全部</button>
+                </div>
+            </div>
+            <div class="filter-row">
+                <label>运动类型：</label>
+                <div class="filter-buttons" id="typeFilterButtons">
                     <button class="filter-btn active" data-type="all">全部</button>
                     <button class="filter-btn" data-type="跑步">跑步</button>
                     <button class="filter-btn" data-type="骑行">骑行</button>
@@ -93,44 +138,94 @@
                     <button class="filter-btn" data-type="其他">其他</button>
                 </div>
             </div>
+            <div class="filter-row filter-row-right">
+                <button class="btn-secondary btn-small" id="exportBtn">📤 导出JSON</button>
+                <button class="btn-secondary btn-small" id="importBtn">📥 导入JSON</button>
+                <input type="file" id="importFile" accept=".json" style="display:none">
+            </div>
         </section>
 
         <section class="records-section">
-            <h2>📋 打卡记录</h2>
+            <h2 id="recordsTitle">📋 打卡记录</h2>
             <div id="recordsList" class="records-list">
             </div>
             <div id="emptyState" class="empty-state">
-                <p>还没有打卡记录，开始今天的第一次运动吧！</p>
+                <p id="emptyText">还没有打卡记录，开始今天的第一次运动吧！</p>
             </div>
         </section>
     </div>
 
     <div id="editModal" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content modal-content-wide">
             <h3>修改记录</h3>
             <form id="editForm">
+                <div class="form-error" id="editError"></div>
                 <input type="hidden" id="editId">
-                <div class="form-group">
-                    <label for="editMood">心情</label>
-                    <select id="editMood">
-                        <option value="很棒">😄 很棒</option>
-                        <option value="不错">😊 不错</option>
-                        <option value="一般">😐 一般</option>
-                        <option value="疲惫">😫 疲惫</option>
-                        <option value="酸痛">💪 酸痛</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editDate">日期</label>
+                        <input type="date" id="editDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editExerciseType">运动类型</label>
+                        <select id="editExerciseType" required>
+                            <option value="">请选择</option>
+                            <option value="跑步">🏃 跑步</option>
+                            <option value="骑行">🚴 骑行</option>
+                            <option value="游泳">🏊 游泳</option>
+                            <option value="瑜伽">🧘 瑜伽</option>
+                            <option value="力量训练">🏋️ 力量训练</option>
+                            <option value="快走">🚶 快走</option>
+                            <option value="跳绳">⏱️ 跳绳</option>
+                            <option value="其他">🎯 其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDuration">时长(分钟)</label>
+                        <input type="number" id="editDuration" min="1" max="480" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="editNote">备注</label>
-                    <input type="text" id="editNote" maxlength="100">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editMood">心情</label>
+                        <select id="editMood" required>
+                            <option value="很棒">😄 很棒</option>
+                            <option value="不错">😊 不错</option>
+                            <option value="一般">😐 一般</option>
+                            <option value="疲惫">😫 疲惫</option>
+                            <option value="酸痛">💪 酸痛</option>
+                        </select>
+                    </div>
+                    <div class="form-group form-group-wide">
+                        <label for="editNote">备注</label>
+                        <input type="text" id="editNote" maxlength="100">
+                    </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">保存修改</button>
+                    <button type="submit" class="btn-primary" id="editSubmitBtn">保存修改</button>
                     <button type="button" class="btn-secondary" id="cancelEdit">取消</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <div id="goalModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>设置每周目标</h3>
+            <form id="goalForm">
+                <div class="form-group">
+                    <label for="goalInput">每周运动目标(分钟)</label>
+                    <input type="number" id="goalInput" min="1" max="10080" value="150">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">保存</button>
+                    <button type="button" class="btn-secondary" id="cancelGoal">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="checkin.js"></script>
 </body>

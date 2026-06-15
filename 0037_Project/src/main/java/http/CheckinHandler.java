@@ -42,6 +42,14 @@ public class CheckinHandler implements HttpHandler {
                 handlePut(exchange);
             } else if ("DELETE".equals(method) && path.startsWith("/api/checkin/")) {
                 handleDelete(exchange);
+            } else if ("GET".equals(method) && path.equals("/api/stats")) {
+                handleStats(exchange);
+            } else if ("GET".equals(method) && path.equals("/api/settings/goal")) {
+                handleGetGoal(exchange);
+            } else if ("PUT".equals(method) && path.equals("/api/settings/goal")) {
+                handleSetGoal(exchange);
+            } else if ("POST".equals(method) && path.equals("/api/checkin/import")) {
+                handleImport(exchange);
             } else {
                 sendResponse(exchange, 404, JsonUtil.toErrorJson("路径不存在"));
             }
@@ -107,12 +115,49 @@ public class CheckinHandler implements HttpHandler {
         String body = readRequestBody(exchange);
         Map<String, String> data = JsonUtil.parseRequestBody(body);
 
-        String mood = data.get("mood");
-        String note = data.get("note");
+        LocalDate checkinDate = null;
+        String exerciseType = null;
+        Integer duration = null;
+        String mood = null;
+        String note = null;
 
-        boolean updated = service.updateCheckin(id, mood, note);
+        String dateStr = data.get("checkinDate");
+        if (dateStr != null && !dateStr.isEmpty()) {
+            try {
+                checkinDate = LocalDate.parse(dateStr);
+            } catch (Exception e) {
+                sendResponse(exchange, 400, JsonUtil.toErrorJson("日期格式错误"));
+                return;
+            }
+        }
+
+        exerciseType = data.get("exerciseType");
+
+        String durationStr = data.get("duration");
+        if (durationStr != null && !durationStr.isEmpty()) {
+            try {
+                duration = Integer.parseInt(durationStr);
+                if (duration <= 0 || duration > 480) {
+                    sendResponse(exchange, 400, JsonUtil.toErrorJson("时长必须在1-480分钟之间"));
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                sendResponse(exchange, 400, JsonUtil.toErrorJson("时长格式错误"));
+                return;
+            }
+        }
+
+        mood = data.get("mood");
+        note = data.get("note");
+
+        boolean updated = service.updateCheckin(id, checkinDate, exerciseType, duration, mood, note);
         if (updated) {
-            sendResponse(exchange, 200, JsonUtil.toSuccessJson("更新成功"));
+            FitnessCheckin updatedRecord = service.getCheckinById(id);
+            if (updatedRecord != null) {
+                sendJsonResponse(exchange, 200, JsonUtil.toJson(updatedRecord));
+            } else {
+                sendResponse(exchange, 200, JsonUtil.toSuccessJson("更新成功"));
+            }
         } else {
             sendResponse(exchange, 404, JsonUtil.toErrorJson("记录不存在"));
         }
@@ -128,6 +173,74 @@ public class CheckinHandler implements HttpHandler {
         } else {
             sendResponse(exchange, 404, JsonUtil.toErrorJson("记录不存在"));
         }
+    }
+
+    private void handleStats(HttpExchange exchange) throws IOException {
+        int weeklyMinutes = service.getWeeklyMinutes();
+        int streakDays = service.getStreakDays();
+        int weeklyGoal = service.getWeeklyGoal();
+        int totalCount = service.getAllCheckins().size();
+
+        String json = "{"
+                + "\"weeklyMinutes\":" + weeklyMinutes + ","
+                + "\"streakDays\":" + streakDays + ","
+                + "\"weeklyGoal\":" + weeklyGoal + ","
+                + "\"totalCount\":" + totalCount
+                + "}";
+        sendJsonResponse(exchange, 200, json);
+    }
+
+    private void handleGetGoal(HttpExchange exchange) throws IOException {
+        int goal = service.getWeeklyGoal();
+        String json = "{\"weeklyGoal\":" + goal + "}";
+        sendJsonResponse(exchange, 200, json);
+    }
+
+    private void handleSetGoal(HttpExchange exchange) throws IOException {
+        String body = readRequestBody(exchange);
+        Map<String, String> data = JsonUtil.parseRequestBody(body);
+
+        String goalStr = data.get("weeklyGoal");
+        if (goalStr == null || goalStr.isEmpty()) {
+            sendResponse(exchange, 400, JsonUtil.toErrorJson("缺少目标值"));
+            return;
+        }
+
+        int goal;
+        try {
+            goal = Integer.parseInt(goalStr);
+        } catch (NumberFormatException e) {
+            sendResponse(exchange, 400, JsonUtil.toErrorJson("目标值格式错误"));
+            return;
+        }
+
+        if (goal <= 0 || goal > 10080) {
+            sendResponse(exchange, 400, JsonUtil.toErrorJson("目标值必须在1-10080分钟之间"));
+            return;
+        }
+
+        service.setWeeklyGoal(goal);
+        sendResponse(exchange, 200, JsonUtil.toSuccessJson("目标已更新"));
+    }
+
+    private void handleImport(HttpExchange exchange) throws IOException {
+        String body = readRequestBody(exchange);
+
+        List<FitnessCheckin> importList;
+        try {
+            importList = JsonUtil.parseList(body);
+        } catch (Exception e) {
+            sendResponse(exchange, 400, JsonUtil.toErrorJson("JSON格式错误"));
+            return;
+        }
+
+        String query = exchange.getRequestURI().getQuery();
+        boolean overwrite = query != null && query.contains("overwrite=true");
+
+        int count = service.importCheckins(importList, overwrite);
+
+        String json = "{\"imported\":" + count + ",\"overwrite\":" + overwrite + "}";
+        sendJsonResponse(exchange, 200, json);
     }
 
     private String readRequestBody(HttpExchange exchange) throws IOException {

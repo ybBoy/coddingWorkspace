@@ -50,6 +50,16 @@ public class PlantCareService {
                 .collect(Collectors.toList());
     }
 
+    public List<Plant> filterPlantsSortedByUrgency(String location, String status) {
+        return plants.values().stream()
+                .filter(p -> location == null || location.isEmpty() || location.equalsIgnoreCase(p.getLocation()))
+                .filter(p -> status == null || status.isEmpty() ||
+                        p.getStatus().name().equalsIgnoreCase(status) ||
+                        p.getStatus().getLabel().equals(status))
+                .sorted(Comparator.comparingLong(Plant::getDaysUntilNextWatering))
+                .collect(Collectors.toList());
+    }
+
     public Plant getPlantById(String id) {
         return plants.get(id);
     }

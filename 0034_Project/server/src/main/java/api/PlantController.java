@@ -2,6 +2,7 @@ package api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -39,6 +40,7 @@ public class PlantController {
         this.service = service;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     public class PlantsHandler implements HttpHandler {
@@ -114,7 +116,17 @@ public class PlantController {
     }
 
     private void handleGetSortedPlants(HttpExchange exchange) throws IOException {
-        List<Plant> result = service.getAllPlantsSortedByUrgency();
+        URI uri = exchange.getRequestURI();
+        Map<String, String> params = queryToMap(uri.getQuery());
+        String location = params.get("location");
+        String status = params.get("status");
+
+        List<Plant> result;
+        if ((location != null && !location.isEmpty()) || (status != null && !status.isEmpty())) {
+            result = service.filterPlantsSortedByUrgency(location, status);
+        } else {
+            result = service.getAllPlantsSortedByUrgency();
+        }
         sendJsonResponse(exchange, 200, result);
     }
 
@@ -177,7 +189,7 @@ public class PlantController {
             sendResponse(exchange, 400, "{\"error\":\"Invalid status\"}");
             return;
         }
-        PlantStatus status = PlantStatus.valueOf(statusStr.toUpperCase().replace(" ", "_"));
+        PlantStatus status = PlantStatus.fromLabel(statusStr);
         Plant updated = service.updatePlantStatus(id, status);
         if (updated != null) {
             sendJsonResponse(exchange, 200, updated);

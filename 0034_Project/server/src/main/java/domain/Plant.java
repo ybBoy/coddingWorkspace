@@ -60,7 +60,7 @@ public class Plant {
             careLogs = new ArrayList<>();
         }
         careLogs.add(0, log);
-        if (CareType.WATERING.name().equals(log.getType())) {
+        if (log.getType() == CareType.WATERING) {
             this.lastWateredTime = log.getTimestamp();
         }
     }

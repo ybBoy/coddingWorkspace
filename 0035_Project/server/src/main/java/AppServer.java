@@ -14,8 +14,9 @@ import java.nio.file.Paths;
 
 public class AppServer {
     private static final int PORT = 9000;
-    private static final String WEB_DIR = "web";
-    private static final String DATA_FILE = "data/movies.json";
+    private static final String BASE_DIR = System.getProperty("user.dir");
+    private static final String WEB_DIR = BASE_DIR.endsWith("server") ? "../web" : "web";
+    private static final String DATA_FILE = BASE_DIR.endsWith("server") ? "../data/movies.json" : "data/movies.json";
 
     public static void main(String[] args) throws IOException {
         JsonMovieStore store = new JsonMovieStore(DATA_FILE);

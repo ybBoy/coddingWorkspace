@@ -34,12 +34,98 @@
             </div>
         </header>
 
-        <section class="genre-stats-section">
-            <h2 class="section-title">类型统计</h2>
-            <div id="genreStats" class="genre-stats">
-                <span class="empty-hint-sm">暂无数据</span>
+        <section class="stats-section">
+            <div class="stats-row">
+                <div class="stats-card">
+                    <h2 class="section-title">观影状态</h2>
+                    <div id="statusStats" class="status-stats">
+                        <div class="status-bars">
+                            <div class="status-bar-item">
+                                <div class="status-bar-label">
+                                    <span class="dot watched"></span>已看
+                                    <span class="status-num" id="barWatchedNum">0</span>
+                                </div>
+                                <div class="status-bar-track">
+                                    <div class="status-bar-fill watched" id="barWatched" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div class="status-bar-item">
+                                <div class="status-bar-label">
+                                    <span class="dot want"></span>想看
+                                    <span class="status-num" id="barWantNum">0</span>
+                                </div>
+                                <div class="status-bar-track">
+                                    <div class="status-bar-fill want" id="barWant" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div class="status-bar-item">
+                                <div class="status-bar-label">
+                                    <span class="dot shelved"></span>搁置
+                                    <span class="status-num" id="barShelvedNum">0</span>
+                                </div>
+                                <div class="status-bar-track">
+                                    <div class="status-bar-fill shelved" id="barShelved" style="width:0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="avg-rating">
+                            <span class="avg-label">平均评分</span>
+                            <span class="avg-value" id="avgRating">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <h2 class="section-title">类型统计</h2>
+                    <div id="genreStats" class="genre-stats">
+                        <span class="empty-hint-sm">暂无数据</span>
+                    </div>
+                </div>
             </div>
         </section>
+
+        <section class="tools-section">
+            <div class="tools-row">
+                <button type="button" class="btn-tool btn-random" onclick="getRandomMovie()">
+                    🎲 随机推荐想看
+                </button>
+                <button type="button" class="btn-tool btn-export" onclick="exportMovies()">
+                    📤 导出 JSON
+                </button>
+                <label class="btn-tool btn-import">
+                    📥 导入 JSON
+                    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importMovies(event)">
+                </label>
+                <div class="import-options" id="importOptions" style="display:none;">
+                    <label>
+                        <input type="radio" name="importMode" value="merge" checked> 合并到现有
+                    </label>
+                    <label>
+                        <input type="radio" name="importMode" value="overwrite"> 覆盖现有
+                    </label>
+                    <button type="button" class="btn-tool" style="padding:6px 14px;font-size:0.85em;" onclick="executeImport()">
+                        确认导入
+                    </button>
+                    <button type="button" class="btn-tool" style="padding:6px 14px;font-size:0.85em;background:transparent;border-color:#5a3a3a;color:#8b6b5b;" onclick="cancelImport()">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="randomModal" class="modal-overlay" style="display:none;">
+            <div class="modal random-modal">
+                <div class="modal-header">
+                    <h3>🎲 为你推荐</h3>
+                    <button class="modal-close" onclick="closeRandomModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="randomMovieContent">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeRandomModal()">关闭</button>
+                    <button class="btn-primary" onclick="getRandomMovie()">再换一部</button>
+                </div>
+            </div>
+        </div>
 
         <section class="add-form">
             <h2 class="section-title">新增电影</h2>
@@ -103,7 +189,7 @@
             <h2 class="section-title">搜索 & 筛选 & 排序</h2>
             <div class="filter-row">
                 <div class="form-group" style="flex: 2; min-width: 240px;">
-                    <label for="searchInput">🔍 搜索（电影名/导演）</label>
+                    <label for="searchInput">🔍 搜索（电影名/导演/短评）</label>
                     <input type="text" id="searchInput" placeholder="输入关键词搜索...">
                 </div>
                 <div class="form-group">

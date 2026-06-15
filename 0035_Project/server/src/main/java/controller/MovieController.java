@@ -7,6 +7,7 @@ import service.MovieService;
 import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,14 @@ public class MovieController {
             handleUpdateStatus(exchange, path);
         } else if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
             handleDeleteMovie(exchange, path);
+        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/status-stats")) {
+            handleGetStatusStats(exchange);
+        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/export")) {
+            handleExport(exchange);
+        } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/import")) {
+            handleImport(exchange);
+        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/random")) {
+            handleGetRandom(exchange);
         } else {
             sendResponse(exchange, 404, "{\"error\":\"Not Found\"}");
         }
@@ -334,6 +343,132 @@ public class MovieController {
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    private void handleGetStatusStats(HttpExchange exchange) throws IOException {
+        Map<String, Object> stats = service.getStatusStats();
+        sendResponse(exchange, 200, mapToJson(stats));
+    }
+
+    private void handleExport(HttpExchange exchange) throws IOException {
+        String json = service.exportAll();
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.getResponseHeaders().set("Content-Disposition",
+                "attachment; filename=\"movies-export.json\"");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.sendResponseHeaders(200, bytes.length);
+        OutputStream os = exchange.getResponseBody();
+        os.write(bytes);
+        os.close();
+    }
+
+    private void handleImport(HttpExchange exchange) throws IOException {
+        try {
+            String body = readBody(exchange);
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getQuery());
+            boolean overwrite = "true".equalsIgnoreCase(params.get("overwrite"));
+
+            List<Movie> movies = parseMovieArrayFromJson(body);
+            if (movies == null || movies.isEmpty()) {
+                sendResponse(exchange, 400, "{\"error\":\"未找到有效的电影数据\"}");
+                return;
+            }
+
+            int count = service.importMovies(movies, overwrite);
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("success", true);
+            result.put("imported", count);
+            result.put("overwrite", overwrite);
+            sendResponse(exchange, 200, mapToJson(result));
+        } catch (Exception e) {
+            sendResponse(exchange, 400, "{\"error\":\"导入失败: " + e.getMessage() + "\"}");
+        }
+    }
+
+    private List<Movie> parseMovieArrayFromJson(String json) {
+        List<Movie> result = new ArrayList<Movie>();
+        json = json.trim();
+
+        int moviesStart = json.indexOf("\"movies\"");
+        if (moviesStart > 0) {
+            int arrStart = json.indexOf('[', moviesStart);
+            if (arrStart > 0) {
+                int arrEnd = findMatchingBracket(json, arrStart);
+                if (arrEnd > arrStart) {
+                    json = json.substring(arrStart, arrEnd + 1);
+                }
+            }
+        }
+
+        if (!json.startsWith("[")) return result;
+
+        List<String> objects = splitJsonArray(json);
+        for (String objStr : objects) {
+            Movie m = parseMovieFromJson(objStr);
+            if (m != null && m.getName() != null && !m.getName().isEmpty()) {
+                result.add(m);
+            }
+        }
+        return result;
+    }
+
+    private List<String> splitJsonArray(String json) {
+        List<String> result = new ArrayList<String>();
+        json = json.trim();
+        if (json.startsWith("[") && json.endsWith("]")) {
+            json = json.substring(1, json.length() - 1);
+        }
+        int depth = 0;
+        int start = 0;
+        boolean inString = false;
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '"' && (i == 0 || json.charAt(i - 1) != '\\')) {
+                inString = !inString;
+            }
+            if (!inString) {
+                if (c == '{' || c == '[') depth++;
+                else if (c == '}' || c == ']') depth--;
+                else if (c == ',' && depth == 0) {
+                    result.add(json.substring(start, i));
+                    start = i + 1;
+                }
+            }
+        }
+        if (start < json.length()) {
+            String last = json.substring(start).trim();
+            if (!last.isEmpty()) result.add(last);
+        }
+        return result;
+    }
+
+    private int findMatchingBracket(String str, int openIndex) {
+        char open = str.charAt(openIndex);
+        char close = (open == '[') ? ']' : '}';
+        int depth = 1;
+        boolean inString = false;
+        for (int i = openIndex + 1; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '"' && (i == 0 || str.charAt(i - 1) != '\\')) {
+                inString = !inString;
+            }
+            if (!inString) {
+                if (c == open) depth++;
+                else if (c == close) depth--;
+                if (depth == 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    private void handleGetRandom(HttpExchange exchange) throws IOException {
+        Movie movie = service.getRandomWantToWatch();
+        if (movie != null) {
+            sendResponse(exchange, 200, movieToJson(movie));
+        } else {
+            sendResponse(exchange, 404, "{\"error\":\"没有想看的电影，先添加一些吧！\"}");
+        }
     }
 
     private String escape(String s) {

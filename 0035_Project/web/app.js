@@ -14,9 +14,13 @@
     const statResultEl = document.getElementById('statResult');
     const genreStatsEl = document.getElementById('genreStats');
     const editModalEl = document.getElementById('editModal');
+    const randomModalEl = document.getElementById('randomModal');
+    const randomMovieContentEl = document.getElementById('randomMovieContent');
+    const importOptionsEl = document.getElementById('importOptions');
 
     let currentFilter = { status: 'all', genre: 'all', search: '', sort: 'default' };
     let searchTimer = null;
+    let lastImportFile = null;
 
     function apiRequest(url, options) {
         return fetch(API_BASE + url, options).then(function(res) {
@@ -321,8 +325,141 @@
         });
     }
 
+    function loadStatusStats() {
+        apiRequest('/api/status-stats').then(function(data) {
+            const total = data.total || 1;
+            const watched = data.watched || 0;
+            const want = data.wantToWatch || 0;
+            const shelved = data.shelved || 0;
+
+            document.getElementById('barWatchedNum').textContent = watched;
+            document.getElementById('barWantNum').textContent = want;
+            document.getElementById('barShelvedNum').textContent = shelved;
+
+            setTimeout(function() {
+                document.getElementById('barWatched').style.width = ((watched / total) * 100).toFixed(1) + '%';
+                document.getElementById('barWant').style.width = ((want / total) * 100).toFixed(1) + '%';
+                document.getElementById('barShelved').style.width = ((shelved / total) * 100).toFixed(1) + '%';
+            }, 50);
+
+            const avgEl = document.getElementById('avgRating');
+            if (data.avgRating > 0) {
+                avgEl.innerHTML = '<span class="star">★</span>' + Number(data.avgRating).toFixed(1);
+            } else {
+                avgEl.textContent = '-';
+            }
+        }).catch(function(err) {
+            console.error('加载状态统计失败:', err);
+        });
+    }
+
+    function exportMovies() {
+        window.open(API_BASE + '/api/export', '_blank');
+    }
+
+    function importMovies(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        lastImportFile = file;
+        importOptionsEl.style.display = 'flex';
+    }
+
+    function executeImport() {
+        if (!lastImportFile) return;
+        const mode = document.querySelector('input[name="importMode"]:checked').value;
+        const overwrite = mode === 'overwrite';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const content = e.target.result;
+                const url = API_BASE + '/api/import?overwrite=' + overwrite;
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: content
+                }).then(function(res) {
+                    return res.json();
+                }).then(function(data) {
+                    if (data.success) {
+                        alert('导入成功！共导入 ' + data.imported + ' 部电影');
+                        refreshAll();
+                        lastImportFile = null;
+                        importOptionsEl.style.display = 'none';
+                        document.getElementById('importFile').value = '';
+                    } else {
+                        throw new Error(data.error || '导入失败');
+                    }
+                }).catch(function(err) {
+                    alert('导入失败: ' + err.message);
+                });
+            } catch (err) {
+                alert('文件读取失败: ' + err.message);
+            }
+        };
+        reader.readAsText(lastImportFile, 'UTF-8');
+    }
+
+    function getRandomMovie() {
+        apiRequest('/api/random').then(function(movie) {
+            randomModalEl.style.display = 'flex';
+            renderRandomMovie(movie);
+        }).catch(function(err) {
+            randomModalEl.style.display = 'flex';
+            randomMovieContentEl.innerHTML = '<div class="empty-random">🎬 ' +
+                (err.message || '没有想看的电影，先添加一些吧！') + '</div>';
+        });
+    }
+
+    function renderRandomMovie(movie) {
+        let posterHtml = '';
+        if (movie.posterUrl) {
+            posterHtml = '<img src="' + movie.posterUrl + '" alt="' + escapeHtml(movie.name) +
+                '" onerror="this.parentElement.innerHTML=\'<div class=\\\'random-poster-placeholder\\\'>🎬</div>\'">';
+        } else {
+            posterHtml = '<div class="random-poster-placeholder">🎬</div>';
+        }
+
+        let ratingHtml = '';
+        if (movie.rating > 0) {
+            for (let i = 1; i <= 5; i++) {
+                ratingHtml += (i <= movie.rating) ?
+                    '<span style="color:#f1c40f;">★</span>' :
+                    '<span style="color:#4a4a4a;">★</span>';
+            }
+        }
+
+        let commentHtml = '';
+        if (movie.comment) {
+            commentHtml = '<div class="random-comment">' + escapeHtml(movie.comment) + '</div>';
+        }
+
+        let metaHtml = (movie.director ? escapeHtml(movie.director) + ' · ' : '') +
+            (movie.year || '') + (movie.genre ? ' · ' + escapeHtml(movie.genre) : '');
+
+        randomMovieContentEl.innerHTML = '<div class="random-movie-display">' +
+            '<div class="random-poster">' + posterHtml + '</div>' +
+            '<div class="random-name">' + escapeHtml(movie.name) + '</div>' +
+            '<div class="random-meta">' + metaHtml + '</div>' +
+            '<div class="random-rating">' + ratingHtml + '</div>' +
+            commentHtml +
+            '</div>';
+    }
+
+    function closeRandomModal() {
+        randomModalEl.style.display = 'none';
+        randomMovieContentEl.innerHTML = '';
+    }
+
+    function cancelImport() {
+        lastImportFile = null;
+        importOptionsEl.style.display = 'none';
+        document.getElementById('importFile').value = '';
+    }
+
     function refreshAll() {
         loadStats();
+        loadStatusStats();
         loadGenreStats();
         loadGenres();
         loadMovies();
@@ -427,6 +564,13 @@
             loadMovies();
         }, 300);
     });
+
+    window.getRandomMovie = getRandomMovie;
+    window.closeRandomModal = closeRandomModal;
+    window.exportMovies = exportMovies;
+    window.importMovies = importMovies;
+    window.executeImport = executeImport;
+    window.cancelImport = cancelImport;
 
     refreshAll();
 })();

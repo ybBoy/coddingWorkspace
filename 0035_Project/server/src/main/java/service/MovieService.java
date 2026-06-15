@@ -31,7 +31,9 @@ public class MovieService {
             if (searchLower != null && !searchLower.isEmpty()) {
                 String name = (m.getName() != null) ? m.getName().toLowerCase() : "";
                 String director = (m.getDirector() != null) ? m.getDirector().toLowerCase() : "";
-                matchSearch = name.contains(searchLower) || director.contains(searchLower);
+                String comment = (m.getComment() != null) ? m.getComment().toLowerCase() : "";
+                matchSearch = name.contains(searchLower) || director.contains(searchLower)
+                        || comment.contains(searchLower);
             }
             if (matchStatus && matchGenre && matchSearch) {
                 result.add(m);
@@ -201,5 +203,112 @@ public class MovieService {
             }
         }
         return null;
+    }
+
+    public Map<String, Object> getStatusStats() {
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        int total = movies.size();
+        int watched = getCountByStatus("已看");
+        int wantToWatch = getCountByStatus("想看");
+        int shelved = getCountByStatus("搁置");
+
+        result.put("total", total);
+        result.put("watched", watched);
+        result.put("wantToWatch", wantToWatch);
+        result.put("shelved", shelved);
+
+        if (total > 0) {
+            result.put("watchedPercent", Math.round(watched * 100.0 / total));
+            result.put("wantToWatchPercent", Math.round(wantToWatch * 100.0 / total));
+            result.put("shelvedPercent", Math.round(shelved * 100.0 / total));
+        } else {
+            result.put("watchedPercent", 0);
+            result.put("wantToWatchPercent", 0);
+            result.put("shelvedPercent", 0);
+        }
+
+        int ratedCount = 0;
+        double totalRating = 0;
+        for (Movie m : movies) {
+            if (m.getRating() > 0) {
+                ratedCount++;
+                totalRating += m.getRating();
+            }
+        }
+        result.put("ratedCount", ratedCount);
+        if (ratedCount > 0) {
+            result.put("avgRating", Math.round(totalRating / ratedCount * 10.0) / 10.0);
+        } else {
+            result.put("avgRating", 0);
+        }
+
+        return result;
+    }
+
+    public String exportAll() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"exportDate\": \"").append(new java.util.Date().toString()).append("\",\n");
+        sb.append("  \"totalCount\": ").append(movies.size()).append(",\n");
+        sb.append("  \"movies\": [\n");
+        for (int i = 0; i < movies.size(); i++) {
+            Movie m = movies.get(i);
+            sb.append("    {\n");
+            sb.append("      \"name\": \"").append(escape(m.getName())).append("\",\n");
+            sb.append("      \"director\": \"").append(escape(m.getDirector())).append("\",\n");
+            sb.append("      \"year\": ").append(m.getYear()).append(",\n");
+            sb.append("      \"genre\": \"").append(escape(m.getGenre())).append("\",\n");
+            sb.append("      \"status\": \"").append(escape(m.getStatus())).append("\",\n");
+            sb.append("      \"comment\": \"").append(escape(m.getComment())).append("\",\n");
+            sb.append("      \"rating\": ").append(m.getRating()).append(",\n");
+            sb.append("      \"posterUrl\": \"").append(escape(m.getPosterUrl())).append("\"\n");
+            sb.append("    }");
+            if (i < movies.size() - 1) sb.append(",");
+            sb.append("\n");
+        }
+        sb.append("  ]\n");
+        sb.append("}\n");
+        return sb.toString();
+    }
+
+    private String escape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    public int importMovies(List<Movie> newMovies, boolean overwrite) {
+        if (overwrite) {
+            movies.clear();
+        }
+        int count = 0;
+        for (Movie m : newMovies) {
+            if (m.getName() == null || m.getName().trim().isEmpty()) continue;
+            m.setId(store.generateId());
+            if (m.getCreatedAt() == 0) {
+                m.setCreatedAt(System.currentTimeMillis());
+            }
+            if (m.getStatus() == null || m.getStatus().isEmpty()) {
+                m.setStatus("想看");
+            }
+            movies.add(m);
+            count++;
+        }
+        store.saveMovies(movies);
+        return count;
+    }
+
+    public Movie getRandomWantToWatch() {
+        List<Movie> wantList = new ArrayList<Movie>();
+        for (Movie m : movies) {
+            if ("想看".equalsIgnoreCase(m.getStatus())) {
+                wantList.add(m);
+            }
+        }
+        if (wantList.isEmpty()) {
+            return null;
+        }
+        Random random = new Random();
+        int index = random.nextInt(wantList.size());
+        return wantList.get(index);
     }
 }

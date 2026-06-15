@@ -40,6 +40,7 @@ const BeanTable: React.FC<BeanTableProps> = ({
       case 'RESTOCK': return '补货';
       case 'CONSUME': return '消耗';
       case 'INIT': return '初始';
+      case 'EDIT': return '编辑';
       default: return type;
     }
   };
@@ -49,6 +50,7 @@ const BeanTable: React.FC<BeanTableProps> = ({
       case 'RESTOCK': return 'record-restock';
       case 'CONSUME': return 'record-consume';
       case 'INIT': return 'record-init';
+      case 'EDIT': return 'record-edit';
       default: return '';
     }
   };
@@ -144,8 +146,9 @@ const BeanTable: React.FC<BeanTableProps> = ({
                     </span>
                   </td>
                   <td className="operator-cell">{record.operator || '-'}</td>
-                  <td className={record.type === 'CONSUME' ? 'consume-amount' : record.type === 'INIT' ? '' : 'restock-amount'}>
-                    {record.type === 'CONSUME' ? '-' : record.type === 'INIT' ? '' : '+'}{record.quantity}
+                  <td className={record.type === 'CONSUME' ? 'consume-amount' : record.type === 'INIT' || record.type === 'EDIT' ? '' : 'restock-amount'}>
+                    {record.type === 'CONSUME' ? '-' : record.type === 'RESTOCK' ? '+' : ''}
+                    {record.type === 'EDIT' ? '-' : record.quantity}
                   </td>
                   <td>{record.beforeStock}</td>
                   <td><strong>{record.afterStock}</strong></td>

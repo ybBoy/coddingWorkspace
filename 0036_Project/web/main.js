@@ -2,6 +2,7 @@ const API_BASE = 'http://localhost:8080/api';
 
 let currentTasteFilter = '';
 let currentTimeFilter = '';
+const recipeNotesMap = {};
 
 document.addEventListener('DOMContentLoaded', function() {
     loadRecipes();
@@ -41,6 +42,26 @@ function setupEventListeners() {
             closeModal();
         }
     });
+
+    document.getElementById('recipesGrid').addEventListener('click', handleGridClick);
+}
+
+function handleGridClick(e) {
+    const target = e.target;
+    if (target.classList.contains('btn-edit')) {
+        const card = target.closest('.recipe-card');
+        if (card) {
+            const id = card.dataset.id;
+            const notes = recipeNotesMap[id] || '';
+            openEditModal(id, notes);
+        }
+    } else if (target.classList.contains('btn-danger')) {
+        const card = target.closest('.recipe-card');
+        if (card) {
+            const id = card.dataset.id;
+            deleteRecipe(id);
+        }
+    }
 }
 
 function buildQueryString() {
@@ -80,6 +101,8 @@ function renderRecipes(recipes) {
     const grid = document.getElementById('recipesGrid');
     const emptyState = document.getElementById('emptyState');
 
+    Object.keys(recipeNotesMap).forEach(key => delete recipeNotesMap[key]);
+
     if (recipes.length === 0) {
         grid.innerHTML = '';
         emptyState.style.display = 'block';
@@ -87,7 +110,9 @@ function renderRecipes(recipes) {
     }
 
     emptyState.style.display = 'none';
-    grid.innerHTML = recipes.map(recipe => `
+    grid.innerHTML = recipes.map(recipe => {
+        recipeNotesMap[recipe.id] = recipe.notes || '';
+        return `
         <div class="recipe-card" data-id="${recipe.id}">
             <div class="recipe-header">
                 <h3 class="recipe-name">${escapeHtml(recipe.name)}</h3>
@@ -103,15 +128,15 @@ function renderRecipes(recipes) {
                 </div>
                 <div class="recipe-notes">
                     <strong>📝 做法备注：</strong>
-                    <p>${escapeHtml(recipe.notes) || '暂无备注'}</p>
+                    <p class="recipe-notes-display">${escapeHtml(recipe.notes) || '暂无备注'}</p>
                 </div>
             </div>
             <div class="recipe-actions">
-                <button class="btn btn-edit" onclick="openEditModal('${recipe.id}', '${escapeHtml(recipe.notes).replace(/'/g, "\\'")}')">编辑备注</button>
-                <button class="btn btn-danger" onclick="deleteRecipe('${recipe.id}')">删除</button>
+                <button class="btn btn-edit">编辑备注</button>
+                <button class="btn btn-danger">删除</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 async function handleAddRecipe(e) {
@@ -161,11 +186,11 @@ function closeModal() {
 
 async function handleSaveEdit() {
     const id = document.getElementById('editRecipeId').value;
-    const notes = document.getElementById('editNotes').value.trim();
+    const notes = document.getElementById('editNotes').value;
 
     try {
         const response = await fetch(API_BASE + '/recipes/' + id, {
-            method: 'PATCH',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -207,6 +232,7 @@ async function deleteRecipe(id) {
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;

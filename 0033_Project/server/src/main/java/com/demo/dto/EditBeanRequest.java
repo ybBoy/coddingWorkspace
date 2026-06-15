@@ -5,6 +5,7 @@ public class EditBeanRequest {
     private String origin;
     private String roastLevel;
     private Integer minStockLevel;
+    private String operator;
 
     public String getName() {
         return name;
@@ -36,5 +37,13 @@ public class EditBeanRequest {
 
     public void setMinStockLevel(Integer minStockLevel) {
         this.minStockLevel = minStockLevel;
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public void setOperator(String operator) {
+        this.operator = operator;
     }
 }

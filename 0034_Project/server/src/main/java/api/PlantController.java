@@ -1,11 +1,15 @@
 package api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import domain.CareLog;
+import domain.CareType;
 import domain.Plant;
+import domain.PlantStatistics;
+import domain.PlantStatus;
 import service.PlantCareService;
 
 import java.io.IOException;
@@ -14,6 +18,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +31,9 @@ public class PlantController {
     private final ObjectMapper objectMapper;
     private static final Set<String> VALID_CARE_TYPES = new HashSet<>(
             Arrays.asList("WATERING", "FERTILIZING", "PRUNING"));
+    private static final Set<String> VALID_STATUSES = new HashSet<>(
+            Arrays.asList("HEALTHY", "GROWING_WELL", "NEEDS_ATTENTION", "SICK", "DORMANT",
+                    "健康", "生长良好", "需要关注", "生病", "休眠"));
 
     public PlantController(PlantCareService service) {
         this.service = service;
@@ -51,14 +59,26 @@ public class PlantController {
             try {
                 if ("GET".equals(method) && path.equals("/api/plants")) {
                     handleGetPlants(exchange);
+                } else if ("GET".equals(method) && path.equals("/api/plants/sorted")) {
+                    handleGetSortedPlants(exchange);
                 } else if ("GET".equals(method) && path.equals("/api/plants/needing-water")) {
                     handleGetNeedingWater(exchange);
+                } else if ("GET".equals(method) && path.equals("/api/plants/export")) {
+                    handleExportPlants(exchange);
+                } else if ("POST".equals(method) && path.equals("/api/plants/import")) {
+                    handleImportPlants(exchange);
+                } else if ("GET".equals(method) && path.equals("/api/statistics")) {
+                    handleGetStatistics(exchange);
+                } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+/timeline")) {
+                    handleGetTimeline(exchange, path);
                 } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+/care-logs/recent")) {
                     handleGetRecentCareLogs(exchange, path);
                 } else if ("GET".equals(method) && path.matches("/api/plants/[^/]+")) {
                     handleGetPlant(exchange, path);
                 } else if ("POST".equals(method) && path.equals("/api/plants")) {
                     handleCreatePlant(exchange);
+                } else if ("PUT".equals(method) && path.matches("/api/plants/[^/]+/photo")) {
+                    handleUpdatePhoto(exchange, path);
                 } else if ("PUT".equals(method) && path.matches("/api/plants/[^/]+/status")) {
                     handleUpdateStatus(exchange, path);
                 } else if ("PUT".equals(method) && path.matches("/api/plants/[^/]+")) {
@@ -90,6 +110,11 @@ public class PlantController {
             result = service.getAllPlants();
         }
 
+        sendJsonResponse(exchange, 200, result);
+    }
+
+    private void handleGetSortedPlants(HttpExchange exchange) throws IOException {
+        List<Plant> result = service.getAllPlantsSortedByUrgency();
         sendJsonResponse(exchange, 200, result);
     }
 
@@ -143,8 +168,33 @@ public class PlantController {
     private void handleUpdateStatus(HttpExchange exchange, String path) throws IOException {
         String id = extractIdFromStatusPath(path);
         Map<String, String> body = readBody(exchange, Map.class);
-        String status = body.get("status");
+        String statusStr = body.get("status");
+        if (statusStr == null || statusStr.trim().isEmpty()) {
+            sendResponse(exchange, 400, "{\"error\":\"Status cannot be empty\"}");
+            return;
+        }
+        if (!VALID_STATUSES.contains(statusStr)) {
+            sendResponse(exchange, 400, "{\"error\":\"Invalid status\"}");
+            return;
+        }
+        PlantStatus status = PlantStatus.valueOf(statusStr.toUpperCase().replace(" ", "_"));
         Plant updated = service.updatePlantStatus(id, status);
+        if (updated != null) {
+            sendJsonResponse(exchange, 200, updated);
+        } else {
+            sendResponse(exchange, 404, "{\"error\":\"Plant not found\"}");
+        }
+    }
+
+    private void handleUpdatePhoto(HttpExchange exchange, String path) throws IOException {
+        String id = path.replace("/api/plants/", "").replace("/photo", "");
+        Map<String, String> body = readBody(exchange, Map.class);
+        String photoUrl = body.get("photoUrl");
+        if (photoUrl == null || photoUrl.trim().isEmpty()) {
+            sendResponse(exchange, 400, "{\"error\":\"Photo URL cannot be empty\"}");
+            return;
+        }
+        Plant updated = service.updatePlantPhoto(id, photoUrl);
         if (updated != null) {
             sendJsonResponse(exchange, 200, updated);
         } else {
@@ -155,17 +205,18 @@ public class PlantController {
     private void handleAddCareLog(HttpExchange exchange, String path) throws IOException {
         String id = extractIdFromCareLogPath(path);
         Map<String, String> body = readBody(exchange, Map.class);
-        String type = body.get("type");
+        String typeStr = body.get("type");
         String note = body.get("note");
-        if (type == null || type.trim().isEmpty()) {
+        if (typeStr == null || typeStr.trim().isEmpty()) {
             sendResponse(exchange, 400, "{\"error\":\"Care type cannot be empty\"}");
             return;
         }
-        if (!VALID_CARE_TYPES.contains(type)) {
+        if (!VALID_CARE_TYPES.contains(typeStr)) {
             sendResponse(exchange, 400,
                     "{\"error\":\"Invalid care type. Must be one of: WATERING, FERTILIZING, PRUNING\"}");
             return;
         }
+        CareType type = CareType.valueOf(typeStr);
         CareLog log = service.addCareLog(id, type, note);
         if (log != null) {
             sendJsonResponse(exchange, 201, log);
@@ -191,9 +242,40 @@ public class PlantController {
         sendJsonResponse(exchange, 200, logs);
     }
 
+    private void handleGetTimeline(HttpExchange exchange, String path) throws IOException {
+        String id = path.replace("/api/plants/", "").replace("/timeline", "");
+        Map<LocalDateTime, List<CareLog>> timeline = service.getCareTimeline(id);
+        sendJsonResponse(exchange, 200, timeline);
+    }
+
     private void handleGetNeedingWater(HttpExchange exchange) throws IOException {
         List<Plant> result = service.getPlantsNeedingWater();
         sendJsonResponse(exchange, 200, result);
+    }
+
+    private void handleGetStatistics(HttpExchange exchange) throws IOException {
+        PlantStatistics stats = service.getStatistics();
+        sendJsonResponse(exchange, 200, stats);
+    }
+
+    private void handleExportPlants(HttpExchange exchange) throws IOException {
+        List<Plant> result = service.exportPlants();
+        String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
+        exchange.getResponseHeaders().add("Content-Disposition", "attachment; filename=plants-backup.json");
+        sendResponse(exchange, 200, json);
+    }
+
+    private void handleImportPlants(HttpExchange exchange) throws IOException {
+        try {
+            List<Plant> importedPlants = objectMapper.readValue(
+                    exchange.getRequestBody(),
+                    new TypeReference<List<Plant>>() {}
+            );
+            service.importPlants(importedPlants);
+            sendResponse(exchange, 200, "{\"message\":\"Imported " + importedPlants.size() + " plants successfully\"}");
+        } catch (Exception e) {
+            sendResponse(exchange, 400, "{\"error\":\"Invalid JSON format: " + e.getMessage() + "\"}");
+        }
     }
 
     private String extractId(String path) {

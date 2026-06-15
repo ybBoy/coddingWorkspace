@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { CoffeeBean, StockRecord, AddBeanRequest, WarningSummary, SortField, SortDir } from '../types';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { CoffeeBean, StockRecord, AddBeanRequest, WarningSummary, SortField, SortDir, StatisticsResponse } from '../types';
 import { beanService } from '../services/beanService';
 import LowStockBanner from '../ui/LowStockBanner';
 import SearchSortBar from '../ui/SearchSortBar';
@@ -13,6 +13,7 @@ import EditBeanDialog from '../ui/EditBeanDialog';
 const InventoryView: React.FC = () => {
   const [beans, setBeans] = useState<CoffeeBean[]>([]);
   const [warningSummary, setWarningSummary] = useState<WarningSummary | null>(null);
+  const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
   const [selectedBean, setSelectedBean] = useState<CoffeeBean | null>(null);
   const [recentRecords, setRecentRecords] = useState<StockRecord[]>([]);
   const [editBean, setEditBean] = useState<CoffeeBean | null>(null);
@@ -25,6 +26,15 @@ const InventoryView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const selectedBeanIdRef = useRef<string | null>(null);
+
+  const refreshStatistics = useCallback(async () => {
+    try {
+      const data = await beanService.getStatistics();
+      setStatistics(data);
+    } catch (_) {}
+  }, []);
+
   const loadBeans = useCallback(async () => {
     try {
       setLoading(true);
@@ -35,17 +45,28 @@ const InventoryView: React.FC = () => {
         sortDir
       );
       setBeans(data);
+
       try {
         const summary = await beanService.getWarningSummary();
         setWarningSummary(summary);
       } catch (_) {}
-      if (selectedBean) {
-        const updated = data.find((b) => b.id === selectedBean.id);
+
+      refreshStatistics();
+
+      const sid = selectedBeanIdRef.current;
+      if (sid) {
+        const updated = data.find((b) => b.id === sid);
         if (updated) {
-          setSelectedBean(updated);
+          setSelectedBean((prev) => {
+            if (prev && prev.id === updated.id) {
+              return updated;
+            }
+            return prev;
+          });
         } else {
           setSelectedBean(null);
           setRecentRecords([]);
+          selectedBeanIdRef.current = null;
         }
       }
     } catch (err) {
@@ -53,7 +74,7 @@ const InventoryView: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterRoast, search, sortBy, sortDir, selectedBean]);
+  }, [filterRoast, search, sortBy, sortDir, refreshStatistics]);
 
   useEffect(() => {
     loadBeans();
@@ -63,9 +84,11 @@ const InventoryView: React.FC = () => {
     if (selectedBean?.id === bean.id) {
       setSelectedBean(null);
       setRecentRecords([]);
+      selectedBeanIdRef.current = null;
       return;
     }
     setSelectedBean(bean);
+    selectedBeanIdRef.current = bean.id;
     try {
       const records = await beanService.getRecentRecords(bean.id, 5);
       setRecentRecords(records);
@@ -87,6 +110,12 @@ const InventoryView: React.FC = () => {
     try {
       await beanService.updateBean(id, req);
       loadBeans();
+      if (selectedBeanIdRef.current === id) {
+        try {
+          const records = await beanService.getRecentRecords(id, 5);
+          setRecentRecords(records);
+        } catch (_) {}
+      }
     } catch (err) {
       setError('编辑咖啡豆失败');
     }
@@ -96,9 +125,11 @@ const InventoryView: React.FC = () => {
     try {
       await beanService.restockBean(id, req);
       loadBeans();
-      if (selectedBean?.id === id) {
-        const records = await beanService.getRecentRecords(id, 5);
-        setRecentRecords(records);
+      if (selectedBeanIdRef.current === id) {
+        try {
+          const records = await beanService.getRecentRecords(id, 5);
+          setRecentRecords(records);
+        } catch (_) {}
       }
     } catch (err: any) {
       setError(err.message || '补货失败');
@@ -109,9 +140,11 @@ const InventoryView: React.FC = () => {
     try {
       await beanService.consumeBean(id, req);
       loadBeans();
-      if (selectedBean?.id === id) {
-        const records = await beanService.getRecentRecords(id, 5);
-        setRecentRecords(records);
+      if (selectedBeanIdRef.current === id) {
+        try {
+          const records = await beanService.getRecentRecords(id, 5);
+          setRecentRecords(records);
+        } catch (_) {}
       }
     } catch (err: any) {
       setError(err.message || '消耗记录失败');
@@ -122,9 +155,10 @@ const InventoryView: React.FC = () => {
     if (!window.confirm('确定要删除这款咖啡豆吗？删除后不可恢复。')) return;
     try {
       await beanService.deleteBean(id);
-      if (selectedBean?.id === id) {
+      if (selectedBeanIdRef.current === id) {
         setSelectedBean(null);
         setRecentRecords([]);
+        selectedBeanIdRef.current = null;
       }
       loadBeans();
     } catch (err) {
@@ -147,7 +181,7 @@ const InventoryView: React.FC = () => {
         </div>
       )}
 
-      <StatisticsPanel />
+      <StatisticsPanel initialData={statistics} onRefresh={refreshStatistics} />
 
       <div className="main-content">
         <div className="left-panel">

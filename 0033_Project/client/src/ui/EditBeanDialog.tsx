@@ -13,6 +13,7 @@ const EditBeanDialog: React.FC<EditBeanDialogProps> = ({ bean, onClose, onSave }
   const [origin, setOrigin] = useState('');
   const [roastLevel, setRoastLevel] = useState('MEDIUM');
   const [minStockLevel, setMinStockLevel] = useState(0);
+  const [operator, setOperator] = useState('');
 
   useEffect(() => {
     if (bean) {
@@ -20,6 +21,7 @@ const EditBeanDialog: React.FC<EditBeanDialogProps> = ({ bean, onClose, onSave }
       setOrigin(bean.origin);
       setRoastLevel(bean.roastLevel);
       setMinStockLevel(bean.minStockLevel);
+      setOperator('');
     }
   }, [bean]);
 
@@ -36,6 +38,7 @@ const EditBeanDialog: React.FC<EditBeanDialogProps> = ({ bean, onClose, onSave }
       onClose();
       return;
     }
+    if (operator.trim()) req.operator = operator.trim();
     onSave(bean.id, req);
     onClose();
   };
@@ -84,6 +87,15 @@ const EditBeanDialog: React.FC<EditBeanDialogProps> = ({ bean, onClose, onSave }
                 min="0"
                 value={minStockLevel}
                 onChange={(e) => setMinStockLevel(Number(e.target.value))}
+              />
+            </div>
+            <div className="form-group">
+              <label>操作人</label>
+              <input
+                type="text"
+                placeholder="如：张三 (可选)"
+                value={operator}
+                onChange={(e) => setOperator(e.target.value)}
               />
             </div>
             <div className="form-group info-only">

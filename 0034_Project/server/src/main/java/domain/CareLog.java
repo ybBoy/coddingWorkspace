@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class CareLog {
     private String id;
-    private String type;
+    private CareType type;
     private String note;
     private LocalDateTime timestamp;
 
@@ -12,7 +12,7 @@ public class CareLog {
         this.timestamp = LocalDateTime.now();
     }
 
-    public CareLog(String id, String type, String note) {
+    public CareLog(String id, CareType type, String note) {
         this.id = id;
         this.type = type;
         this.note = note;
@@ -27,11 +27,11 @@ public class CareLog {
         this.id = id;
     }
 
-    public String getType() {
+    public CareType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(CareType type) {
         this.type = type;
     }
 

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影收藏清单</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">🎬 电影收藏清单</h1>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">总电影数</span>
+                    <span class="stat-value" id="statTotal">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">已看</span>
+                    <span class="stat-value" id="statWatched">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">想看</span>
+                    <span class="stat-value" id="statWant">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">搁置</span>
+                    <span class="stat-value" id="statShelved">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">当前结果</span>
+                    <span class="stat-value" id="statResult">0</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="genre-stats-section">
+            <h2 class="section-title">类型统计</h2>
+            <div id="genreStats" class="genre-stats">
+                <span class="empty-hint-sm">暂无数据</span>
+            </div>
+        </section>
+
+        <section class="add-form">
+            <h2 class="section-title">新增电影</h2>
+            <form id="movieForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieName">电影名 *</label>
+                        <input type="text" id="movieName" required placeholder="例如：肖申克的救赎">
+                    </div>
+                    <div class="form-group">
+                        <label for="movieDirector">导演</label>
+                        <input type="text" id="movieDirector" placeholder="例如：弗兰克·德拉邦特">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieYear">年份</label>
+                        <input type="number" id="movieYear" min="1900" max="2100" placeholder="例如：1994">
+                    </div>
+                    <div class="form-group">
+                        <label for="movieGenre">类型</label>
+                        <input type="text" id="movieGenre" placeholder="例如：剧情 / 犯罪">
+                    </div>
+                    <div class="form-group">
+                        <label for="movieStatus">观看状态</label>
+                        <select id="movieStatus">
+                            <option value="想看">想看</option>
+                            <option value="已看">已看</option>
+                            <option value="搁置">搁置</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieRating">评分</label>
+                        <select id="movieRating">
+                            <option value="0">未评分</option>
+                            <option value="1">⭐ 1星</option>
+                            <option value="2">⭐⭐ 2星</option>
+                            <option value="3">⭐⭐⭐ 3星</option>
+                            <option value="4">⭐⭐⭐⭐ 4星</option>
+                            <option value="5">⭐⭐⭐⭐⭐ 5星</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 2; min-width: 280px;">
+                        <label for="moviePoster">海报链接</label>
+                        <input type="text" id="moviePoster" placeholder="https://example.com/poster.jpg（可选）">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="movieComment">短评</label>
+                        <input type="text" id="movieComment" placeholder="写下你的一句话短评...">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">添加电影</button>
+            </form>
+        </section>
+
+        <section class="filters">
+            <h2 class="section-title">搜索 & 筛选 & 排序</h2>
+            <div class="filter-row">
+                <div class="form-group" style="flex: 2; min-width: 240px;">
+                    <label for="searchInput">🔍 搜索（电影名/导演）</label>
+                    <input type="text" id="searchInput" placeholder="输入关键词搜索...">
+                </div>
+                <div class="form-group">
+                    <label for="filterStatus">按状态</label>
+                    <select id="filterStatus">
+                        <option value="all">全部</option>
+                        <option value="想看">想看</option>
+                        <option value="已看">已看</option>
+                        <option value="搁置">搁置</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterGenre">按类型</label>
+                    <select id="filterGenre">
+                        <option value="all">全部</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sortSelect">排序方式</label>
+                    <select id="sortSelect">
+                        <option value="default">默认排序</option>
+                        <option value="recent">最近添加</option>
+                        <option value="year_desc">年份（新→旧）</option>
+                        <option value="year_asc">年份（旧→新）</option>
+                        <option value="rating_desc">评分（高→低）</option>
+                        <option value="name_asc">名称（A-Z）</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="movie-list-section">
+            <h2 class="section-title">电影列表</h2>
+            <div id="movieList" class="movie-list">
+                <p class="empty-hint">暂无电影，快来添加第一部吧！</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="editModal" class="modal-overlay" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>编辑电影</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editMovieId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editMovieName">电影名 *</label>
+                        <input type="text" id="editMovieName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMovieDirector">导演</label>
+                        <input type="text" id="editMovieDirector">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editMovieYear">年份</label>
+                        <input type="number" id="editMovieYear" min="1900" max="2100">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMovieGenre">类型</label>
+                        <input type="text" id="editMovieGenre">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMovieStatus">观看状态</label>
+                        <select id="editMovieStatus">
+                            <option value="想看">想看</option>
+                            <option value="已看">已看</option>
+                            <option value="搁置">搁置</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editMovieRating">评分</label>
+                        <select id="editMovieRating">
+                            <option value="0">未评分</option>
+                            <option value="1">⭐ 1星</option>
+                            <option value="2">⭐⭐ 2星</option>
+                            <option value="3">⭐⭐⭐ 3星</option>
+                            <option value="4">⭐⭐⭐⭐ 4星</option>
+                            <option value="5">⭐⭐⭐⭐⭐ 5星</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 2; min-width: 240px;">
+                        <label for="editMoviePoster">海报链接</label>
+                        <input type="text" id="editMoviePoster">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="editMovieComment">短评</label>
+                        <input type="text" id="editMovieComment">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeEditModal()">取消</button>
+                <button class="btn-primary" onclick="saveEdit()">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

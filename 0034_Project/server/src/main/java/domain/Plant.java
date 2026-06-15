@@ -9,19 +9,21 @@ public class Plant {
     private String name;
     private String location;
     private String lightRequirement;
-    private String status;
+    private PlantStatus status;
     private int wateringIntervalDays;
     private LocalDateTime lastWateredTime;
     private LocalDateTime createdAt;
+    private String photoUrl;
     private List<CareLog> careLogs;
 
     public Plant() {
         this.careLogs = new ArrayList<>();
         this.createdAt = LocalDateTime.now();
+        this.status = PlantStatus.HEALTHY;
     }
 
     public Plant(String id, String name, String location, String lightRequirement,
-                 String status, int wateringIntervalDays) {
+                 PlantStatus status, int wateringIntervalDays) {
         this.id = id;
         this.name = name;
         this.location = location;
@@ -40,12 +42,25 @@ public class Plant {
         return LocalDateTime.now().isAfter(dueTime);
     }
 
+    public LocalDateTime getNextWateringTime() {
+        if (lastWateredTime == null || wateringIntervalDays <= 0) {
+            return LocalDateTime.now();
+        }
+        return lastWateredTime.plusDays(wateringIntervalDays);
+    }
+
+    public long getDaysUntilNextWatering() {
+        LocalDateTime nextWatering = getNextWateringTime();
+        LocalDateTime now = LocalDateTime.now();
+        return java.time.Duration.between(now, nextWatering).toDays();
+    }
+
     public void addCareLog(CareLog log) {
         if (careLogs == null) {
             careLogs = new ArrayList<>();
         }
         careLogs.add(0, log);
-        if ("WATERING".equals(log.getType())) {
+        if (CareType.WATERING.name().equals(log.getType())) {
             this.lastWateredTime = log.getTimestamp();
         }
     }
@@ -55,6 +70,13 @@ public class Plant {
             return new ArrayList<>();
         }
         return careLogs.subList(0, Math.min(count, careLogs.size()));
+    }
+
+    public LocalDateTime getLastCareTime() {
+        if (careLogs == null || careLogs.isEmpty()) {
+            return createdAt;
+        }
+        return careLogs.get(0).getTimestamp();
     }
 
     public String getId() {
@@ -89,11 +111,11 @@ public class Plant {
         this.lightRequirement = lightRequirement;
     }
 
-    public String getStatus() {
+    public PlantStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PlantStatus status) {
         this.status = status;
     }
 
@@ -119,6 +141,14 @@ public class Plant {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 
     public List<CareLog> getCareLogs() {

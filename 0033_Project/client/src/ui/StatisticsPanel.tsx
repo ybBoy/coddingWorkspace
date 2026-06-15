@@ -3,15 +3,30 @@ import { StatisticsResponse } from '../types';
 import { beanService } from '../services/beanService';
 import { getRoastLabel } from '../constants/roastLevels';
 
-const StatisticsPanel: React.FC = () => {
-  const [stats, setStats] = useState<StatisticsResponse | null>(null);
+interface StatisticsPanelProps {
+  initialData?: StatisticsResponse | null;
+  onRefresh?: () => Promise<void>;
+}
+
+const StatisticsPanel: React.FC<StatisticsPanelProps> = ({ initialData, onRefresh }) => {
+  const [stats, setStats] = useState<StatisticsResponse | null>(initialData || null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialData !== undefined) {
+      setStats(initialData);
+    }
+  }, [initialData]);
 
   const loadStats = async () => {
     try {
       setLoading(true);
-      const data = await beanService.getStatistics();
-      setStats(data);
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        const data = await beanService.getStatistics();
+        setStats(data);
+      }
     } catch (err) {
       // ignore
     } finally {
@@ -20,12 +35,19 @@ const StatisticsPanel: React.FC = () => {
   };
 
   useEffect(() => {
-    loadStats();
-    const timer = setInterval(loadStats, 30000);
+    if (!initialData) {
+      loadStats();
+    }
+    const timer = setInterval(() => {
+      if (onRefresh) {
+        onRefresh();
+      } else {
+        loadStats();
+      }
+    }, 30000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const refresh = () => loadStats();
 
   if (loading && !stats) {
     return <div className="stats-panel loading-panel">加载中...</div>;
@@ -36,7 +58,7 @@ const StatisticsPanel: React.FC = () => {
       <div className="stats-panel">
         <div className="panel-header">
           <h3>📊 数据统计</h3>
-          <button className="btn btn-small btn-secondary" onClick={refresh}>
+          <button className="btn btn-small btn-secondary" onClick={loadStats}>
             刷新
           </button>
         </div>
@@ -49,7 +71,7 @@ const StatisticsPanel: React.FC = () => {
     <div className="stats-panel">
       <div className="panel-header">
         <h3>📊 数据统计</h3>
-        <button className="btn btn-small btn-secondary" onClick={refresh}>
+        <button className="btn btn-small btn-secondary" onClick={loadStats}>
           刷新
         </button>
       </div>

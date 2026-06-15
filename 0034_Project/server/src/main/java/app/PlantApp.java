@@ -25,6 +25,7 @@ public class PlantApp {
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
             server.createContext("/api/plants", controller.new PlantsHandler());
+            server.createContext("/api/statistics", controller.new PlantsHandler());
             server.setExecutor(null);
             server.start();
 

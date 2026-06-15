@@ -19,9 +19,14 @@ for /f "delims=" %%f in ('dir /s /b "%BUILD_DIR%\*.class" 2^>nul') do del "%%f"
 
 echo.
 echo [3/3] 编译 Java 源代码...
-javac -encoding UTF-8 -d "%BUILD_DIR%" -cp "%LIB_DIR%\json-20210307.jar" "%SRC_DIR%\*.java" "%SRC_DIR%\model\*.java" "%SRC_DIR%\store\*.java" "%SRC_DIR%\service\*.java" "%SRC_DIR%\controller\*.java"
+pushd "%SRC_DIR%"
+set "JAVA_FILES="
+for /r %%f in (*.java) do call set "JAVA_FILES=%%JAVA_FILES%% %%~pnxf"
+javac -encoding UTF-8 -d "..\..\..\build\classes" -cp "..\..\..\lib\json-20210307.jar" %%JAVA_FILES%%
+set "ERR_LEVEL=%ERRORLEVEL%"
+popd
 
-if %ERRORLEVEL% EQU 0 (
+if %ERR_LEVEL% EQU 0 (
     echo.
     echo ========================================
     echo  ✅ 编译成功！

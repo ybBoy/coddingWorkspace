@@ -2,7 +2,7 @@
   {
     "estimatedTime": 15,
     "createdAt": 1781454424397,
-    "notes": "先炒蛋，再炒番茄，最后混合",
+    "notes": "测试PUT更新！包含'单引号'和\n换行符\n还有\"双引号\"",
     "mainIngredients": "鸡蛋、番茄、葱花",
     "taste": "清淡",
     "name": "番茄炒蛋",

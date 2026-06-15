@@ -128,25 +128,55 @@ public class BeanInventoryService {
             throw new IllegalArgumentException("Bean not found: " + id);
         }
         CoffeeBean bean = beanOpt.get();
+        List<String> changes = new ArrayList<>();
+        int stockBefore = bean.getStockGrams();
+
         if (req.getName() != null && !req.getName().trim().isEmpty()) {
-            bean.setName(req.getName().trim());
+            String newName = req.getName().trim();
+            if (!newName.equals(bean.getName())) {
+                changes.add("name: " + bean.getName() + " -> " + newName);
+                bean.setName(newName);
+            }
         }
         if (req.getOrigin() != null) {
-            bean.setOrigin(req.getOrigin().trim());
+            String newOrigin = req.getOrigin().trim();
+            String oldOrigin = bean.getOrigin() == null ? "" : bean.getOrigin();
+            if (!newOrigin.equals(oldOrigin)) {
+                changes.add("origin: " + oldOrigin + " -> " + newOrigin);
+                bean.setOrigin(newOrigin);
+            }
         }
         if (req.getRoastLevel() != null && !req.getRoastLevel().isEmpty()) {
             if (!RoastLevel.isValid(req.getRoastLevel())) {
                 throw new IllegalArgumentException("Invalid roast level: " + req.getRoastLevel());
             }
-            bean.setRoastLevel(req.getRoastLevel());
+            if (!req.getRoastLevel().equals(bean.getRoastLevel())) {
+                changes.add("roastLevel: " + bean.getRoastLevel() + " -> " + req.getRoastLevel());
+                bean.setRoastLevel(req.getRoastLevel());
+            }
         }
         if (req.getMinStockLevel() != null) {
             if (req.getMinStockLevel() < 0) {
                 throw new IllegalArgumentException("Min stock level cannot be negative");
             }
-            bean.setMinStockLevel(req.getMinStockLevel());
+            if (!req.getMinStockLevel().equals(bean.getMinStockLevel())) {
+                changes.add("minStockLevel: " + bean.getMinStockLevel() + " -> " + req.getMinStockLevel());
+                bean.setMinStockLevel(req.getMinStockLevel());
+            }
         }
-        bean.setLastModified(LocalDateTime.now());
+
+        if (!changes.isEmpty()) {
+            bean.setLastModified(LocalDateTime.now());
+            String remark = "Edit info - " + String.join("; ", changes);
+            String operator = (req.getOperator() != null && !req.getOperator().isEmpty())
+                    ? req.getOperator() : "anonymous";
+            StockRecord record = createRecord(id, "EDIT", stockBefore, stockBefore, 0,
+                    operator, remark);
+            if (bean.getStockRecords() == null) {
+                bean.setStockRecords(new ArrayList<>());
+            }
+            bean.getStockRecords().add(0, record);
+        }
         return repository.save(bean);
     }
 
@@ -326,7 +356,10 @@ public class BeanInventoryService {
         }
         List<CoffeeBean> saved = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
+        int index = 0;
         for (CoffeeBean bean : beans) {
+            index++;
+            validateImportedBean(bean, index);
             if (bean.getId() == null || bean.getId().isEmpty()) {
                 bean.setId(UUID.randomUUID().toString());
             }
@@ -337,9 +370,35 @@ public class BeanInventoryService {
             if (bean.getStockRecords() == null) {
                 bean.setStockRecords(new ArrayList<>());
             }
+            if (bean.getStockRecords().isEmpty() && bean.getStockGrams() > 0) {
+                StockRecord record = createRecord(bean.getId(), "INIT",
+                        0, bean.getStockGrams(), bean.getStockGrams(),
+                        "import", "Imported from JSON/CSV");
+                bean.getStockRecords().add(record);
+            }
             saved.add(repository.save(bean));
         }
         return saved;
+    }
+
+    private void validateImportedBean(CoffeeBean bean, int index) {
+        String prefix = "Record #" + index + ": ";
+        if (bean.getName() == null || bean.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException(prefix + "Bean name is required");
+        }
+        bean.setName(bean.getName().trim());
+        if (bean.getOrigin() != null) {
+            bean.setOrigin(bean.getOrigin().trim());
+        }
+        if (!RoastLevel.isValid(bean.getRoastLevel())) {
+            throw new IllegalArgumentException(prefix + "Invalid roast level: " + bean.getRoastLevel());
+        }
+        if (bean.getStockGrams() < 0) {
+            throw new IllegalArgumentException(prefix + "Stock grams cannot be negative: " + bean.getStockGrams());
+        }
+        if (bean.getMinStockLevel() < 0) {
+            throw new IllegalArgumentException(prefix + "Min stock level cannot be negative: " + bean.getMinStockLevel());
+        }
     }
 
     public void replaceAll(List<CoffeeBean> beans) {

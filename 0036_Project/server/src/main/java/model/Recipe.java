@@ -4,6 +4,7 @@ public class Recipe {
     private String id;
     private String name;
     private String taste;
+    private String category;
     private int estimatedTime;
     private String mainIngredients;
     private String notes;
@@ -12,10 +13,11 @@ public class Recipe {
     public Recipe() {
     }
 
-    public Recipe(String id, String name, String taste, int estimatedTime, String mainIngredients, String notes) {
+    public Recipe(String id, String name, String taste, String category, int estimatedTime, String mainIngredients, String notes) {
         this.id = id;
         this.name = name;
         this.taste = taste;
+        this.category = category;
         this.estimatedTime = estimatedTime;
         this.mainIngredients = mainIngredients;
         this.notes = notes;
@@ -44,6 +46,14 @@ public class Recipe {
 
     public void setTaste(String taste) {
         this.taste = taste;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public int getEstimatedTime() {

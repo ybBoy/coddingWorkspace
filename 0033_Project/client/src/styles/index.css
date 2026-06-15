@@ -782,6 +782,11 @@ body {
   color: #1565C0;
 }
 
+.record-edit {
+  background-color: #E1BEE7;
+  color: #6A1B9A;
+}
+
 .restock-amount {
   color: #2E7D32;
   font-weight: 600;

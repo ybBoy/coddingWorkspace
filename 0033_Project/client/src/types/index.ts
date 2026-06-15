@@ -13,7 +13,7 @@ export interface CoffeeBean {
 export interface StockRecord {
   id: string;
   beanId: string;
-  type: 'INIT' | 'RESTOCK' | 'CONSUME';
+  type: 'INIT' | 'RESTOCK' | 'CONSUME' | 'EDIT';
   quantity: number;
   beforeStock: number;
   afterStock: number;
@@ -35,6 +35,7 @@ export interface EditBeanRequest {
   origin?: string;
   roastLevel?: string;
   minStockLevel?: number;
+  operator?: string;
 }
 
 export interface StockOperationRequest {

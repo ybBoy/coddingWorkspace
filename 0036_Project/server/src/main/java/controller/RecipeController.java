@@ -32,8 +32,6 @@ public class RecipeController {
             handleAddRecipe(exchange);
         } else if (path.startsWith("/api/recipes/") && method.equals("PUT")) {
             handleUpdateRecipe(exchange);
-        } else if (path.startsWith("/api/recipes/") && method.equals("PATCH")) {
-            handlePatchRecipeNotes(exchange);
         } else if (path.startsWith("/api/recipes/") && method.equals("DELETE")) {
             handleDeleteRecipe(exchange);
         } else if (path.equals("/api/stats") && method.equals("GET")) {
@@ -82,28 +80,21 @@ public class RecipeController {
 
     private void handleUpdateRecipe(HttpExchange exchange) throws IOException {
         String id = extractId(exchange.getRequestURI().getPath());
+        Recipe existing = service.getRecipeById(id);
+        if (existing == null) {
+            sendResponse(exchange, 404, new JSONObject().put("error", "Recipe not found").toString());
+            return;
+        }
+
         JSONObject body = getRequestBody(exchange);
-        String name = body.getString("name");
-        String taste = body.getString("taste");
-        int estimatedTime = body.getInt("estimatedTime");
-        String mainIngredients = body.getString("mainIngredients");
-        String notes = body.optString("notes", "");
+
+        String name = body.has("name") ? body.getString("name") : existing.getName();
+        String taste = body.has("taste") ? body.getString("taste") : existing.getTaste();
+        int estimatedTime = body.has("estimatedTime") ? body.getInt("estimatedTime") : existing.getEstimatedTime();
+        String mainIngredients = body.has("mainIngredients") ? body.getString("mainIngredients") : existing.getMainIngredients();
+        String notes = body.has("notes") ? body.getString("notes") : existing.getNotes();
 
         boolean success = service.updateRecipe(id, name, taste, estimatedTime, mainIngredients, notes);
-        if (success) {
-            Recipe updated = service.getRecipeById(id);
-            sendResponse(exchange, 200, recipeToJson(updated).toString());
-        } else {
-            sendResponse(exchange, 404, new JSONObject().put("error", "Recipe not found").toString());
-        }
-    }
-
-    private void handlePatchRecipeNotes(HttpExchange exchange) throws IOException {
-        String id = extractId(exchange.getRequestURI().getPath());
-        JSONObject body = getRequestBody(exchange);
-        String notes = body.optString("notes", "");
-
-        boolean success = service.updateRecipeNotes(id, notes);
         if (success) {
             Recipe updated = service.getRecipeById(id);
             sendResponse(exchange, 200, recipeToJson(updated).toString());

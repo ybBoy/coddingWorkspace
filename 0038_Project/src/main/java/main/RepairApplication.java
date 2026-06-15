@@ -12,19 +12,29 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 public class RepairApplication {
     private static final int PORT = 8081;
     private static final String STATIC_DIR = "static";
+    private static final String UPLOAD_DIR = "uploads";
 
     public static void main(String[] args) throws IOException {
+        Files.createDirectories(Paths.get(UPLOAD_DIR));
+
         RepairManager manager = new RepairManager();
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
 
         server.createContext("/api", new RepairApi(manager));
-        server.createContext("/", new StaticFileHandler());
+        server.createContext("/uploads", new FileHandler(UPLOAD_DIR,
+                Arrays.asList("jpg", "jpeg", "png", "gif", "webp")));
+        server.createContext("/", new FileHandler(STATIC_DIR,
+                Arrays.asList("html", "css", "js", "json", "png", "jpg", "jpeg",
+                        "gif", "svg", "ico", "woff", "woff2", "ttf")));
 
         server.setExecutor(null);
         server.start();
@@ -36,11 +46,18 @@ public class RepairApplication {
         System.out.println("========================================");
     }
 
-    static class StaticFileHandler implements HttpHandler {
-        private final Path staticRootPath;
+    static class FileHandler implements HttpHandler {
+        private final Path rootPath;
+        private final List<String> allowedExts;
 
-        StaticFileHandler() {
-            this.staticRootPath = Paths.get(STATIC_DIR).toAbsolutePath().normalize();
+        FileHandler(String dir, List<String> allowedExts) {
+            this.rootPath = Paths.get(dir).toAbsolutePath().normalize();
+            this.allowedExts = allowedExts;
+            try {
+                Files.createDirectories(this.rootPath);
+            } catch (IOException e) {
+                System.err.println("Failed to create directory " + dir + ": " + e.getMessage());
+            }
         }
 
         @Override
@@ -65,8 +82,9 @@ public class RepairApplication {
 
             File file;
             try {
-                Path filePath = staticRootPath.resolve(requestPath.substring(1)).normalize();
-                if (!filePath.startsWith(staticRootPath)) {
+                String relative = requestPath.startsWith("/") ? requestPath.substring(1) : requestPath;
+                Path filePath = rootPath.resolve(relative).normalize();
+                if (!filePath.startsWith(rootPath)) {
                     sendForbidden(exchange, "Forbidden");
                     return;
                 }
@@ -113,19 +131,10 @@ public class RepairApplication {
 
         private boolean isAllowedExtension(String filename) {
             String lower = filename.toLowerCase();
-            return lower.endsWith(".html")
-                    || lower.endsWith(".css")
-                    || lower.endsWith(".js")
-                    || lower.endsWith(".json")
-                    || lower.endsWith(".png")
-                    || lower.endsWith(".jpg")
-                    || lower.endsWith(".jpeg")
-                    || lower.endsWith(".gif")
-                    || lower.endsWith(".svg")
-                    || lower.endsWith(".ico")
-                    || lower.endsWith(".woff")
-                    || lower.endsWith(".woff2")
-                    || lower.endsWith(".ttf");
+            for (String ext : allowedExts) {
+                if (lower.endsWith("." + ext)) return true;
+            }
+            return false;
         }
 
         private void sendForbidden(HttpExchange exchange, String message) throws IOException {
@@ -146,6 +155,7 @@ public class RepairApplication {
             if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
             if (lower.endsWith(".gif")) return "image/gif";
             if (lower.endsWith(".svg")) return "image/svg+xml";
+            if (lower.endsWith(".webp")) return "image/webp";
             if (lower.endsWith(".ico")) return "image/x-icon";
             if (lower.endsWith(".woff")) return "font/woff";
             if (lower.endsWith(".woff2")) return "font/woff2";

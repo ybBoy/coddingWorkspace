@@ -777,6 +777,311 @@ body {
     background-color: rgba(50, 30, 30, 0.4);
 }
 
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 18px;
+}
+
+.stats-card {
+    background-color: rgba(42, 42, 42, 0.6);
+    border: 1px solid #5a2a2a;
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.stats-card .section-title {
+    margin-bottom: 14px;
+}
+
+.rating-stats, .year-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rating-item, .year-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+}
+
+.rating-label, .year-label {
+    color: #c9a96a;
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.rating-bar, .year-bar {
+    flex: 1;
+    height: 18px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.rating-bar-fill, .year-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #c9a96a, #d4af37);
+    transition: width 0.5s ease;
+    border-radius: 3px;
+}
+
+.rating-count, .year-count {
+    color: #e8d5b7;
+    width: 35px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.list-header .section-title {
+    margin-bottom: 0;
+}
+
+.list-header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.view-switch {
+    display: flex;
+    border: 1px solid #5a2a2a;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.btn-view {
+    background-color: transparent;
+    color: #8b6b5b;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.btn-view:hover {
+    color: #c9a96a;
+    background-color: rgba(139, 37, 0, 0.2);
+}
+
+.btn-view.active {
+    background-color: #8b2500;
+    color: #f0d78c;
+}
+
+.batch-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: rgba(139, 37, 0, 0.2);
+    border: 1px solid #8b2500;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #c9a96a;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+.select-all input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+#selectedCount {
+    color: #d4af37;
+    font-weight: bold;
+}
+
+.batch-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-batch-delete {
+    background-color: #8b2500;
+    border-color: #c0392b;
+    color: #ffd7c9;
+}
+
+.btn-batch-delete:hover {
+    background-color: #c0392b;
+}
+
+.btn-cancel {
+    background-color: transparent;
+    border-color: #5a3a3a;
+    color: #8b6b5b;
+}
+
+.btn-cancel:hover {
+    background-color: rgba(90, 58, 58, 0.5);
+    color: #c9a96a;
+}
+
+.movie-table-container {
+    overflow-x: auto;
+    border: 1px solid #5a2a2a;
+    border-radius: 8px;
+    background-color: rgba(42, 42, 42, 0.4);
+}
+
+.movie-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.movie-table th,
+.movie-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #3a2a2a;
+}
+
+.movie-table th {
+    background-color: rgba(139, 37, 0, 0.3);
+    color: #f0d78c;
+    font-weight: 600;
+    letter-spacing: 1px;
+    position: sticky;
+    top: 0;
+}
+
+.movie-table tbody tr:hover {
+    background-color: rgba(139, 37, 0, 0.15);
+}
+
+.movie-table .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+.table-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.table-btn {
+    padding: 4px 10px;
+    font-size: 0.85em;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid #5a2a2a;
+    background-color: rgba(50, 30, 30, 0.6);
+    color: #c9a96a;
+    font-family: inherit;
+}
+
+.table-btn:hover {
+    background-color: #8b2500;
+    color: #f0d78c;
+}
+
+.table-btn.delete:hover {
+    background-color: #c0392b;
+    border-color: #c0392b;
+}
+
+.movie-card {
+    position: relative;
+}
+
+.card-checkbox {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.movie-card:hover .card-checkbox,
+.card-checkbox:checked {
+    opacity: 1;
+}
+
+.movie-card.selected::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 3px solid #d4af37;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+
+.card-footer .priority-star {
+    color: #d4af37;
+    font-size: 0.9em;
+}
+
+.tags-container {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: rgba(139, 37, 0, 0.3);
+    border: 1px solid #5a2a2a;
+    border-radius: 3px;
+    font-size: 0.75em;
+    color: #c9a96a;
+}
+
+.watch-info {
+    margin-top: 6px;
+    font-size: 0.8em;
+    color: #8b6b5b;
+}
+
+.empty-hint-sm {
+    color: #5a4a3a;
+    font-size: 0.9em;
+}
+
+.batch-toolbar select {
+    padding: 6px 10px;
+    font-size: 0.9em;
+}
+
 @media (max-width: 600px) {
     body {
         padding: 10px;

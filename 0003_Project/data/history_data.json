@@ -1,0 +1,2665 @@
+{
+  "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06_CPU" : [ {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 59.5,
+    "timestamp" : "2026-05-01T22:47:58.827"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 74.5,
+    "timestamp" : "2026-05-01T22:52:02.166"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 75.3,
+    "timestamp" : "2026-05-01T22:53:10.629"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 60.5,
+    "timestamp" : "2026-05-01T22:53:10.988"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 78.1,
+    "timestamp" : "2026-05-01T22:54:10.975"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 78.8,
+    "timestamp" : "2026-05-01T22:55:10.983"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 88.0,
+    "timestamp" : "2026-05-01T22:56:10.996"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 81.7,
+    "timestamp" : "2026-05-01T22:57:11.047"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 97.4,
+    "timestamp" : "2026-05-01T22:58:10.991"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 82.4,
+    "timestamp" : "2026-05-01T22:59:10.967"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 67.2,
+    "timestamp" : "2026-05-01T23:00:10.97"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 66.6,
+    "timestamp" : "2026-05-01T23:01:10.982"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 76.9,
+    "timestamp" : "2026-05-01T23:02:10.988"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 70.4,
+    "timestamp" : "2026-05-01T23:03:11.009"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 95.9,
+    "timestamp" : "2026-05-01T23:04:11.027"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 87.7,
+    "timestamp" : "2026-05-01T23:05:10.988"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 71.3,
+    "timestamp" : "2026-05-01T23:06:11.001"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 66.1,
+    "timestamp" : "2026-05-01T23:07:10.975"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 76.7,
+    "timestamp" : "2026-05-01T23:08:11.063"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 91.4,
+    "timestamp" : "2026-05-01T23:09:10.997"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 58.6,
+    "timestamp" : "2026-05-01T23:10:10.994"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 61.8,
+    "timestamp" : "2026-05-01T23:11:10.969"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 82.3,
+    "timestamp" : "2026-05-01T23:12:11"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 70.6,
+    "timestamp" : "2026-05-01T23:13:10.975"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 96.4,
+    "timestamp" : "2026-05-01T23:14:11.012"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 77.3,
+    "timestamp" : "2026-05-01T23:15:10.995"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 76.3,
+    "timestamp" : "2026-05-01T23:16:10.966"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 88.5,
+    "timestamp" : "2026-05-01T23:17:10.994"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 86.8,
+    "timestamp" : "2026-05-01T23:18:10.978"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 67.2,
+    "timestamp" : "2026-05-01T23:19:11.034"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 83.5,
+    "timestamp" : "2026-05-01T23:20:10.97"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 71.3,
+    "timestamp" : "2026-05-01T23:21:10.973"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 72.7,
+    "timestamp" : "2026-05-01T23:22:10.971"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 80.2,
+    "timestamp" : "2026-05-01T23:23:11.003"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 91.1,
+    "timestamp" : "2026-05-01T23:24:11.094"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 91.7,
+    "timestamp" : "2026-05-01T23:25:10.994"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 63.2,
+    "timestamp" : "2026-05-01T23:26:11"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 66.4,
+    "timestamp" : "2026-05-01T23:27:10.988"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 78.9,
+    "timestamp" : "2026-05-01T23:28:11.011"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 61.9,
+    "timestamp" : "2026-05-01T23:29:10.998"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 69.0,
+    "timestamp" : "2026-05-01T23:30:11.08"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 95.6,
+    "timestamp" : "2026-05-01T23:31:11.003"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 60.2,
+    "timestamp" : "2026-05-01T23:32:11"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 76.6,
+    "timestamp" : "2026-05-01T23:33:10.993"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 68.7,
+    "timestamp" : "2026-05-01T23:34:11.015"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 66.0,
+    "timestamp" : "2026-05-01T23:35:11.014"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 92.6,
+    "timestamp" : "2026-05-01T23:36:11.027"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 86.7,
+    "timestamp" : "2026-05-01T23:37:10.992"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 63.8,
+    "timestamp" : "2026-05-01T23:38:11.018"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 61.7,
+    "timestamp" : "2026-05-01T23:39:11.01"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 87.3,
+    "timestamp" : "2026-05-01T23:42:47.669"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 70.4,
+    "timestamp" : "2026-05-01T23:42:48.353"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 94.5,
+    "timestamp" : "2026-05-01T23:43:32.926"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 94.3,
+    "timestamp" : "2026-05-01T23:43:33.213"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 88.3,
+    "timestamp" : "2026-05-01T23:44:36.829"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 73.1,
+    "timestamp" : "2026-05-01T23:44:37.118"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 91.3,
+    "timestamp" : "2026-05-01T23:45:37.118"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 66.2,
+    "timestamp" : "2026-05-01T23:46:37.124"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 76.0,
+    "timestamp" : "2026-05-01T23:47:37.939"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 93.4,
+    "timestamp" : "2026-05-01T23:48:37.426"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 84.3,
+    "timestamp" : "2026-05-01T23:49:37.136"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 95.2,
+    "timestamp" : "2026-05-01T23:50:37.138"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 61.4,
+    "timestamp" : "2026-05-01T23:51:37.066"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 89.2,
+    "timestamp" : "2026-05-01T23:52:37.07"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 81.4,
+    "timestamp" : "2026-05-01T23:53:37.067"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 92.8,
+    "timestamp" : "2026-05-01T23:54:37.073"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 88.8,
+    "timestamp" : "2026-05-01T23:55:37.061"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 79.0,
+    "timestamp" : "2026-05-01T23:56:37.065"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "CPU",
+    "value" : 81.3,
+    "timestamp" : "2026-05-01T23:57:37.073"
+  } ],
+  "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2_CPU" : [ {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 46.2,
+    "timestamp" : "2026-05-01T22:47:58.68"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 49.5,
+    "timestamp" : "2026-05-01T22:52:02.099"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 53.6,
+    "timestamp" : "2026-05-01T22:53:10.589"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 48.9,
+    "timestamp" : "2026-05-01T22:53:10.93"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 36.1,
+    "timestamp" : "2026-05-01T22:54:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 54.5,
+    "timestamp" : "2026-05-01T22:55:10.931"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 68.9,
+    "timestamp" : "2026-05-01T22:56:10.944"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 49.2,
+    "timestamp" : "2026-05-01T22:57:10.944"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 59.4,
+    "timestamp" : "2026-05-01T22:58:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 67.9,
+    "timestamp" : "2026-05-01T22:59:10.932"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 41.2,
+    "timestamp" : "2026-05-01T23:00:10.935"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 50.7,
+    "timestamp" : "2026-05-01T23:01:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 55.3,
+    "timestamp" : "2026-05-01T23:02:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 71.2,
+    "timestamp" : "2026-05-01T23:03:10.932"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 49.6,
+    "timestamp" : "2026-05-01T23:04:10.941"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 34.1,
+    "timestamp" : "2026-05-01T23:05:10.94"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 59.5,
+    "timestamp" : "2026-05-01T23:06:10.941"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 63.1,
+    "timestamp" : "2026-05-01T23:07:10.93"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 49.1,
+    "timestamp" : "2026-05-01T23:08:10.937"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 39.6,
+    "timestamp" : "2026-05-01T23:09:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 71.3,
+    "timestamp" : "2026-05-01T23:10:10.939"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 70.9,
+    "timestamp" : "2026-05-01T23:11:10.934"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 49.4,
+    "timestamp" : "2026-05-01T23:12:10.933"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 68.4,
+    "timestamp" : "2026-05-01T23:13:10.935"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 37.7,
+    "timestamp" : "2026-05-01T23:14:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 57.0,
+    "timestamp" : "2026-05-01T23:15:10.94"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 63.1,
+    "timestamp" : "2026-05-01T23:16:10.93"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 33.2,
+    "timestamp" : "2026-05-01T23:17:10.941"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 46.5,
+    "timestamp" : "2026-05-01T23:18:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 34.8,
+    "timestamp" : "2026-05-01T23:19:10.944"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 64.2,
+    "timestamp" : "2026-05-01T23:20:10.934"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 39.3,
+    "timestamp" : "2026-05-01T23:21:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 50.0,
+    "timestamp" : "2026-05-01T23:22:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 34.2,
+    "timestamp" : "2026-05-01T23:23:10.945"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 36.7,
+    "timestamp" : "2026-05-01T23:24:10.94"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 35.6,
+    "timestamp" : "2026-05-01T23:25:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 38.5,
+    "timestamp" : "2026-05-01T23:26:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 38.4,
+    "timestamp" : "2026-05-01T23:27:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 72.9,
+    "timestamp" : "2026-05-01T23:28:10.935"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 35.7,
+    "timestamp" : "2026-05-01T23:29:10.933"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 63.4,
+    "timestamp" : "2026-05-01T23:30:10.929"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 49.0,
+    "timestamp" : "2026-05-01T23:31:10.933"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 42.0,
+    "timestamp" : "2026-05-01T23:32:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 68.5,
+    "timestamp" : "2026-05-01T23:33:10.94"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 71.4,
+    "timestamp" : "2026-05-01T23:34:10.946"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 42.7,
+    "timestamp" : "2026-05-01T23:35:10.934"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 68.6,
+    "timestamp" : "2026-05-01T23:36:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 59.6,
+    "timestamp" : "2026-05-01T23:37:10.929"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 67.2,
+    "timestamp" : "2026-05-01T23:38:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 56.8,
+    "timestamp" : "2026-05-01T23:39:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 72.9,
+    "timestamp" : "2026-05-01T23:42:46.999"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 35.4,
+    "timestamp" : "2026-05-01T23:42:48.304"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 61.9,
+    "timestamp" : "2026-05-01T23:43:32.863"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 43.6,
+    "timestamp" : "2026-05-01T23:43:33.164"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 54.7,
+    "timestamp" : "2026-05-01T23:44:36.77"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 68.9,
+    "timestamp" : "2026-05-01T23:44:37.06"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 37.4,
+    "timestamp" : "2026-05-01T23:45:37.071"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 46.8,
+    "timestamp" : "2026-05-01T23:46:37.069"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 59.4,
+    "timestamp" : "2026-05-01T23:47:37.074"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 62.4,
+    "timestamp" : "2026-05-01T23:48:37.065"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 65.3,
+    "timestamp" : "2026-05-01T23:49:37.06"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "CPU",
+    "value" : 46.5,
+    "timestamp" : "2026-05-01T23:50:37.07"
+  } ],
+  "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2_DISK" : [ {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.3,
+    "timestamp" : "2026-05-01T22:47:58.712"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 21.3,
+    "timestamp" : "2026-05-01T22:52:02.123"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 22.3,
+    "timestamp" : "2026-05-01T22:53:10.615"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.8,
+    "timestamp" : "2026-05-01T22:53:10.96"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 10.6,
+    "timestamp" : "2026-05-01T22:54:10.961"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 17.1,
+    "timestamp" : "2026-05-01T22:55:10.959"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.3,
+    "timestamp" : "2026-05-01T22:56:10.972"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.6,
+    "timestamp" : "2026-05-01T22:57:10.974"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 12.4,
+    "timestamp" : "2026-05-01T22:58:10.968"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.6,
+    "timestamp" : "2026-05-01T22:59:10.952"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 19.8,
+    "timestamp" : "2026-05-01T23:00:10.955"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 19.4,
+    "timestamp" : "2026-05-01T23:01:10.961"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 22.3,
+    "timestamp" : "2026-05-01T23:02:10.972"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 18.3,
+    "timestamp" : "2026-05-01T23:03:10.953"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.0,
+    "timestamp" : "2026-05-01T23:04:10.962"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 13.5,
+    "timestamp" : "2026-05-01T23:05:10.966"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 21.9,
+    "timestamp" : "2026-05-01T23:06:10.974"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 19.5,
+    "timestamp" : "2026-05-01T23:07:10.954"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 18.0,
+    "timestamp" : "2026-05-01T23:08:10.959"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 15.0,
+    "timestamp" : "2026-05-01T23:09:10.971"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 18.2,
+    "timestamp" : "2026-05-01T23:10:10.965"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 20.3,
+    "timestamp" : "2026-05-01T23:11:10.955"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 8.6,
+    "timestamp" : "2026-05-01T23:12:10.952"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 20.7,
+    "timestamp" : "2026-05-01T23:13:10.955"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.4,
+    "timestamp" : "2026-05-01T23:14:10.96"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 15.7,
+    "timestamp" : "2026-05-01T23:15:10.973"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 15.4,
+    "timestamp" : "2026-05-01T23:16:10.95"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 19.8,
+    "timestamp" : "2026-05-01T23:17:10.973"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.4,
+    "timestamp" : "2026-05-01T23:18:10.963"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 8.6,
+    "timestamp" : "2026-05-01T23:19:10.964"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 12.5,
+    "timestamp" : "2026-05-01T23:20:10.954"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 11.5,
+    "timestamp" : "2026-05-01T23:21:10.957"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 16.5,
+    "timestamp" : "2026-05-01T23:22:10.958"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.6,
+    "timestamp" : "2026-05-01T23:23:10.981"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.0,
+    "timestamp" : "2026-05-01T23:24:10.985"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 10.9,
+    "timestamp" : "2026-05-01T23:25:10.971"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 15.3,
+    "timestamp" : "2026-05-01T23:26:10.977"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.9,
+    "timestamp" : "2026-05-01T23:27:10.964"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 12.9,
+    "timestamp" : "2026-05-01T23:28:10.99"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.6,
+    "timestamp" : "2026-05-01T23:29:10.971"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 22.8,
+    "timestamp" : "2026-05-01T23:30:10.962"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 18.4,
+    "timestamp" : "2026-05-01T23:31:10.974"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 13.7,
+    "timestamp" : "2026-05-01T23:32:10.972"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 13.8,
+    "timestamp" : "2026-05-01T23:33:10.97"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 17.9,
+    "timestamp" : "2026-05-01T23:34:10.986"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 21.8,
+    "timestamp" : "2026-05-01T23:35:10.966"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.5,
+    "timestamp" : "2026-05-01T23:36:10.974"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 12.1,
+    "timestamp" : "2026-05-01T23:37:10.963"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 10.0,
+    "timestamp" : "2026-05-01T23:38:10.966"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.5,
+    "timestamp" : "2026-05-01T23:39:10.983"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.9,
+    "timestamp" : "2026-05-01T23:42:47.043"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 9.7,
+    "timestamp" : "2026-05-01T23:42:48.334"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 12.8,
+    "timestamp" : "2026-05-01T23:43:32.906"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 13.0,
+    "timestamp" : "2026-05-01T23:43:33.197"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 11.9,
+    "timestamp" : "2026-05-01T23:44:36.81"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 17.1,
+    "timestamp" : "2026-05-01T23:44:37.1"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.6,
+    "timestamp" : "2026-05-01T23:45:37.095"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 16.7,
+    "timestamp" : "2026-05-01T23:46:37.1"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 8.6,
+    "timestamp" : "2026-05-01T23:47:37.104"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 20.5,
+    "timestamp" : "2026-05-01T23:48:37.085"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 14.4,
+    "timestamp" : "2026-05-01T23:49:37.101"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "DISK",
+    "value" : 22.3,
+    "timestamp" : "2026-05-01T23:50:37.108"
+  } ],
+  "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06_MEMORY" : [ {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 86.5,
+    "timestamp" : "2026-05-01T22:47:58.843"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 80.0,
+    "timestamp" : "2026-05-01T22:52:02.178"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.9,
+    "timestamp" : "2026-05-01T22:53:10.644"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 97.9,
+    "timestamp" : "2026-05-01T22:53:11.002"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 90.6,
+    "timestamp" : "2026-05-01T22:54:10.99"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.4,
+    "timestamp" : "2026-05-01T22:55:11.006"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 81.6,
+    "timestamp" : "2026-05-01T22:56:11.017"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.3,
+    "timestamp" : "2026-05-01T22:57:11.065"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 98.3,
+    "timestamp" : "2026-05-01T22:58:11.017"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 92.5,
+    "timestamp" : "2026-05-01T22:59:10.983"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 73.3,
+    "timestamp" : "2026-05-01T23:00:10.988"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:01:11.003"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 85.2,
+    "timestamp" : "2026-05-01T23:02:11.009"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 92.7,
+    "timestamp" : "2026-05-01T23:03:11.028"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.2,
+    "timestamp" : "2026-05-01T23:04:11.043"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 84.8,
+    "timestamp" : "2026-05-01T23:05:11.007"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 96.6,
+    "timestamp" : "2026-05-01T23:06:11.029"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 90.5,
+    "timestamp" : "2026-05-01T23:07:10.996"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:08:11.086"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.1,
+    "timestamp" : "2026-05-01T23:09:11.024"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 75.5,
+    "timestamp" : "2026-05-01T23:10:11.014"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 80.6,
+    "timestamp" : "2026-05-01T23:11:10.986"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 93.5,
+    "timestamp" : "2026-05-01T23:12:11.025"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.5,
+    "timestamp" : "2026-05-01T23:13:10.995"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 76.6,
+    "timestamp" : "2026-05-01T23:14:11.024"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 81.4,
+    "timestamp" : "2026-05-01T23:15:11.011"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 93.2,
+    "timestamp" : "2026-05-01T23:16:10.983"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 86.7,
+    "timestamp" : "2026-05-01T23:17:11.017"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 96.8,
+    "timestamp" : "2026-05-01T23:18:10.994"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 87.4,
+    "timestamp" : "2026-05-01T23:19:11.049"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:20:10.987"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 78.0,
+    "timestamp" : "2026-05-01T23:21:11.024"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 94.3,
+    "timestamp" : "2026-05-01T23:22:10.989"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 90.1,
+    "timestamp" : "2026-05-01T23:23:11.021"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 79.1,
+    "timestamp" : "2026-05-01T23:24:11.106"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.5,
+    "timestamp" : "2026-05-01T23:25:11.029"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 74.3,
+    "timestamp" : "2026-05-01T23:26:11.023"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 76.0,
+    "timestamp" : "2026-05-01T23:27:11.016"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.7,
+    "timestamp" : "2026-05-01T23:28:11.039"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 90.1,
+    "timestamp" : "2026-05-01T23:29:11.028"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 92.6,
+    "timestamp" : "2026-05-01T23:30:11.096"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.4,
+    "timestamp" : "2026-05-01T23:31:11.03"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 82.0,
+    "timestamp" : "2026-05-01T23:32:11.02"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:33:11.015"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 86.8,
+    "timestamp" : "2026-05-01T23:34:11.045"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 76.0,
+    "timestamp" : "2026-05-01T23:35:11.034"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 92.5,
+    "timestamp" : "2026-05-01T23:36:11.048"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 88.8,
+    "timestamp" : "2026-05-01T23:37:11.021"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 74.6,
+    "timestamp" : "2026-05-01T23:38:11.035"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 93.0,
+    "timestamp" : "2026-05-01T23:39:11.039"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.2,
+    "timestamp" : "2026-05-01T23:42:47.678"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 82.0,
+    "timestamp" : "2026-05-01T23:42:48.367"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.4,
+    "timestamp" : "2026-05-01T23:43:32.947"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:43:33.229"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:44:36.844"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 93.4,
+    "timestamp" : "2026-05-01T23:44:37.135"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.8,
+    "timestamp" : "2026-05-01T23:45:37.138"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 96.3,
+    "timestamp" : "2026-05-01T23:46:37.148"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 85.0,
+    "timestamp" : "2026-05-01T23:47:37.967"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:48:37.434"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 91.8,
+    "timestamp" : "2026-05-01T23:49:37.175"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.3,
+    "timestamp" : "2026-05-01T23:50:37.166"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:51:37.081"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 86.3,
+    "timestamp" : "2026-05-01T23:52:37.076"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 75.6,
+    "timestamp" : "2026-05-01T23:53:37.072"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.0,
+    "timestamp" : "2026-05-01T23:54:37.078"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:55:37.068"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 83.3,
+    "timestamp" : "2026-05-01T23:56:37.07"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "MEMORY",
+    "value" : 94.7,
+    "timestamp" : "2026-05-01T23:57:37.08"
+  } ],
+  "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06_DISK" : [ {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 32.5,
+    "timestamp" : "2026-05-01T22:47:58.86"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 23.8,
+    "timestamp" : "2026-05-01T22:52:02.188"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 23.6,
+    "timestamp" : "2026-05-01T22:53:10.655"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 35.0,
+    "timestamp" : "2026-05-01T22:53:11.015"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 31.1,
+    "timestamp" : "2026-05-01T22:54:11.007"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.6,
+    "timestamp" : "2026-05-01T22:55:11.032"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 37.8,
+    "timestamp" : "2026-05-01T22:56:11.044"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.0,
+    "timestamp" : "2026-05-01T22:57:11.081"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 28.4,
+    "timestamp" : "2026-05-01T22:58:11.043"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 26.0,
+    "timestamp" : "2026-05-01T22:59:10.999"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.7,
+    "timestamp" : "2026-05-01T23:00:11.001"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 24.4,
+    "timestamp" : "2026-05-01T23:01:11.019"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 31.1,
+    "timestamp" : "2026-05-01T23:02:11.029"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 36.1,
+    "timestamp" : "2026-05-01T23:03:11.045"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 25.7,
+    "timestamp" : "2026-05-01T23:04:11.062"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 26.4,
+    "timestamp" : "2026-05-01T23:05:11.022"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.6,
+    "timestamp" : "2026-05-01T23:06:11.049"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 36.7,
+    "timestamp" : "2026-05-01T23:07:11.017"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 26.7,
+    "timestamp" : "2026-05-01T23:08:11.107"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 23.0,
+    "timestamp" : "2026-05-01T23:09:11.049"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.0,
+    "timestamp" : "2026-05-01T23:10:11.036"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 35.0,
+    "timestamp" : "2026-05-01T23:11:10.997"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 30.3,
+    "timestamp" : "2026-05-01T23:12:11.051"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 25.0,
+    "timestamp" : "2026-05-01T23:13:11.009"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.2,
+    "timestamp" : "2026-05-01T23:14:11.043"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 28.6,
+    "timestamp" : "2026-05-01T23:15:11.027"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 25.9,
+    "timestamp" : "2026-05-01T23:16:10.999"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.4,
+    "timestamp" : "2026-05-01T23:17:11.046"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 37.4,
+    "timestamp" : "2026-05-01T23:18:11.014"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 31.1,
+    "timestamp" : "2026-05-01T23:19:11.065"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.2,
+    "timestamp" : "2026-05-01T23:20:11.002"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.9,
+    "timestamp" : "2026-05-01T23:21:11.04"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 24.4,
+    "timestamp" : "2026-05-01T23:22:11.004"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.3,
+    "timestamp" : "2026-05-01T23:23:11.044"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 35.0,
+    "timestamp" : "2026-05-01T23:24:11.124"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 32.4,
+    "timestamp" : "2026-05-01T23:25:11.06"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 24.2,
+    "timestamp" : "2026-05-01T23:26:11.048"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 35.6,
+    "timestamp" : "2026-05-01T23:27:11.037"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 33.9,
+    "timestamp" : "2026-05-01T23:28:11.066"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 26.2,
+    "timestamp" : "2026-05-01T23:29:11.05"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 37.9,
+    "timestamp" : "2026-05-01T23:30:11.116"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 25.8,
+    "timestamp" : "2026-05-01T23:31:11.058"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 23.1,
+    "timestamp" : "2026-05-01T23:32:11.046"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 36.9,
+    "timestamp" : "2026-05-01T23:33:11.032"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 33.6,
+    "timestamp" : "2026-05-01T23:34:11.072"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.4,
+    "timestamp" : "2026-05-01T23:35:11.052"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 35.2,
+    "timestamp" : "2026-05-01T23:36:11.071"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.9,
+    "timestamp" : "2026-05-01T23:37:11.041"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 28.0,
+    "timestamp" : "2026-05-01T23:38:11.049"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.5,
+    "timestamp" : "2026-05-01T23:39:11.066"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 23.4,
+    "timestamp" : "2026-05-01T23:42:47.688"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.3,
+    "timestamp" : "2026-05-01T23:42:48.384"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.1,
+    "timestamp" : "2026-05-01T23:43:32.967"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 23.2,
+    "timestamp" : "2026-05-01T23:43:33.248"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.9,
+    "timestamp" : "2026-05-01T23:44:36.862"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.4,
+    "timestamp" : "2026-05-01T23:44:37.156"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 28.7,
+    "timestamp" : "2026-05-01T23:45:37.159"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 28.4,
+    "timestamp" : "2026-05-01T23:46:37.171"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 36.7,
+    "timestamp" : "2026-05-01T23:47:37.99"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 32.6,
+    "timestamp" : "2026-05-01T23:48:37.443"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.4,
+    "timestamp" : "2026-05-01T23:49:37.212"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 25.1,
+    "timestamp" : "2026-05-01T23:50:37.198"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 29.5,
+    "timestamp" : "2026-05-01T23:51:37.121"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 35.2,
+    "timestamp" : "2026-05-01T23:52:37.1"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 32.2,
+    "timestamp" : "2026-05-01T23:53:37.099"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 27.6,
+    "timestamp" : "2026-05-01T23:54:37.103"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.2,
+    "timestamp" : "2026-05-01T23:55:37.093"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 30.9,
+    "timestamp" : "2026-05-01T23:56:37.089"
+  }, {
+    "serverId" : "b3ca775c-bdbc-4e85-809c-a4cabdfaaf06",
+    "monitorType" : "DISK",
+    "value" : 34.4,
+    "timestamp" : "2026-05-01T23:57:37.105"
+  } ],
+  "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2_MEMORY" : [ {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 77.6,
+    "timestamp" : "2026-05-01T22:47:58.694"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 84.7,
+    "timestamp" : "2026-05-01T22:52:02.111"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 74.7,
+    "timestamp" : "2026-05-01T22:53:10.603"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 84.2,
+    "timestamp" : "2026-05-01T22:53:10.944"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 66.5,
+    "timestamp" : "2026-05-01T22:54:10.944"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 80.8,
+    "timestamp" : "2026-05-01T22:55:10.935"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 83.7,
+    "timestamp" : "2026-05-01T22:56:10.948"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 59.5,
+    "timestamp" : "2026-05-01T22:57:10.948"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 60.3,
+    "timestamp" : "2026-05-01T22:58:10.945"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 80.3,
+    "timestamp" : "2026-05-01T22:59:10.933"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 82.7,
+    "timestamp" : "2026-05-01T23:00:10.938"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 60.2,
+    "timestamp" : "2026-05-01T23:01:10.943"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 73.0,
+    "timestamp" : "2026-05-01T23:02:10.946"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 67.8,
+    "timestamp" : "2026-05-01T23:03:10.934"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 69.9,
+    "timestamp" : "2026-05-01T23:04:10.945"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 83.7,
+    "timestamp" : "2026-05-01T23:05:10.943"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 71.4,
+    "timestamp" : "2026-05-01T23:06:10.949"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 79.4,
+    "timestamp" : "2026-05-01T23:07:10.934"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 85.3,
+    "timestamp" : "2026-05-01T23:08:10.941"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 72.7,
+    "timestamp" : "2026-05-01T23:09:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 71.1,
+    "timestamp" : "2026-05-01T23:10:10.941"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 81.4,
+    "timestamp" : "2026-05-01T23:11:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 60.6,
+    "timestamp" : "2026-05-01T23:12:10.937"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 82.3,
+    "timestamp" : "2026-05-01T23:13:10.937"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 79.3,
+    "timestamp" : "2026-05-01T23:14:10.939"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 80.9,
+    "timestamp" : "2026-05-01T23:15:10.944"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 66.6,
+    "timestamp" : "2026-05-01T23:16:10.931"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 64.1,
+    "timestamp" : "2026-05-01T23:17:10.945"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 76.8,
+    "timestamp" : "2026-05-01T23:18:10.94"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 64.5,
+    "timestamp" : "2026-05-01T23:19:10.948"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 58.5,
+    "timestamp" : "2026-05-01T23:20:10.935"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 78.3,
+    "timestamp" : "2026-05-01T23:21:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 66.1,
+    "timestamp" : "2026-05-01T23:22:10.94"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 63.4,
+    "timestamp" : "2026-05-01T23:23:10.951"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 78.2,
+    "timestamp" : "2026-05-01T23:24:10.954"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 62.9,
+    "timestamp" : "2026-05-01T23:25:10.946"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 68.5,
+    "timestamp" : "2026-05-01T23:26:10.943"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 77.0,
+    "timestamp" : "2026-05-01T23:27:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 74.3,
+    "timestamp" : "2026-05-01T23:28:10.947"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 61.0,
+    "timestamp" : "2026-05-01T23:29:10.941"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 67.0,
+    "timestamp" : "2026-05-01T23:30:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 62.9,
+    "timestamp" : "2026-05-01T23:31:10.943"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 59.9,
+    "timestamp" : "2026-05-01T23:32:10.949"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 64.9,
+    "timestamp" : "2026-05-01T23:33:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 78.3,
+    "timestamp" : "2026-05-01T23:34:10.956"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 85.9,
+    "timestamp" : "2026-05-01T23:35:10.939"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 67.3,
+    "timestamp" : "2026-05-01T23:36:10.942"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 78.0,
+    "timestamp" : "2026-05-01T23:37:10.936"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 81.2,
+    "timestamp" : "2026-05-01T23:38:10.943"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 83.0,
+    "timestamp" : "2026-05-01T23:39:10.95"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 63.4,
+    "timestamp" : "2026-05-01T23:42:47.023"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 85.4,
+    "timestamp" : "2026-05-01T23:42:48.321"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 59.5,
+    "timestamp" : "2026-05-01T23:43:32.884"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:43:33.181"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 65.8,
+    "timestamp" : "2026-05-01T23:44:36.793"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 76.4,
+    "timestamp" : "2026-05-01T23:44:37.08"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 85.1,
+    "timestamp" : "2026-05-01T23:45:37.074"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 84.4,
+    "timestamp" : "2026-05-01T23:46:37.076"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 65.1,
+    "timestamp" : "2026-05-01T23:47:37.081"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 80.8,
+    "timestamp" : "2026-05-01T23:48:37.067"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 76.9,
+    "timestamp" : "2026-05-01T23:49:37.069"
+  }, {
+    "serverId" : "0cf0f39f-1595-4c3d-8fdd-5efc39147ea2",
+    "monitorType" : "MEMORY",
+    "value" : 73.9,
+    "timestamp" : "2026-05-01T23:50:37.076"
+  } ],
+  "0235e8e8-71a1-4903-a6f2-906eb7fd99f2_CPU" : [ {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 57.6,
+    "timestamp" : "2026-05-01T22:47:58.876"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 76.3,
+    "timestamp" : "2026-05-01T22:52:02.203"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 64.9,
+    "timestamp" : "2026-05-01T22:53:10.667"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 84.5,
+    "timestamp" : "2026-05-01T22:53:11.028"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 62.5,
+    "timestamp" : "2026-05-01T22:54:11.023"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 72.4,
+    "timestamp" : "2026-05-01T22:55:11.107"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 89.2,
+    "timestamp" : "2026-05-01T22:56:11.092"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 84.1,
+    "timestamp" : "2026-05-01T22:57:11.101"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 92.1,
+    "timestamp" : "2026-05-01T22:58:11.063"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 71.0,
+    "timestamp" : "2026-05-01T22:59:11.014"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 60.8,
+    "timestamp" : "2026-05-01T23:00:11.015"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 82.0,
+    "timestamp" : "2026-05-01T23:01:11.056"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 62.2,
+    "timestamp" : "2026-05-01T23:02:11.064"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 89.4,
+    "timestamp" : "2026-05-01T23:03:11.061"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 61.9,
+    "timestamp" : "2026-05-01T23:04:11.082"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 92.0,
+    "timestamp" : "2026-05-01T23:05:11.039"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 74.0,
+    "timestamp" : "2026-05-01T23:06:11.116"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 75.4,
+    "timestamp" : "2026-05-01T23:07:11.031"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 57.9,
+    "timestamp" : "2026-05-01T23:08:11.154"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 91.0,
+    "timestamp" : "2026-05-01T23:09:11.073"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 63.2,
+    "timestamp" : "2026-05-01T23:10:11.055"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 72.1,
+    "timestamp" : "2026-05-01T23:11:11.014"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 82.1,
+    "timestamp" : "2026-05-01T23:12:11.092"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 87.2,
+    "timestamp" : "2026-05-01T23:13:11.03"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.6,
+    "timestamp" : "2026-05-01T23:14:11.079"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 91.8,
+    "timestamp" : "2026-05-01T23:15:11.042"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 71.3,
+    "timestamp" : "2026-05-01T23:16:11.013"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 77.3,
+    "timestamp" : "2026-05-01T23:17:11.067"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 78.3,
+    "timestamp" : "2026-05-01T23:18:11.05"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 78.0,
+    "timestamp" : "2026-05-01T23:19:11.103"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 71.1,
+    "timestamp" : "2026-05-01T23:20:11.018"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 95.1,
+    "timestamp" : "2026-05-01T23:21:11.06"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.5,
+    "timestamp" : "2026-05-01T23:22:11.021"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 78.9,
+    "timestamp" : "2026-05-01T23:23:11.195"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 91.4,
+    "timestamp" : "2026-05-01T23:24:11.16"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 68.7,
+    "timestamp" : "2026-05-01T23:25:11.089"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 78.9,
+    "timestamp" : "2026-05-01T23:26:11.075"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.8,
+    "timestamp" : "2026-05-01T23:27:11.067"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 91.6,
+    "timestamp" : "2026-05-01T23:28:11.122"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 88.8,
+    "timestamp" : "2026-05-01T23:29:11.075"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 68.4,
+    "timestamp" : "2026-05-01T23:30:11.166"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 66.0,
+    "timestamp" : "2026-05-01T23:31:11.086"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 96.0,
+    "timestamp" : "2026-05-01T23:32:11.064"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 86.2,
+    "timestamp" : "2026-05-01T23:33:11.052"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:34:11.15"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:35:11.076"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 79.1,
+    "timestamp" : "2026-05-01T23:36:11.107"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 80.2,
+    "timestamp" : "2026-05-01T23:37:11.066"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 76.6,
+    "timestamp" : "2026-05-01T23:38:11.071"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 84.2,
+    "timestamp" : "2026-05-01T23:39:11.091"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 88.0,
+    "timestamp" : "2026-05-01T23:42:47.906"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.2,
+    "timestamp" : "2026-05-01T23:42:48.396"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 79.5,
+    "timestamp" : "2026-05-01T23:43:32.986"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 57.8,
+    "timestamp" : "2026-05-01T23:43:33.266"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 61.0,
+    "timestamp" : "2026-05-01T23:44:36.883"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 90.2,
+    "timestamp" : "2026-05-01T23:44:37.169"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 66.0,
+    "timestamp" : "2026-05-01T23:45:37.173"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.2,
+    "timestamp" : "2026-05-01T23:46:37.193"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.4,
+    "timestamp" : "2026-05-01T23:47:38.012"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 90.6,
+    "timestamp" : "2026-05-01T23:48:37.652"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 83.6,
+    "timestamp" : "2026-05-01T23:49:37.239"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 73.2,
+    "timestamp" : "2026-05-01T23:50:37.224"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 82.3,
+    "timestamp" : "2026-05-01T23:51:37.159"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 81.1,
+    "timestamp" : "2026-05-01T23:52:37.125"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 71.2,
+    "timestamp" : "2026-05-01T23:53:37.118"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 94.3,
+    "timestamp" : "2026-05-01T23:54:37.472"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:55:37.116"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 69.3,
+    "timestamp" : "2026-05-01T23:56:37.113"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "CPU",
+    "value" : 61.4,
+    "timestamp" : "2026-05-01T23:57:37.128"
+  } ],
+  "0235e8e8-71a1-4903-a6f2-906eb7fd99f2_MEMORY" : [ {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T22:47:58.894"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T22:52:02.219"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.2,
+    "timestamp" : "2026-05-01T22:53:10.682"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 79.8,
+    "timestamp" : "2026-05-01T22:53:11.042"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 96.6,
+    "timestamp" : "2026-05-01T22:54:11.038"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.8,
+    "timestamp" : "2026-05-01T22:55:11.13"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 92.7,
+    "timestamp" : "2026-05-01T22:56:11.112"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.1,
+    "timestamp" : "2026-05-01T22:57:11.12"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.0,
+    "timestamp" : "2026-05-01T22:58:11.085"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T22:59:11.029"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.4,
+    "timestamp" : "2026-05-01T23:00:11.031"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.9,
+    "timestamp" : "2026-05-01T23:01:11.075"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 86.1,
+    "timestamp" : "2026-05-01T23:02:11.083"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:03:11.079"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 87.5,
+    "timestamp" : "2026-05-01T23:04:11.102"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 76.8,
+    "timestamp" : "2026-05-01T23:05:11.056"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:06:11.135"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 72.1,
+    "timestamp" : "2026-05-01T23:07:11.045"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 85.5,
+    "timestamp" : "2026-05-01T23:08:11.172"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 77.9,
+    "timestamp" : "2026-05-01T23:09:11.097"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 80.8,
+    "timestamp" : "2026-05-01T23:10:11.071"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 81.1,
+    "timestamp" : "2026-05-01T23:11:11.027"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 88.9,
+    "timestamp" : "2026-05-01T23:12:11.109"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 88.4,
+    "timestamp" : "2026-05-01T23:13:11.046"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 91.1,
+    "timestamp" : "2026-05-01T23:14:11.092"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:15:11.061"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 78.9,
+    "timestamp" : "2026-05-01T23:16:11.027"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 86.5,
+    "timestamp" : "2026-05-01T23:17:11.095"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 87.3,
+    "timestamp" : "2026-05-01T23:18:11.073"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 77.7,
+    "timestamp" : "2026-05-01T23:19:11.119"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.2,
+    "timestamp" : "2026-05-01T23:20:11.036"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 91.5,
+    "timestamp" : "2026-05-01T23:21:11.088"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 89.8,
+    "timestamp" : "2026-05-01T23:22:11.04"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.3,
+    "timestamp" : "2026-05-01T23:23:11.215"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 89.6,
+    "timestamp" : "2026-05-01T23:24:11.177"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.8,
+    "timestamp" : "2026-05-01T23:25:11.118"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 90.1,
+    "timestamp" : "2026-05-01T23:26:11.101"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.0,
+    "timestamp" : "2026-05-01T23:27:11.093"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 87.5,
+    "timestamp" : "2026-05-01T23:28:11.139"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 87.9,
+    "timestamp" : "2026-05-01T23:29:11.098"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 86.8,
+    "timestamp" : "2026-05-01T23:30:11.181"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 76.8,
+    "timestamp" : "2026-05-01T23:31:11.114"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.0,
+    "timestamp" : "2026-05-01T23:32:11.084"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 98.7,
+    "timestamp" : "2026-05-01T23:33:11.071"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.7,
+    "timestamp" : "2026-05-01T23:34:11.174"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 89.2,
+    "timestamp" : "2026-05-01T23:35:11.106"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 85.1,
+    "timestamp" : "2026-05-01T23:36:11.126"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 94.3,
+    "timestamp" : "2026-05-01T23:37:11.09"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 89.9,
+    "timestamp" : "2026-05-01T23:38:11.087"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:39:11.116"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 96.2,
+    "timestamp" : "2026-05-01T23:42:47.917"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.9,
+    "timestamp" : "2026-05-01T23:42:48.414"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 73.9,
+    "timestamp" : "2026-05-01T23:43:33.007"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 99.0,
+    "timestamp" : "2026-05-01T23:43:33.284"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 95.4,
+    "timestamp" : "2026-05-01T23:44:36.903"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 77.0,
+    "timestamp" : "2026-05-01T23:44:37.187"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 78.1,
+    "timestamp" : "2026-05-01T23:45:37.187"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 75.5,
+    "timestamp" : "2026-05-01T23:46:37.212"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 80.9,
+    "timestamp" : "2026-05-01T23:47:38.034"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 93.5,
+    "timestamp" : "2026-05-01T23:48:37.659"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 98.9,
+    "timestamp" : "2026-05-01T23:49:37.269"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 79.2,
+    "timestamp" : "2026-05-01T23:50:37.252"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 84.6,
+    "timestamp" : "2026-05-01T23:51:37.203"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 77.8,
+    "timestamp" : "2026-05-01T23:52:37.163"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 95.7,
+    "timestamp" : "2026-05-01T23:53:37.14"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 97.6,
+    "timestamp" : "2026-05-01T23:54:37.481"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 96.8,
+    "timestamp" : "2026-05-01T23:55:37.141"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 98.0,
+    "timestamp" : "2026-05-01T23:56:37.135"
+  }, {
+    "serverId" : "0235e8e8-71a1-4903-a6f2-906eb7fd99f2",
+    "monitorType" : "MEMORY",
+    "value" : 77.7,
+    "timestamp" : "2026-05-01T23:57:37.149"
+  } ]
+}

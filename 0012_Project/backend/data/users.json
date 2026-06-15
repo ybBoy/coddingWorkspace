@@ -1,0 +1,31 @@
+[ {
+  "id" : "U001",
+  "name" : "张伟",
+  "department" : "综合管理部",
+  "role" : "部门主管",
+  "status" : "正常在岗"
+}, {
+  "id" : "U002",
+  "name" : "李娜",
+  "department" : "产品技术部",
+  "role" : "部门主管",
+  "status" : "正常在岗"
+}, {
+  "id" : "U003",
+  "name" : "王强",
+  "department" : "市场拓展部",
+  "role" : "普通成员",
+  "status" : "请假中"
+}, {
+  "id" : "U004",
+  "name" : "赵敏",
+  "department" : "财务审计部",
+  "role" : "普通成员",
+  "status" : "正常在岗"
+}, {
+  "id" : "U005",
+  "name" : "陈磊",
+  "department" : "项目执行部",
+  "role" : "普通成员",
+  "status" : "正常在岗"
+} ]

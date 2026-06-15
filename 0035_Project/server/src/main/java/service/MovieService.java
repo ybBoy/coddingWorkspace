@@ -32,8 +32,9 @@ public class MovieService {
                 String name = (m.getName() != null) ? m.getName().toLowerCase() : "";
                 String director = (m.getDirector() != null) ? m.getDirector().toLowerCase() : "";
                 String comment = (m.getComment() != null) ? m.getComment().toLowerCase() : "";
+                String tags = (m.getTags() != null) ? m.getTags().toLowerCase() : "";
                 matchSearch = name.contains(searchLower) || director.contains(searchLower)
-                        || comment.contains(searchLower);
+                        || comment.contains(searchLower) || tags.contains(searchLower);
             }
             if (matchStatus && matchGenre && matchSearch) {
                 result.add(m);
@@ -125,11 +126,49 @@ public class MovieService {
                 if (updated.getComment() != null) m.setComment(updated.getComment());
                 if (updated.getRating() >= 0 && updated.getRating() <= 5) m.setRating(updated.getRating());
                 if (updated.getPosterUrl() != null) m.setPosterUrl(updated.getPosterUrl());
+                if (updated.getTags() != null) m.setTags(updated.getTags());
+                if (updated.getPriority() >= 0) m.setPriority(updated.getPriority());
+                if (updated.getWatchDate() != null) m.setWatchDate(updated.getWatchDate());
+                if (updated.getRewatchCount() >= 0) m.setRewatchCount(updated.getRewatchCount());
                 store.saveMovies(movies);
                 return true;
             }
         }
         return false;
+    }
+
+    public int batchDelete(List<String> ids) {
+        int count = 0;
+        for (String id : ids) {
+            for (int i = 0; i < movies.size(); i++) {
+                if (movies.get(i).getId().equals(id)) {
+                    movies.remove(i);
+                    count++;
+                    break;
+                }
+            }
+        }
+        if (count > 0) {
+            store.saveMovies(movies);
+        }
+        return count;
+    }
+
+    public int batchUpdateStatus(List<String> ids, String status) {
+        int count = 0;
+        for (String id : ids) {
+            for (Movie m : movies) {
+                if (m.getId().equals(id)) {
+                    m.setStatus(status);
+                    count++;
+                    break;
+                }
+            }
+        }
+        if (count > 0) {
+            store.saveMovies(movies);
+        }
+        return count;
     }
 
     public boolean deleteMovie(String id) {
@@ -245,35 +284,44 @@ public class MovieService {
         return result;
     }
 
-    public String exportAll() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n");
-        sb.append("  \"exportDate\": \"").append(new java.util.Date().toString()).append("\",\n");
-        sb.append("  \"totalCount\": ").append(movies.size()).append(",\n");
-        sb.append("  \"movies\": [\n");
-        for (int i = 0; i < movies.size(); i++) {
-            Movie m = movies.get(i);
-            sb.append("    {\n");
-            sb.append("      \"name\": \"").append(escape(m.getName())).append("\",\n");
-            sb.append("      \"director\": \"").append(escape(m.getDirector())).append("\",\n");
-            sb.append("      \"year\": ").append(m.getYear()).append(",\n");
-            sb.append("      \"genre\": \"").append(escape(m.getGenre())).append("\",\n");
-            sb.append("      \"status\": \"").append(escape(m.getStatus())).append("\",\n");
-            sb.append("      \"comment\": \"").append(escape(m.getComment())).append("\",\n");
-            sb.append("      \"rating\": ").append(m.getRating()).append(",\n");
-            sb.append("      \"posterUrl\": \"").append(escape(m.getPosterUrl())).append("\"\n");
-            sb.append("    }");
-            if (i < movies.size() - 1) sb.append(",");
-            sb.append("\n");
+    public Map<String, Integer> getYearStats() {
+        Map<String, Integer> stats = new TreeMap<String, Integer>(Collections.reverseOrder());
+        for (Movie m : movies) {
+            int year = m.getYear();
+            if (year > 0) {
+                String key = String.valueOf(year);
+                Integer count = stats.get(key);
+                if (count == null) count = 0;
+                stats.put(key, count + 1);
+            }
         }
-        sb.append("  ]\n");
-        sb.append("}\n");
-        return sb.toString();
+        return stats;
     }
 
-    private String escape(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    public Map<String, Integer> getRatingStats() {
+        Map<String, Integer> stats = new LinkedHashMap<String, Integer>();
+        for (int i = 5; i >= 1; i--) {
+            stats.put(i + "星", 0);
+        }
+        stats.put("未评分", 0);
+        for (Movie m : movies) {
+            int rating = m.getRating();
+            if (rating > 0 && rating <= 5) {
+                String key = rating + "星";
+                stats.put(key, stats.get(key) + 1);
+            } else {
+                stats.put("未评分", stats.get("未评分") + 1);
+            }
+        }
+        return stats;
+    }
+
+    public String exportAll() {
+        Map<String, Object> export = new LinkedHashMap<String, Object>();
+        export.put("exportDate", new java.util.Date().toString());
+        export.put("totalCount", movies.size());
+        export.put("movies", movies);
+        return store.toJson(export);
     }
 
     public int importMovies(List<Movie> newMovies, boolean overwrite) {

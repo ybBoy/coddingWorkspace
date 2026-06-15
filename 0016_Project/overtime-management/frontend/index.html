@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加班与调休管理系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+    <header class="app-header">
+        <div class="header-left">
+            <h1 class="app-title">加班与调休管理</h1>
+            <span class="app-subtitle">Overtime & Time-off Management</span>
+        </div>
+        <div class="header-right">
+            <label class="user-switch-label">当前用户</label>
+            <select v-model="currentUserId" @change="onUserChange" class="user-select">
+                <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} - {{ u.department }}（{{ u.role === 'MANAGER' ? '主管' : '员工' }}）</option>
+            </select>
+            <div v-if="currentUser" class="user-badge">
+                <div class="avatar">{{ currentUser.name.charAt(0) }}</div>
+                <div class="badge-info">
+                    <span class="badge-name">{{ currentUser.name }}</span>
+                    <span class="badge-dept">{{ currentUser.department }}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <nav class="sidebar">
+            <div class="nav-group">
+                <div class="nav-group-title">员工功能</div>
+                <a :class="['nav-item', currentView === 'dashboard' ? 'active' : '']" @click="currentView='dashboard'">
+                    <span class="nav-icon">📊</span> 个人看板
+                </a>
+                <a :class="['nav-item', currentView === 'overtime' ? 'active' : '']" @click="currentView='overtime'">
+                    <span class="nav-icon">⏰</span> 加班申请
+                </a>
+                <a :class="['nav-item', currentView === 'timeoff' ? 'active' : '']" @click="currentView='timeoff'">
+                    <span class="nav-icon">🏖</span> 调休申请
+                </a>
+            </div>
+            <div v-if="isManager" class="nav-group">
+                <div class="nav-group-title">主管功能</div>
+                <a :class="['nav-item', currentView === 'approve-overtime' ? 'active' : '']" @click="currentView='approve-overtime'">
+                    <span class="nav-icon">✅</span> 加班审批
+                </a>
+                <a :class="['nav-item', currentView === 'approve-timeoff' ? 'active' : '']" @click="currentView='approve-timeoff'">
+                    <span class="nav-icon">📋</span> 调休审批
+                </a>
+                <a :class="['nav-item', currentView === 'report' ? 'active' : '']" @click="currentView='report'">
+                    <span class="nav-icon">📈</span> 工时报表
+                </a>
+            </div>
+        </nav>
+
+        <section class="content">
+            <!-- 个人看板 -->
+            <div v-if="currentView === 'dashboard' && dashboard" class="view-panel">
+                <h2 class="view-title">个人看板</h2>
+                <div class="dashboard-cards">
+                    <div class="dash-card card-overtime">
+                        <div class="card-icon">⏰</div>
+                        <div class="card-value">{{ dashboard.totalOvertimeHours }}<span class="card-unit">小时</span></div>
+                        <div class="card-label">累计加班时长</div>
+                    </div>
+                    <div class="dash-card card-used">
+                        <div class="card-icon">🏖</div>
+                        <div class="card-value">{{ dashboard.usedTimeoffHours }}<span class="card-unit">小时</span></div>
+                        <div class="card-label">已用调休时长</div>
+                    </div>
+                    <div class="dash-card card-remaining">
+                        <div class="card-icon">💎</div>
+                        <div class="card-value">{{ dashboard.remainingHours }}<span class="card-unit">小时</span></div>
+                        <div class="card-label">剩余可用调休</div>
+                    </div>
+                </div>
+                <div class="dashboard-profile">
+                    <div class="profile-avatar">{{ dashboard.name ? dashboard.name.charAt(0) : '' }}</div>
+                    <div class="profile-info">
+                        <div class="profile-name">{{ dashboard.name }}</div>
+                        <div class="profile-dept">{{ dashboard.department }} · {{ dashboard.role === 'MANAGER' ? '部门主管' : '普通员工' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加班申请 -->
+            <div v-if="currentView === 'overtime'" class="view-panel">
+                <h2 class="view-title">加班申请</h2>
+                <div class="form-card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>加班日期</label>
+                            <input type="date" v-model="otForm.date" :max="today">
+                        </div>
+                        <div class="form-group">
+                            <label>开始时间</label>
+                            <input type="time" v-model="otForm.startTime">
+                        </div>
+                        <div class="form-group">
+                            <label>结束时间</label>
+                            <input type="time" v-model="otForm.endTime">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>加班事由</label>
+                        <textarea v-model="otForm.reason" rows="3" placeholder="请输入加班事由"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" @click="submitOvertime">提交申请</button>
+                    </div>
+                </div>
+                <h3 class="section-title">我的加班记录</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>时间段</th>
+                                <th>时长</th>
+                                <th>事由</th>
+                                <th>状态</th>
+                                <th>审批意见</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="myOvertime.length === 0"><td colspan="6" class="empty-row">暂无记录</td></tr>
+                            <tr v-for="r in myOvertime" :key="r.id">
+                                <td>{{ r.date }}</td>
+                                <td>{{ r.startTime }} - {{ r.endTime }}</td>
+                                <td>{{ r.hours }}小时</td>
+                                <td>{{ r.reason }}</td>
+                                <td><span :class="['status-tag', 'status-' + r.status.toLowerCase()]">{{ statusText(r.status) }}</span></td>
+                                <td>{{ r.rejectReason || '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 调休申请 -->
+            <div v-if="currentView === 'timeoff'" class="view-panel">
+                <h2 class="view-title">调休申请</h2>
+                <div class="form-card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>调休日期</label>
+                            <input type="date" v-model="toForm.date" :min="today">
+                        </div>
+                        <div class="form-group">
+                            <label>调休类型</label>
+                            <select v-model="toForm.type">
+                                <option value="FULL_DAY">全天（8小时）</option>
+                                <option value="HALF_DAY">半天（4小时）</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>调休事由</label>
+                        <textarea v-model="toForm.reason" rows="3" placeholder="请输入调休事由"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" @click="submitTimeoff">提交申请</button>
+                    </div>
+                </div>
+                <h3 class="section-title">我的调休记录</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>类型</th>
+                                <th>时长</th>
+                                <th>事由</th>
+                                <th>状态</th>
+                                <th>审批意见</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="myTimeoff.length === 0"><td colspan="6" class="empty-row">暂无记录</td></tr>
+                            <tr v-for="r in myTimeoff" :key="r.id">
+                                <td>{{ r.date }}</td>
+                                <td>{{ r.type === 'FULL_DAY' ? '全天' : '半天' }}</td>
+                                <td>{{ r.hours }}小时</td>
+                                <td>{{ r.reason }}</td>
+                                <td><span :class="['status-tag', 'status-' + r.status.toLowerCase()]">{{ statusText(r.status) }}</span></td>
+                                <td>{{ r.rejectReason || '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 加班审批 -->
+            <div v-if="currentView === 'approve-overtime'" class="view-panel">
+                <h2 class="view-title">加班审批<span class="view-subtitle">（本部门待审批）</span></h2>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>申请人</th>
+                                <th>日期</th>
+                                <th>时间段</th>
+                                <th>时长</th>
+                                <th>事由</th>
+                                <th>申请人剩余调休</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="pendingOvertime.length === 0"><td colspan="7" class="empty-row">暂无待审批申请</td></tr>
+                            <tr v-for="r in pendingOvertime" :key="r.id">
+                                <td>{{ r.userName }}</td>
+                                <td>{{ r.date }}</td>
+                                <td>{{ r.startTime }} - {{ r.endTime }}</td>
+                                <td>{{ r.hours }}小时</td>
+                                <td>{{ r.reason }}</td>
+                                <td>{{ r.userRemainingHours }}小时</td>
+                                <td class="action-cell">
+                                    <button class="btn btn-success btn-sm" @click="approveOvertime(r.id)">通过</button>
+                                    <button class="btn btn-danger btn-sm" @click="startRejectOvertime(r.id)">拒绝</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-if="rejectOvertimeId" class="reject-modal-overlay" @click.self="rejectOvertimeId=null">
+                    <div class="reject-modal">
+                        <h3>拒绝加班申请</h3>
+                        <div class="form-group">
+                            <label>拒绝意见（必填）</label>
+                            <textarea v-model="rejectOvertimeReason" rows="3" placeholder="请输入拒绝原因"></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-danger" @click="confirmRejectOvertime">确认拒绝</button>
+                            <button class="btn btn-secondary" @click="rejectOvertimeId=null">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 调休审批 -->
+            <div v-if="currentView === 'approve-timeoff'" class="view-panel">
+                <h2 class="view-title">调休审批<span class="view-subtitle">（本部门待审批）</span></h2>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>申请人</th>
+                                <th>日期</th>
+                                <th>类型</th>
+                                <th>时长</th>
+                                <th>事由</th>
+                                <th>申请人剩余调休</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="pendingTimeoff.length === 0"><td colspan="7" class="empty-row">暂无待审批申请</td></tr>
+                            <tr v-for="r in pendingTimeoff" :key="r.id">
+                                <td>{{ r.userName }}</td>
+                                <td>{{ r.date }}</td>
+                                <td>{{ r.type === 'FULL_DAY' ? '全天' : '半天' }}</td>
+                                <td>{{ r.hours }}小时</td>
+                                <td>{{ r.reason }}</td>
+                                <td>{{ r.userRemainingHours }}小时</td>
+                                <td class="action-cell">
+                                    <button class="btn btn-success btn-sm" @click="approveTimeoff(r.id)">通过</button>
+                                    <button class="btn btn-danger btn-sm" @click="startRejectTimeoff(r.id)">拒绝</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-if="rejectTimeoffId" class="reject-modal-overlay" @click.self="rejectTimeoffId=null">
+                    <div class="reject-modal">
+                        <h3>拒绝调休申请</h3>
+                        <div class="form-group">
+                            <label>拒绝意见（必填）</label>
+                            <textarea v-model="rejectTimeoffReason" rows="3" placeholder="请输入拒绝原因"></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-danger" @click="confirmRejectTimeoff">确认拒绝</button>
+                            <button class="btn btn-secondary" @click="rejectTimeoffId=null">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工时报表 -->
+            <div v-if="currentView === 'report'" class="view-panel">
+                <h2 class="view-title">本部门工时报表</h2>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>角色</th>
+                                <th>累计加班(小时)</th>
+                                <th>已调休(小时)</th>
+                                <th>剩余(小时)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="r in deptReport" :key="r.id">
+                                <td>{{ r.name }}</td>
+                                <td>{{ r.role === 'MANAGER' ? '主管' : '员工' }}</td>
+                                <td>{{ r.totalOvertimeHours }}</td>
+                                <td>{{ r.usedTimeoffHours }}</td>
+                                <td><strong>{{ r.remainingHours }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div v-if="toast.show" :class="['toast', toast.type]">{{ toast.message }}</div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

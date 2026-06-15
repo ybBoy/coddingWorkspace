@@ -80,6 +80,18 @@
                         <span class="empty-hint-sm">暂无数据</span>
                     </div>
                 </div>
+                <div class="stats-card">
+                    <h2 class="section-title">评分分布</h2>
+                    <div id="ratingStats" class="rating-stats">
+                        <span class="empty-hint-sm">暂无数据</span>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <h2 class="section-title">年度观影</h2>
+                    <div id="yearStats" class="year-stats">
+                        <span class="empty-hint-sm">暂无数据</span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -176,6 +188,29 @@
                     </div>
                 </div>
                 <div class="form-row">
+                    <div class="form-group" style="flex: 1.5; min-width: 240px;">
+                        <label for="movieTags">标签</label>
+                        <input type="text" id="movieTags" placeholder="用逗号分隔，如：经典,悬疑,必看">
+                    </div>
+                    <div class="form-group">
+                        <label for="moviePriority">收藏优先级</label>
+                        <select id="moviePriority">
+                            <option value="0">普通</option>
+                            <option value="1">⭐ 一星</option>
+                            <option value="2">⭐⭐ 二星</option>
+                            <option value="3">⭐⭐⭐ 三星</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieWatchDate">观看日期</label>
+                        <input type="date" id="movieWatchDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="movieRewatchCount">重刷次数</label>
+                        <input type="number" id="movieRewatchCount" min="0" value="0" placeholder="0">
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group full-width">
                         <label for="movieComment">短评</label>
                         <input type="text" id="movieComment" placeholder="写下你的一句话短评...">
@@ -222,9 +257,66 @@
         </section>
 
         <section class="movie-list-section">
-            <h2 class="section-title">电影列表</h2>
+            <div class="list-header">
+                <h2 class="section-title">电影列表</h2>
+                <div class="list-header-right">
+                    <div class="view-switch">
+                        <button type="button" class="btn-view active" id="btnCardView" onclick="switchView('card')">
+                            卡片视图
+                        </button>
+                        <button type="button" class="btn-view" id="btnTableView" onclick="switchView('table')">
+                            表格视图
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="batch-toolbar" id="batchToolbar" style="display:none;">
+                <label class="select-all">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                    全选 <span id="selectedCount">0</span> 部已选中
+                </label>
+                <div class="batch-actions">
+                    <select id="batchStatusSelect">
+                        <option value="">批量修改状态...</option>
+                        <option value="想看">改为 想看</option>
+                        <option value="已看">改为 已看</option>
+                        <option value="搁置">改为 搁置</option>
+                    </select>
+                    <button type="button" class="btn-tool btn-batch-status" onclick="batchUpdateStatus()">
+                        应用
+                    </button>
+                    <button type="button" class="btn-tool btn-batch-delete" onclick="batchDelete()">
+                        批量删除
+                    </button>
+                    <button type="button" class="btn-tool btn-cancel" onclick="clearSelection()">
+                        取消选择
+                    </button>
+                </div>
+            </div>
+
             <div id="movieList" class="movie-list">
                 <p class="empty-hint">暂无电影，快来添加第一部吧！</p>
+            </div>
+            <div id="movieTable" class="movie-table-container" style="display:none;">
+                <table class="movie-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;"><input type="checkbox" id="tableSelectAll" onchange="toggleSelectAll(this)"></th>
+                            <th>电影名</th>
+                            <th>导演</th>
+                            <th>年份</th>
+                            <th>类型</th>
+                            <th>状态</th>
+                            <th>评分</th>
+                            <th>标签</th>
+                            <th>优先级</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movieTableBody">
+                    </tbody>
+                </table>
             </div>
         </section>
     </div>
@@ -280,6 +372,29 @@
                     <div class="form-group" style="flex: 2; min-width: 240px;">
                         <label for="editMoviePoster">海报链接</label>
                         <input type="text" id="editMoviePoster">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1.5;">
+                        <label for="editMovieTags">标签</label>
+                        <input type="text" id="editMovieTags" placeholder="用逗号分隔">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMoviePriority">收藏优先级</label>
+                        <select id="editMoviePriority">
+                            <option value="0">普通</option>
+                            <option value="1">⭐ 一星</option>
+                            <option value="2">⭐⭐ 二星</option>
+                            <option value="3">⭐⭐⭐ 三星</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMovieWatchDate">观看日期</label>
+                        <input type="date" id="editMovieWatchDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="editMovieRewatchCount">重刷次数</label>
+                        <input type="number" id="editMovieRewatchCount" min="0" value="0">
                     </div>
                 </div>
                 <div class="form-row">

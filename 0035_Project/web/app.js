@@ -17,10 +17,22 @@
     const randomModalEl = document.getElementById('randomModal');
     const randomMovieContentEl = document.getElementById('randomMovieContent');
     const importOptionsEl = document.getElementById('importOptions');
+    const ratingStatsEl = document.getElementById('ratingStats');
+    const yearStatsEl = document.getElementById('yearStats');
+    const batchToolbarEl = document.getElementById('batchToolbar');
+    const selectedCountEl = document.getElementById('selectedCount');
+    const movieTableContainer = document.getElementById('movieTable');
+    const movieTableBody = document.getElementById('movieTableBody');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const tableSelectAll = document.getElementById('tableSelectAll');
+    const batchStatusSelect = document.getElementById('batchStatusSelect');
 
     let currentFilter = { status: 'all', genre: 'all', search: '', sort: 'default' };
     let searchTimer = null;
     let lastImportFile = null;
+    let selectedIds = new Set();
+    let currentView = 'card';
+    let currentMovies = [];
 
     function apiRequest(url, options) {
         return fetch(API_BASE + url, options).then(function(res) {
@@ -77,6 +89,67 @@
                 loadMovies();
             });
             genreStatsEl.appendChild(tag);
+        });
+    }
+
+    function loadRatingStats() {
+        apiRequest('/api/rating-stats').then(function(stats) {
+            renderRatingStats(stats);
+        }).catch(function(err) {
+            console.error('加载评分统计失败:', err);
+        });
+    }
+
+    function renderRatingStats(stats) {
+        if (!stats || Object.keys(stats).length === 0) {
+            ratingStatsEl.innerHTML = '<span class="empty-hint-sm">暂无数据</span>';
+            return;
+        }
+        let total = 0;
+        Object.keys(stats).forEach(function(k) { total += stats[k]; });
+        ratingStatsEl.innerHTML = '';
+        Object.keys(stats).forEach(function(label) {
+            const count = stats[label];
+            const percent = total > 0 ? Math.round(count * 100 / total) : 0;
+            const item = document.createElement('div');
+            item.className = 'rating-item';
+            item.innerHTML =
+                '<span class="rating-label">' + label + '</span>' +
+                '<div class="rating-bar"><div class="rating-bar-fill" style="width:' + percent + '%"></div></div>' +
+                '<span class="rating-count">' + count + '</span>';
+            ratingStatsEl.appendChild(item);
+        });
+    }
+
+    function loadYearStats() {
+        apiRequest('/api/year-stats').then(function(stats) {
+            renderYearStats(stats);
+        }).catch(function(err) {
+            console.error('加载年度统计失败:', err);
+        });
+    }
+
+    function renderYearStats(stats) {
+        if (!stats || Object.keys(stats).length === 0) {
+            yearStatsEl.innerHTML = '<span class="empty-hint-sm">暂无数据</span>';
+            return;
+        }
+        let max = 0;
+        Object.keys(stats).forEach(function(k) {
+            if (stats[k] > max) max = stats[k];
+        });
+        yearStatsEl.innerHTML = '';
+        const years = Object.keys(stats).slice(0, 8);
+        years.forEach(function(year) {
+            const count = stats[year];
+            const percent = max > 0 ? Math.round(count * 100 / max) : 0;
+            const item = document.createElement('div');
+            item.className = 'year-item';
+            item.innerHTML =
+                '<span class="year-label">' + year + '</span>' +
+                '<div class="year-bar"><div class="year-bar-fill" style="width:' + percent + '%"></div></div>' +
+                '<span class="year-count">' + count + '</span>';
+            yearStatsEl.appendChild(item);
         });
     }
 
@@ -137,8 +210,18 @@
     }
 
     function renderMovies(movies) {
-        statResultEl.textContent = movies.length;
+        currentMovies = movies || [];
+        statResultEl.textContent = currentMovies.length;
 
+        if (currentView === 'card') {
+            renderCardView(currentMovies);
+        } else {
+            renderTableView(currentMovies);
+        }
+        updateBatchToolbar();
+    }
+
+    function renderCardView(movies) {
         if (!movies || movies.length === 0) {
             movieListEl.innerHTML = '<p class="empty-hint">暂无电影，快来添加第一部吧！</p>';
             return;
@@ -148,7 +231,18 @@
         movies.forEach(function(movie) {
             const card = document.createElement('div');
             card.className = 'movie-card';
+            if (selectedIds.has(movie.id)) card.classList.add('selected');
             card.dataset.id = movie.id;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'card-checkbox';
+            checkbox.checked = selectedIds.has(movie.id);
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                toggleSelect(movie.id, this.checked);
+            });
+            card.appendChild(checkbox);
 
             const posterWrapper = document.createElement('div');
             posterWrapper.className = 'poster-wrapper';
@@ -214,16 +308,44 @@
             info.innerHTML = infoHtml || '<div style="color:#666;">暂无详细信息</div>';
             cardContent.appendChild(info);
 
+            if (movie.tags && movie.tags.trim()) {
+                const tagsEl = document.createElement('div');
+                tagsEl.className = 'tags-container';
+                const tagArr = movie.tags.split(/[,，、\/]/);
+                tagArr.forEach(function(t) {
+                    t = t.trim();
+                    if (t) {
+                        const tag = document.createElement('span');
+                        tag.className = 'tag';
+                        tag.textContent = t;
+                        tagsEl.appendChild(tag);
+                    }
+                });
+                cardContent.appendChild(tagsEl);
+            }
+
+            const watchInfo = document.createElement('div');
+            watchInfo.className = 'watch-info';
+            let watchInfoHtml = '';
+            if (movie.priority > 0) {
+                watchInfoHtml += '优先级: ' + '★'.repeat(movie.priority) + '　';
+            }
+            if (movie.watchDate) {
+                watchInfoHtml += '观看: ' + movie.watchDate + '　';
+            }
+            if (movie.rewatchCount > 0) {
+                watchInfoHtml += '重刷: ' + movie.rewatchCount + '次';
+            }
+            if (watchInfoHtml) {
+                watchInfo.innerHTML = watchInfoHtml;
+                cardContent.appendChild(watchInfo);
+            }
+
             if (movie.comment) {
                 const commentEl = document.createElement('div');
                 commentEl.className = 'movie-comment';
                 commentEl.textContent = movie.comment;
                 cardContent.appendChild(commentEl);
-            } else {
-                const spacer = document.createElement('div');
-                spacer.style.flex = '1';
-                spacer.style.minHeight = '36px';
-                cardContent.appendChild(spacer);
             }
 
             const actions = document.createElement('div');
@@ -322,6 +444,233 @@
             refreshAll();
         }).catch(function(err) {
             alert('删除失败: ' + err.message);
+        });
+    }
+
+    function toggleSelect(id, checked) {
+        if (checked) {
+            selectedIds.add(id);
+        } else {
+            selectedIds.delete(id);
+        }
+        updateBatchToolbar();
+        updateCardSelection();
+        updateTableSelection();
+    }
+
+    function toggleSelectAll(checkboxEl) {
+        if (checkboxEl.checked) {
+            currentMovies.forEach(function(m) { selectedIds.add(m.id); });
+        } else {
+            selectedIds.clear();
+        }
+        if (selectAllCheckbox) selectAllCheckbox.checked = checkboxEl.checked;
+        if (tableSelectAll) tableSelectAll.checked = checkboxEl.checked;
+        updateBatchToolbar();
+        updateCardSelection();
+        updateTableSelection();
+    }
+
+    function clearSelection() {
+        selectedIds.clear();
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        if (tableSelectAll) tableSelectAll.checked = false;
+        updateBatchToolbar();
+        updateCardSelection();
+        updateTableSelection();
+    }
+
+    function updateBatchToolbar() {
+        if (!batchToolbarEl) return;
+        const count = selectedIds.size;
+        if (selectedCountEl) selectedCountEl.textContent = count;
+        if (count > 0) {
+            batchToolbarEl.style.display = 'flex';
+        } else {
+            batchToolbarEl.style.display = 'none';
+        }
+    }
+
+    function updateCardSelection() {
+        if (currentView !== 'card') return;
+        const cards = document.querySelectorAll('.movie-card');
+        cards.forEach(function(card) {
+            const id = card.dataset.id;
+            const checkbox = card.querySelector('.card-checkbox');
+            if (selectedIds.has(id)) {
+                card.classList.add('selected');
+                if (checkbox) checkbox.checked = true;
+            } else {
+                card.classList.remove('selected');
+                if (checkbox) checkbox.checked = false;
+            }
+        });
+    }
+
+    function updateTableSelection() {
+        if (currentView !== 'table') return;
+        const rows = movieTableBody.querySelectorAll('tr');
+        rows.forEach(function(row) {
+            const id = row.dataset.id;
+            const checkbox = row.querySelector('.row-checkbox');
+            if (selectedIds.has(id)) {
+                row.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                if (checkbox) checkbox.checked = true;
+            } else {
+                row.style.backgroundColor = '';
+                if (checkbox) checkbox.checked = false;
+            }
+        });
+    }
+
+    function batchDelete() {
+        if (selectedIds.size === 0) return;
+        if (!confirm('确定要删除选中的 ' + selectedIds.size + ' 部电影吗？')) return;
+        const ids = Array.from(selectedIds);
+        apiRequest('/api/batch/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids })
+        }).then(function(res) {
+            alert('已删除 ' + (res.deleted || 0) + ' 部电影');
+            selectedIds.clear();
+            refreshAll();
+        }).catch(function(err) {
+            alert('批量删除失败: ' + err.message);
+        });
+    }
+
+    function batchUpdateStatus() {
+        if (selectedIds.size === 0) return;
+        const status = batchStatusSelect.value;
+        if (!status) {
+            alert('请选择要修改的状态');
+            return;
+        }
+        const ids = Array.from(selectedIds);
+        apiRequest('/api/batch/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, status: status })
+        }).then(function(res) {
+            alert('已修改 ' + (res.updated || 0) + ' 部电影的状态');
+            selectedIds.clear();
+            batchStatusSelect.value = '';
+            refreshAll();
+        }).catch(function(err) {
+            alert('批量修改失败: ' + err.message);
+        });
+    }
+
+    function switchView(view) {
+        currentView = view;
+        const btnCard = document.getElementById('btnCardView');
+        const btnTable = document.getElementById('btnTableView');
+        if (btnCard) btnCard.classList.toggle('active', view === 'card');
+        if (btnTable) btnTable.classList.toggle('active', view === 'table');
+
+        if (view === 'card') {
+            movieListEl.style.display = '';
+            movieTableContainer.style.display = 'none';
+            renderCardView(currentMovies);
+        } else {
+            movieListEl.style.display = 'none';
+            movieTableContainer.style.display = 'block';
+            renderTableView(currentMovies);
+        }
+    }
+
+    function renderTableView(movies) {
+        if (!movies || movies.length === 0) {
+            movieTableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#5a4a3a;">暂无电影</td></tr>';
+            return;
+        }
+
+        movieTableBody.innerHTML = '';
+        movies.forEach(function(movie) {
+            const tr = document.createElement('tr');
+            tr.dataset.id = movie.id;
+            if (selectedIds.has(movie.id)) {
+                tr.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+            }
+
+            const tdCheck = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'row-checkbox';
+            checkbox.checked = selectedIds.has(movie.id);
+            checkbox.addEventListener('change', function() {
+                toggleSelect(movie.id, this.checked);
+            });
+            tdCheck.appendChild(checkbox);
+            tr.appendChild(tdCheck);
+
+            const tdName = document.createElement('td');
+            tdName.textContent = movie.name || '';
+            tdName.style.fontWeight = '600';
+            tdName.style.color = '#f0d78c';
+            tr.appendChild(tdName);
+
+            const tdDir = document.createElement('td');
+            tdDir.textContent = movie.director || '-';
+            tr.appendChild(tdDir);
+
+            const tdYear = document.createElement('td');
+            tdYear.textContent = movie.year || '-';
+            tr.appendChild(tdYear);
+
+            const tdGenre = document.createElement('td');
+            tdGenre.textContent = movie.genre || '-';
+            tr.appendChild(tdGenre);
+
+            const tdStatus = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'status-badge status-' + (movie.status || '想看');
+            statusBadge.textContent = movie.status || '想看';
+            tdStatus.appendChild(statusBadge);
+            tr.appendChild(tdStatus);
+
+            const tdRating = document.createElement('td');
+            tdRating.innerHTML = renderStars(movie.rating);
+            tr.appendChild(tdRating);
+
+            const tdTags = document.createElement('td');
+            tdTags.textContent = movie.tags || '-';
+            tdTags.style.maxWidth = '120px';
+            tdTags.style.overflow = 'hidden';
+            tdTags.style.textOverflow = 'ellipsis';
+            tdTags.style.whiteSpace = 'nowrap';
+            tr.appendChild(tdTags);
+
+            const tdPriority = document.createElement('td');
+            tdPriority.textContent = movie.priority > 0 ? '★'.repeat(movie.priority) : '-';
+            tdPriority.style.color = '#d4af37';
+            tr.appendChild(tdPriority);
+
+            const tdActions = document.createElement('td');
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'table-actions';
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'table-btn';
+            editBtn.textContent = '编辑';
+            editBtn.addEventListener('click', function() { openEditModal(movie); });
+            actionsDiv.appendChild(editBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'table-btn delete';
+            delBtn.textContent = '删除';
+            delBtn.addEventListener('click', function() {
+                if (confirm('确定要删除《' + movie.name + '》吗？')) {
+                    deleteMovie(movie.id);
+                }
+            });
+            actionsDiv.appendChild(delBtn);
+
+            tdActions.appendChild(actionsDiv);
+            tr.appendChild(tdActions);
+
+            movieTableBody.appendChild(tr);
         });
     }
 
@@ -461,6 +810,8 @@
         loadStats();
         loadStatusStats();
         loadGenreStats();
+        loadRatingStats();
+        loadYearStats();
         loadGenres();
         loadMovies();
     }
@@ -474,6 +825,10 @@
         document.getElementById('editMovieStatus').value = movie.status || '想看';
         document.getElementById('editMovieRating').value = movie.rating || 0;
         document.getElementById('editMoviePoster').value = movie.posterUrl || '';
+        document.getElementById('editMovieTags').value = movie.tags || '';
+        document.getElementById('editMoviePriority').value = movie.priority || 0;
+        document.getElementById('editMovieWatchDate').value = movie.watchDate || '';
+        document.getElementById('editMovieRewatchCount').value = movie.rewatchCount || 0;
         document.getElementById('editMovieComment').value = movie.comment || '';
         editModalEl.style.display = 'flex';
     }
@@ -497,6 +852,10 @@
             status: document.getElementById('editMovieStatus').value,
             rating: parseInt(document.getElementById('editMovieRating').value) || 0,
             posterUrl: document.getElementById('editMoviePoster').value.trim(),
+            tags: document.getElementById('editMovieTags').value.trim(),
+            priority: parseInt(document.getElementById('editMoviePriority').value) || 0,
+            watchDate: document.getElementById('editMovieWatchDate').value || '',
+            rewatchCount: parseInt(document.getElementById('editMovieRewatchCount').value) || 0,
             comment: document.getElementById('editMovieComment').value.trim()
         };
         updateMovieFull(id, data);
@@ -532,6 +891,10 @@
             status: document.getElementById('movieStatus').value,
             rating: parseInt(document.getElementById('movieRating').value) || 0,
             posterUrl: document.getElementById('moviePoster').value.trim(),
+            tags: document.getElementById('movieTags').value.trim(),
+            priority: parseInt(document.getElementById('moviePriority').value) || 0,
+            watchDate: document.getElementById('movieWatchDate').value || '',
+            rewatchCount: parseInt(document.getElementById('movieRewatchCount').value) || 0,
             comment: document.getElementById('movieComment').value.trim()
         };
 
@@ -571,6 +934,11 @@
     window.importMovies = importMovies;
     window.executeImport = executeImport;
     window.cancelImport = cancelImport;
+    window.switchView = switchView;
+    window.toggleSelectAll = toggleSelectAll;
+    window.batchDelete = batchDelete;
+    window.batchUpdateStatus = batchUpdateStatus;
+    window.clearSelection = clearSelection;
 
     refreshAll();
 })();

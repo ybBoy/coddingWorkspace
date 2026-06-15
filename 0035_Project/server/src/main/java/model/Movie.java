@@ -11,9 +11,15 @@ public class Movie {
     private int rating;
     private String posterUrl;
     private long createdAt;
+    private String tags;
+    private int priority;
+    private String watchDate;
+    private int rewatchCount;
 
     public Movie() {
         this.createdAt = System.currentTimeMillis();
+        this.priority = 0;
+        this.rewatchCount = 0;
     }
 
     public Movie(String id, String name, String director, int year, String genre,
@@ -28,6 +34,8 @@ public class Movie {
         this.rating = rating;
         this.posterUrl = posterUrl;
         this.createdAt = createdAt;
+        this.priority = 0;
+        this.rewatchCount = 0;
     }
 
     public String getId() {
@@ -108,5 +116,37 @@ public class Movie {
 
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public String getWatchDate() {
+        return watchDate;
+    }
+
+    public void setWatchDate(String watchDate) {
+        this.watchDate = watchDate;
+    }
+
+    public int getRewatchCount() {
+        return rewatchCount;
+    }
+
+    public void setRewatchCount(int rewatchCount) {
+        this.rewatchCount = rewatchCount;
     }
 }

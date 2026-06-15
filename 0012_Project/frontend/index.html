@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业员工门户 - 请假流程演示系统</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span class="logo-text">企业员工门户</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <nav class="tab-nav">
+                    <button class="tab-btn active" data-tab="employee" id="tabEmployee">员工工作台</button>
+                    <button class="tab-btn" data-tab="manager" id="tabManager">主管审批台</button>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="user-switcher">
+                    <label for="userSelect">当前用户：</label>
+                    <select id="userSelect"></select>
+                </div>
+                <div class="current-user-badge" id="currentUserBadge">
+                    <div class="avatar" id="avatarDisplay">张</div>
+                    <div class="user-info">
+                        <span class="user-name" id="userNameDisplay">张伟</span>
+                        <span class="user-status" id="userStatusDisplay">正常在岗</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <!-- 员工工作台 -->
+            <section class="tab-content active" id="employeeTab">
+                <div class="employee-layout">
+                    <div class="left-panel">
+                        <div class="glass-card status-card">
+                            <div class="card-header">
+                                <h3>个人状态</h3>
+                            </div>
+                            <div class="status-card-body">
+                                <div class="big-avatar" id="bigAvatar">张</div>
+                                <div class="status-info">
+                                    <h2 class="emp-name" id="empName">张伟</h2>
+                                    <p class="emp-dept" id="empDept">综合管理部</p>
+                                    <p class="emp-role" id="empRole">部门主管</p>
+                                    <div class="status-badge" id="statusBadge">
+                                        <span class="status-dot"></span>
+                                        <span class="status-text">正常在岗</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card leave-form-card">
+                            <div class="card-header">
+                                <h3>提交请假申请</h3>
+                            </div>
+                            <form id="leaveForm" class="leave-form">
+                                <div class="form-group">
+                                    <label>请假类型</label>
+                                    <select id="leaveType" required>
+                                        <option value="">请选择</option>
+                                        <option value="年假">年假</option>
+                                        <option value="病假">病假</option>
+                                        <option value="事假">事假</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>开始日期</label>
+                                        <input type="date" id="startDate" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>结束日期</label>
+                                        <input type="date" id="endDate" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>请假事由</label>
+                                    <textarea id="leaveReason" rows="3" required placeholder="请输入请假事由..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">提交申请</button>
+                            </form>
+                            <div class="form-message" id="formMessage"></div>
+                        </div>
+                    </div>
+
+                    <div class="right-panel">
+                        <div class="glass-card records-card">
+                            <div class="card-header">
+                                <h3>我的请假记录</h3>
+                                <div class="filter-tabs">
+                                    <button class="filter-btn active" data-filter="all">全部</button>
+                                    <button class="filter-btn" data-filter="待审批">待审批</button>
+                                    <button class="filter-btn" data-filter="已通过">已通过</button>
+                                    <button class="filter-btn" data-filter="已拒绝">已拒绝</button>
+                                </div>
+                            </div>
+                            <div class="records-body" id="myRecords">
+                                <div class="empty-state">暂无请假记录</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 主管审批台 -->
+            <section class="tab-content" id="managerTab">
+                <div class="manager-layout">
+                    <div class="glass-card approval-card">
+                        <div class="card-header">
+                            <h3>请假审批面板</h3>
+                            <div class="filter-tabs">
+                                <button class="filter-btn active" data-filter="all" id="mgrFilterAll">全部</button>
+                                <button class="filter-btn" data-filter="待审批" id="mgrFilterPending">待审批</button>
+                                <button class="filter-btn" data-filter="已通过" id="mgrFilterApproved">已通过</button>
+                                <button class="filter-btn" data-filter="已拒绝" id="mgrFilterRejected">已拒绝</button>
+                            </div>
+                        </div>
+                        <div class="approval-body" id="allRecords">
+                            <div class="empty-state">暂无请假申请</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 审批弹窗 -->
+    <div class="modal-overlay" id="approvalModal">
+        <div class="glass-card modal-card">
+            <div class="modal-header">
+                <h3 id="modalTitle">审批操作</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-detail" id="modalDetail"></div>
+                <div class="form-group">
+                    <label>审批意见</label>
+                    <textarea id="approvalComment" rows="3" placeholder="请输入审批意见..."></textarea>
+                </div>
+                <div class="comment-hint" id="commentHint"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="btnApprove">通过</button>
+                <button class="btn btn-danger" id="btnReject">拒绝</button>
+                <button class="btn btn-secondary" id="btnCancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

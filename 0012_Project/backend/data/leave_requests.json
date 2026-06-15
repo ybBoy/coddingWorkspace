@@ -1,0 +1,13 @@
+[ {
+  "id" : "LR0001",
+  "userId" : "U003",
+  "userName" : "王强",
+  "department" : "市场拓展部",
+  "leaveType" : "??",
+  "startDate" : "2026-06-15",
+  "endDate" : "2026-06-17",
+  "reason" : "????????,???",
+  "status" : "待审批",
+  "approverComment" : "",
+  "createTime" : "2026-06-10"
+} ]

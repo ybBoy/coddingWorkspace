@@ -1,0 +1,13 @@
+[
+  {"id":"U001","name":"张伟","department":"技术部","role":"MANAGER","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U002","name":"李明","department":"技术部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U003","name":"王芳","department":"技术部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U004","name":"刘洋","department":"产品部","role":"MANAGER","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U005","name":"陈静","department":"产品部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U006","name":"赵磊","department":"产品部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U007","name":"孙鹏","department":"运营部","role":"MANAGER","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U008","name":"周婷","department":"运营部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U009","name":"吴强","department":"运营部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U010","name":"郑晓","department":"人事部","role":"MANAGER","totalOvertimeHours":0,"usedTimeoffHours":0},
+  {"id":"U011","name":"黄丽","department":"人事部","role":"EMPLOYEE","totalOvertimeHours":0,"usedTimeoffHours":0}
+]

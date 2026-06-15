@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>团队任务管理</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <h1 class="app-title">📋 任务管理</h1>
+        </div>
+        <div class="header-right">
+            <div id="user-info" class="user-info">
+                <div id="user-avatar" class="user-avatar"></div>
+                <span id="user-name" class="user-name"></span>
+                <span id="user-role" class="user-role"></span>
+            </div>
+            <select id="user-selector" class="user-selector">
+                <option value="">-- 选择用户 --</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="filter-btn active" data-filter="全部">全部</button>
+                <button class="filter-btn" data-filter="未完成">未完成</button>
+                <button class="filter-btn" data-filter="已完成">已完成</button>
+            </div>
+            <div class="toolbar-right">
+                <div id="assignee-filter-wrap" class="assignee-filter-wrap" style="display:none;">
+                    <select id="assignee-filter" class="assignee-filter">
+                        <option value="">全部成员</option>
+                    </select>
+                </div>
+                <button id="btn-new-task" class="btn btn-primary" disabled>＋ 新建任务</button>
+            </div>
+        </div>
+
+        <div id="task-list" class="task-list">
+            <div class="empty-state">请先选择用户</div>
+        </div>
+    </main>
+
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">新建任务</h2>
+                <button id="modal-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>任务标题</label>
+                    <input type="text" id="task-title" placeholder="请输入任务标题" />
+                </div>
+                <div class="form-group">
+                    <label>截止日期</label>
+                    <input type="date" id="task-due-date" />
+                </div>
+                <div class="form-group">
+                    <label>优先级</label>
+                    <select id="task-priority">
+                        <option value="高">高</option>
+                        <option value="中" selected>中</option>
+                        <option value="低">低</option>
+                    </select>
+                </div>
+                <div class="form-group" id="assignee-group" style="display:none;">
+                    <label>负责人</label>
+                    <select id="task-assignee"></select>
+                </div>
+                <div class="form-group" id="status-group" style="display:none;">
+                    <label>状态</label>
+                    <select id="task-status">
+                        <option value="未开始">未开始</option>
+                        <option value="进行中">进行中</option>
+                        <option value="已完成">已完成</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel" class="btn btn-secondary">取消</button>
+                <button id="btn-save" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-overlay" class="modal-overlay">
+        <div class="modal confirm-modal">
+            <div class="modal-header">
+                <h2>确认删除</h2>
+                <button id="confirm-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这条任务吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-cancel" class="btn btn-secondary">取消</button>
+                <button id="confirm-ok" class="btn btn-danger">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

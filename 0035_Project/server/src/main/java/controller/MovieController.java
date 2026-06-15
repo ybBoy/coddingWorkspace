@@ -1,10 +1,14 @@
 package controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.sun.net.httpserver.HttpExchange;
 import model.Movie;
 import service.MovieService;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -14,9 +18,14 @@ import java.util.Map;
 
 public class MovieController {
     private final MovieService service;
+    private final Gson gson;
 
     public MovieController(MovieService service) {
         this.service = service;
+        this.gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create();
     }
 
     public void handleRequest(HttpExchange exchange) throws IOException {
@@ -24,34 +33,47 @@ public class MovieController {
         URI uri = exchange.getRequestURI();
         String path = uri.getPath();
 
-        if ("GET".equalsIgnoreCase(method) && path.equals("/api/movies")) {
-            handleGetMovies(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/stats")) {
-            handleGetStats(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/genres")) {
-            handleGetGenres(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/genre-stats")) {
-            handleGetGenreStats(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
-            handleGetMovieById(exchange, path);
-        } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/movies")) {
-            handleAddMovie(exchange);
-        } else if ("PUT".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
-            handleUpdateMovie(exchange, path);
-        } else if ("PATCH".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
-            handleUpdateStatus(exchange, path);
-        } else if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
-            handleDeleteMovie(exchange, path);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/status-stats")) {
-            handleGetStatusStats(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/export")) {
-            handleExport(exchange);
-        } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/import")) {
-            handleImport(exchange);
-        } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/random")) {
-            handleGetRandom(exchange);
-        } else {
-            sendResponse(exchange, 404, "{\"error\":\"Not Found\"}");
+        try {
+            if ("GET".equalsIgnoreCase(method) && path.equals("/api/movies")) {
+                handleGetMovies(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/stats")) {
+                handleGetStats(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/genres")) {
+                handleGetGenres(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/genre-stats")) {
+                handleGetGenreStats(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/status-stats")) {
+                handleGetStatusStats(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/year-stats")) {
+                handleGetYearStats(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/rating-stats")) {
+                handleGetRatingStats(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/export")) {
+                handleExport(exchange);
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/import")) {
+                handleImport(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.equals("/api/random")) {
+                handleGetRandom(exchange);
+            } else if ("GET".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
+                handleGetMovieById(exchange, path);
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/movies")) {
+                handleAddMovie(exchange);
+            } else if ("PUT".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
+                handleUpdateMovie(exchange, path);
+            } else if ("PATCH".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
+                handleUpdateStatus(exchange, path);
+            } else if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/api/movies/")) {
+                handleDeleteMovie(exchange, path);
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/batch/delete")) {
+                handleBatchDelete(exchange);
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/api/batch/status")) {
+                handleBatchUpdateStatus(exchange);
+            } else {
+                sendError(exchange, 404, "Not Found");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(exchange, 500, "服务器内部错误: " + e.getMessage());
         }
     }
 
@@ -62,16 +84,16 @@ public class MovieController {
         String search = params.get("search");
         String sort = params.get("sort");
         List<Movie> movies = service.filterMovies(status, genre, search, sort);
-        sendResponse(exchange, 200, moviesToJson(movies));
+        sendJson(exchange, 200, movies);
     }
 
     private void handleGetMovieById(HttpExchange exchange, String path) throws IOException {
         String id = extractId(path);
         Movie movie = service.getMovieById(id);
         if (movie != null) {
-            sendResponse(exchange, 200, movieToJson(movie));
+            sendJson(exchange, 200, movie);
         } else {
-            sendResponse(exchange, 404, "{\"error\":\"电影不存在\"}");
+            sendError(exchange, 404, "电影不存在");
         }
     }
 
@@ -81,62 +103,77 @@ public class MovieController {
         stats.put("watched", service.getCountByStatus("已看"));
         stats.put("wantToWatch", service.getCountByStatus("想看"));
         stats.put("shelved", service.getCountByStatus("搁置"));
-        sendResponse(exchange, 200, mapToJson(stats));
+        sendJson(exchange, 200, stats);
     }
 
     private void handleGetGenres(HttpExchange exchange) throws IOException {
         List<String> genres = service.getAllGenres();
-        sendResponse(exchange, 200, stringListToJson(genres));
+        sendJson(exchange, 200, genres);
     }
 
     private void handleGetGenreStats(HttpExchange exchange) throws IOException {
         Map<String, Integer> genreStats = service.getGenreStats();
-        sendResponse(exchange, 200, intMapToJson(genreStats));
+        sendJson(exchange, 200, genreStats);
+    }
+
+    private void handleGetStatusStats(HttpExchange exchange) throws IOException {
+        Map<String, Object> stats = service.getStatusStats();
+        sendJson(exchange, 200, stats);
+    }
+
+    private void handleGetYearStats(HttpExchange exchange) throws IOException {
+        Map<String, Integer> yearStats = service.getYearStats();
+        sendJson(exchange, 200, yearStats);
+    }
+
+    private void handleGetRatingStats(HttpExchange exchange) throws IOException {
+        Map<String, Integer> ratingStats = service.getRatingStats();
+        sendJson(exchange, 200, ratingStats);
     }
 
     private void handleAddMovie(HttpExchange exchange) throws IOException {
         String body = readBody(exchange);
-        Movie movie = parseMovieFromJson(body);
-        if (movie == null || movie.getName() == null || movie.getName().isEmpty()) {
-            sendResponse(exchange, 400, "{\"error\":\"电影名称不能为空\"}");
+        Movie movie = parseMovie(body);
+        if (movie == null || movie.getName() == null || movie.getName().trim().isEmpty()) {
+            sendError(exchange, 400, "电影名称不能为空");
             return;
         }
         Movie saved = service.addMovie(movie);
-        sendResponse(exchange, 201, movieToJson(saved));
+        sendJson(exchange, 201, saved);
     }
 
     private void handleUpdateStatus(HttpExchange exchange, String path) throws IOException {
         String id = extractId(path);
         String body = readBody(exchange);
-        Map<String, String> data = parseJsonPairs(body);
-        String status = data.get("status");
-        if (status == null || status.isEmpty()) {
-            sendResponse(exchange, 400, "{\"error\":\"状态不能为空\"}");
+        Map<String, Object> data = parseMap(body);
+        String status = data != null ? (String) data.get("status") : null;
+        if (status == null || status.trim().isEmpty()) {
+            sendError(exchange, 400, "状态不能为空");
             return;
         }
         boolean success = service.updateStatus(id, status);
         if (success) {
             Movie updated = service.getMovieById(id);
-            sendResponse(exchange, 200, movieToJson(updated));
+            sendJson(exchange, 200, updated);
         } else {
-            sendResponse(exchange, 404, "{\"error\":\"电影不存在\"}");
+            sendError(exchange, 404, "电影不存在");
         }
     }
 
     private void handleUpdateMovie(HttpExchange exchange, String path) throws IOException {
         String id = extractId(path);
         String body = readBody(exchange);
-        Movie updated = parseMovieFromJson(body);
+        Movie updated = parseMovie(body);
         if (updated == null) {
-            sendResponse(exchange, 400, "{\"error\":\"数据格式错误\"}");
+            sendError(exchange, 400, "数据格式错误");
             return;
         }
         boolean success = service.updateMovie(id, updated);
         if (success) {
             Movie result = service.getMovieById(id);
-            sendResponse(exchange, 200, movieToJson(result));
+            sendJson(exchange, 200, result);
         } else {
-            sendResponse(exchange, 404, "{\"error\":\"电影不存在\"}");
+            sendError(exchange, 404, "电影不存在");
         }
     }
 
@@ -144,9 +181,149 @@ public class MovieController {
         String id = extractId(path);
         boolean success = service.deleteMovie(id);
         if (success) {
-            sendResponse(exchange, 200, "{\"success\":true}");
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("success", true);
+            sendJson(exchange, 200, result);
         } else {
-            sendResponse(exchange, 404, "{\"error\":\"电影不存在\"}");
+            sendError(exchange, 404, "电影不存在");
+        }
+    }
+
+    private void handleBatchDelete(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        List<String> ids = parseStringList(body);
+        if (ids == null || ids.isEmpty()) {
+            sendError(exchange, 400, "请提供要删除的电影ID列表");
+            return;
+        }
+        int count = service.batchDelete(ids);
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("success", true);
+        result.put("deleted", count);
+        sendJson(exchange, 200, result);
+    }
+
+    private void handleBatchUpdateStatus(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        Map<String, Object> data = parseMap(body);
+        if (data == null) {
+            sendError(exchange, 400, "数据格式错误");
+            return;
+        }
+        @SuppressWarnings("unchecked")
+        List<String> ids = (List<String>) data.get("ids");
+        String status = (String) data.get("status");
+        if (ids == null || ids.isEmpty()) {
+            sendError(exchange, 400, "请提供要修改的电影ID列表");
+            return;
+        }
+        if (status == null || status.trim().isEmpty()) {
+            sendError(exchange, 400, "状态不能为空");
+            return;
+        }
+        int count = service.batchUpdateStatus(ids, status);
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("success", true);
+        result.put("updated", count);
+        result.put("status", status);
+        sendJson(exchange, 200, result);
+    }
+
+    private void handleExport(HttpExchange exchange) throws IOException {
+        String json = service.exportAll();
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.getResponseHeaders().set("Content-Disposition",
+                "attachment; filename=\"movies-export.json\"");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.sendResponseHeaders(200, bytes.length);
+        OutputStream os = exchange.getResponseBody();
+        os.write(bytes);
+        os.close();
+    }
+
+    private void handleImport(HttpExchange exchange) throws IOException {
+        try {
+            String body = readBody(exchange);
+            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getQuery());
+            boolean overwrite = "true".equalsIgnoreCase(params.get("overwrite"));
+
+            List<Movie> movies = parseMovieArrayFromJson(body);
+            if (movies == null || movies.isEmpty()) {
+                sendError(exchange, 400, "未找到有效的电影数据");
+                return;
+            }
+
+            int count = service.importMovies(movies, overwrite);
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("success", true);
+            result.put("imported", count);
+            result.put("overwrite", overwrite);
+            sendJson(exchange, 200, result);
+        } catch (Exception e) {
+            sendError(exchange, 400, "导入失败: " + e.getMessage());
+        }
+    }
+
+    private List<Movie> parseMovieArrayFromJson(String json) {
+        try {
+            json = json.trim();
+            Map<String, Object> wrapper = parseMap(json);
+            if (wrapper != null && wrapper.containsKey("movies")) {
+                Object moviesObj = wrapper.get("movies");
+                if (moviesObj instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> movieMaps = (List<Map<String, Object>>) moviesObj;
+                    List<Movie> result = new ArrayList<Movie>();
+                    for (Map<String, Object> map : movieMaps) {
+                        Movie m = mapToMovie(map);
+                        if (m != null && m.getName() != null && !m.getName().isEmpty()) {
+                            result.add(m);
+                        }
+                    }
+                    return result;
+                }
+            }
+            Type listType = new TypeToken<List<Movie>>() {}.getType();
+            List<Movie> movies = gson.fromJson(json, listType);
+            return movies != null ? movies : new ArrayList<Movie>();
+        } catch (Exception e) {
+            return new ArrayList<Movie>();
+        }
+    }
+
+    private Movie mapToMovie(Map<String, Object> map) {
+        if (map == null) return null;
+        Movie movie = new Movie();
+        if (map.get("name") != null) movie.setName(String.valueOf(map.get("name")));
+        if (map.get("director") != null) movie.setDirector(String.valueOf(map.get("director")));
+        if (map.get("year") != null) {
+            try { movie.setYear(((Number) map.get("year")).intValue()); } catch (Exception e) {}
+        }
+        if (map.get("genre") != null) movie.setGenre(String.valueOf(map.get("genre")));
+        if (map.get("status") != null) movie.setStatus(String.valueOf(map.get("status")));
+        if (map.get("comment") != null) movie.setComment(String.valueOf(map.get("comment")));
+        if (map.get("rating") != null) {
+            try { movie.setRating(((Number) map.get("rating")).intValue()); } catch (Exception e) {}
+        }
+        if (map.get("posterUrl") != null) movie.setPosterUrl(String.valueOf(map.get("posterUrl")));
+        if (map.get("tags") != null) movie.setTags(String.valueOf(map.get("tags")));
+        if (map.get("priority") != null) {
+            try { movie.setPriority(((Number) map.get("priority")).intValue()); } catch (Exception e) {}
+        }
+        if (map.get("watchDate") != null) movie.setWatchDate(String.valueOf(map.get("watchDate")));
+        if (map.get("rewatchCount") != null) {
+            try { movie.setRewatchCount(((Number) map.get("rewatchCount")).intValue()); } catch (Exception e) {}
+        }
+        return movie;
+    }
+
+    private void handleGetRandom(HttpExchange exchange) throws IOException {
+        Movie movie = service.getRandomWantToWatch();
+        if (movie != null) {
+            sendJson(exchange, 200, movie);
+        } else {
+            sendError(exchange, 404, "没有想看的电影，先添加一些吧！");
         }
     }
 
@@ -184,300 +361,41 @@ public class MovieController {
         return sb.toString();
     }
 
-    private Movie parseMovieFromJson(String json) {
+    private Movie parseMovie(String json) {
         try {
-            Map<String, String> data = parseJsonPairs(json);
-            Movie movie = new Movie();
-            movie.setName(data.get("name"));
-            movie.setDirector(data.get("director"));
-            String yearStr = data.get("year");
-            if (yearStr != null && !yearStr.isEmpty()) {
-                try {
-                    movie.setYear(Integer.parseInt(yearStr));
-                } catch (NumberFormatException e) {
-                    movie.setYear(0);
-                }
-            }
-            movie.setGenre(data.get("genre"));
-            String status = data.get("status");
-            movie.setStatus((status == null || status.isEmpty()) ? "想看" : status);
-            movie.setComment(data.get("comment"));
-            String ratingStr = data.get("rating");
-            if (ratingStr != null && !ratingStr.isEmpty()) {
-                try {
-                    int r = Integer.parseInt(ratingStr);
-                    if (r >= 0 && r <= 5) movie.setRating(r);
-                } catch (NumberFormatException e) {
-                }
-            }
-            movie.setPosterUrl(data.get("posterUrl"));
-            return movie;
+            return gson.fromJson(json, Movie.class);
         } catch (Exception e) {
             return null;
         }
     }
 
-    private Map<String, String> parseJsonPairs(String json) {
-        Map<String, String> result = new HashMap<String, String>();
-        json = json.trim();
-        if (json.startsWith("{") && json.endsWith("}")) {
-            json = json.substring(1, json.length() - 1);
-        }
-        boolean inString = false;
-        int depth = 0;
-        int start = 0;
-        for (int i = 0; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (c == '"' && (i == 0 || json.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            }
-            if (!inString) {
-                if (c == '{' || c == '[') depth++;
-                else if (c == '}' || c == ']') depth--;
-                else if (c == ',' && depth == 0) {
-                    parsePair(json.substring(start, i), result);
-                    start = i + 1;
-                }
-            }
-        }
-        if (start < json.length()) {
-            parsePair(json.substring(start), result);
-        }
-        return result;
-    }
-
-    private void parsePair(String pair, Map<String, String> result) {
-        boolean inString = false;
-        for (int i = 0; i < pair.length(); i++) {
-            char c = pair.charAt(i);
-            if (c == '"' && (i == 0 || pair.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            }
-            if (!inString && c == ':') {
-                String key = stripQuotes(pair.substring(0, i).trim());
-                String value = pair.substring(i + 1).trim();
-                if (value.startsWith("\"") && value.endsWith("\"")) {
-                    value = stripQuotes(value);
-                }
-                result.put(key, value);
-                return;
-            }
-        }
-    }
-
-    private String stripQuotes(String s) {
-        s = s.trim();
-        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
-            s = s.substring(1, s.length() - 1);
-        }
-        return s.replace("\\\"", "\"").replace("\\\\", "\\");
-    }
-
-    private String moviesToJson(List<Movie> movies) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < movies.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append(movieToJson(movies.get(i)));
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String movieToJson(Movie movie) {
-        if (movie == null) return "null";
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"id\":\"").append(escape(movie.getId())).append("\",");
-        sb.append("\"name\":\"").append(escape(movie.getName())).append("\",");
-        sb.append("\"director\":\"").append(escape(movie.getDirector())).append("\",");
-        sb.append("\"year\":").append(movie.getYear()).append(",");
-        sb.append("\"genre\":\"").append(escape(movie.getGenre())).append("\",");
-        sb.append("\"status\":\"").append(escape(movie.getStatus())).append("\",");
-        sb.append("\"comment\":\"").append(escape(movie.getComment())).append("\",");
-        sb.append("\"rating\":").append(movie.getRating()).append(",");
-        sb.append("\"posterUrl\":\"").append(escape(movie.getPosterUrl())).append("\",");
-        sb.append("\"createdAt\":").append(movie.getCreatedAt());
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private String stringListToJson(List<String> list) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < list.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append("\"").append(escape(list.get(i))).append("\"");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String mapToJson(Map<String, Object> map) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (!first) sb.append(",");
-            first = false;
-            sb.append("\"").append(escape(entry.getKey())).append("\":");
-            Object value = entry.getValue();
-            if (value instanceof Number) {
-                sb.append(value);
-            } else {
-                sb.append("\"").append(escape(String.valueOf(value))).append("\"");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private String intMapToJson(Map<String, Integer> map) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        boolean first = true;
-        for (Map.Entry<String, Integer> entry : map.entrySet()) {
-            if (!first) sb.append(",");
-            first = false;
-            sb.append("\"").append(escape(entry.getKey())).append("\":").append(entry.getValue());
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private void handleGetStatusStats(HttpExchange exchange) throws IOException {
-        Map<String, Object> stats = service.getStatusStats();
-        sendResponse(exchange, 200, mapToJson(stats));
-    }
-
-    private void handleExport(HttpExchange exchange) throws IOException {
-        String json = service.exportAll();
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Content-Disposition",
-                "attachment; filename=\"movies-export.json\"");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.sendResponseHeaders(200, bytes.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(bytes);
-        os.close();
-    }
-
-    private void handleImport(HttpExchange exchange) throws IOException {
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseMap(String json) {
         try {
-            String body = readBody(exchange);
-            Map<String, String> params = parseQueryParams(exchange.getRequestURI().getQuery());
-            boolean overwrite = "true".equalsIgnoreCase(params.get("overwrite"));
-
-            List<Movie> movies = parseMovieArrayFromJson(body);
-            if (movies == null || movies.isEmpty()) {
-                sendResponse(exchange, 400, "{\"error\":\"未找到有效的电影数据\"}");
-                return;
-            }
-
-            int count = service.importMovies(movies, overwrite);
-            Map<String, Object> result = new HashMap<String, Object>();
-            result.put("success", true);
-            result.put("imported", count);
-            result.put("overwrite", overwrite);
-            sendResponse(exchange, 200, mapToJson(result));
+            Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+            return gson.fromJson(json, mapType);
         } catch (Exception e) {
-            sendResponse(exchange, 400, "{\"error\":\"导入失败: " + e.getMessage() + "\"}");
+            return null;
         }
     }
 
-    private List<Movie> parseMovieArrayFromJson(String json) {
-        List<Movie> result = new ArrayList<Movie>();
-        json = json.trim();
-
-        int moviesStart = json.indexOf("\"movies\"");
-        if (moviesStart > 0) {
-            int arrStart = json.indexOf('[', moviesStart);
-            if (arrStart > 0) {
-                int arrEnd = findMatchingBracket(json, arrStart);
-                if (arrEnd > arrStart) {
-                    json = json.substring(arrStart, arrEnd + 1);
-                }
+    @SuppressWarnings("unchecked")
+    private List<String> parseStringList(String json) {
+        try {
+            Type listType = new TypeToken<List<String>>() {}.getType();
+            return gson.fromJson(json, listType);
+        } catch (Exception e) {
+            Map<String, Object> map = parseMap(json);
+            if (map != null && map.containsKey("ids")) {
+                return (List<String>) map.get("ids");
             }
-        }
-
-        if (!json.startsWith("[")) return result;
-
-        List<String> objects = splitJsonArray(json);
-        for (String objStr : objects) {
-            Movie m = parseMovieFromJson(objStr);
-            if (m != null && m.getName() != null && !m.getName().isEmpty()) {
-                result.add(m);
-            }
-        }
-        return result;
-    }
-
-    private List<String> splitJsonArray(String json) {
-        List<String> result = new ArrayList<String>();
-        json = json.trim();
-        if (json.startsWith("[") && json.endsWith("]")) {
-            json = json.substring(1, json.length() - 1);
-        }
-        int depth = 0;
-        int start = 0;
-        boolean inString = false;
-        for (int i = 0; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (c == '"' && (i == 0 || json.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            }
-            if (!inString) {
-                if (c == '{' || c == '[') depth++;
-                else if (c == '}' || c == ']') depth--;
-                else if (c == ',' && depth == 0) {
-                    result.add(json.substring(start, i));
-                    start = i + 1;
-                }
-            }
-        }
-        if (start < json.length()) {
-            String last = json.substring(start).trim();
-            if (!last.isEmpty()) result.add(last);
-        }
-        return result;
-    }
-
-    private int findMatchingBracket(String str, int openIndex) {
-        char open = str.charAt(openIndex);
-        char close = (open == '[') ? ']' : '}';
-        int depth = 1;
-        boolean inString = false;
-        for (int i = openIndex + 1; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (c == '"' && (i == 0 || str.charAt(i - 1) != '\\')) {
-                inString = !inString;
-            }
-            if (!inString) {
-                if (c == open) depth++;
-                else if (c == close) depth--;
-                if (depth == 0) return i;
-            }
-        }
-        return -1;
-    }
-
-    private void handleGetRandom(HttpExchange exchange) throws IOException {
-        Movie movie = service.getRandomWantToWatch();
-        if (movie != null) {
-            sendResponse(exchange, 200, movieToJson(movie));
-        } else {
-            sendResponse(exchange, 404, "{\"error\":\"没有想看的电影，先添加一些吧！\"}");
+            return null;
         }
     }
 
-    private String escape(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
-
-    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+    private void sendJson(HttpExchange exchange, int statusCode, Object data) throws IOException {
+        String json = gson.toJson(data);
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
@@ -486,5 +404,11 @@ public class MovieController {
         OutputStream os = exchange.getResponseBody();
         os.write(bytes);
         os.close();
+    }
+
+    private void sendError(HttpExchange exchange, int statusCode, String message) throws IOException {
+        Map<String, String> error = new HashMap<String, String>();
+        error.put("error", message);
+        sendJson(exchange, statusCode, error);
     }
 }

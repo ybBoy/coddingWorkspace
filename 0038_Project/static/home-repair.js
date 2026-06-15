@@ -60,12 +60,8 @@ function renderRepairs(items) {
         return;
     }
 
-    const today = new Date();
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-
     container.innerHTML = items.map(item => {
-        const reportDate = new Date(item.reportDate);
-        const isOverdue = item.status === 'PENDING' && reportDate < sevenDaysAgo;
+        const isOverdue = item.overdue === true;
         
         const statusClass = item.status === 'PENDING' ? 'pending' : 
                            item.status === 'IN_PROGRESS' ? 'in-progress' : 'completed';

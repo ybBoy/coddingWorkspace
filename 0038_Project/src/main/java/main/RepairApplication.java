@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class RepairApplication {
     private static final int PORT = 8081;
@@ -35,16 +37,44 @@ public class RepairApplication {
     }
 
     static class StaticFileHandler implements HttpHandler {
+        private final Path staticRootPath;
+
+        StaticFileHandler() {
+            this.staticRootPath = Paths.get(STATIC_DIR).toAbsolutePath().normalize();
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
-            String path = exchange.getRequestURI().getPath();
-            if ("/".equals(path)) {
-                path = "/home.html";
+            String method = exchange.getRequestMethod();
+            if (!"GET".equals(method) && !"HEAD".equals(method)) {
+                sendForbidden(exchange, "Method Not Allowed");
+                return;
             }
 
-            File file = new File(STATIC_DIR + path);
+            String requestPath = exchange.getRequestURI().getPath();
+            if ("/".equals(requestPath)) {
+                requestPath = "/home.html";
+            }
+
+            if (requestPath.contains("..") || requestPath.contains("\\0")) {
+                sendForbidden(exchange, "Forbidden");
+                return;
+            }
+
+            File file;
+            try {
+                Path filePath = staticRootPath.resolve(requestPath.substring(1)).normalize();
+                if (!filePath.startsWith(staticRootPath)) {
+                    sendForbidden(exchange, "Forbidden");
+                    return;
+                }
+                file = filePath.toFile();
+            } catch (Exception e) {
+                sendForbidden(exchange, "Forbidden");
+                return;
+            }
 
             if (!file.exists() || !file.isFile()) {
                 String notFound = "<html><body><h1>404 - 文件不存在</h1><p>请访问 <a href='/home.html'>/home.html</a></p></body></html>";
@@ -55,9 +85,21 @@ public class RepairApplication {
                 return;
             }
 
+            if (!isAllowedExtension(file.getName())) {
+                sendForbidden(exchange, "Forbidden");
+                return;
+            }
+
             String contentType = getContentType(file.getName());
             exchange.getResponseHeaders().set("Content-Type", contentType);
+            exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+            exchange.getResponseHeaders().set("X-Frame-Options", "DENY");
             exchange.sendResponseHeaders(200, file.length());
+
+            if ("HEAD".equals(method)) {
+                exchange.close();
+                return;
+            }
 
             try (FileInputStream fis = new FileInputStream(file);
                  OutputStream os = exchange.getResponseBody()) {
@@ -69,13 +111,45 @@ public class RepairApplication {
             }
         }
 
+        private boolean isAllowedExtension(String filename) {
+            String lower = filename.toLowerCase();
+            return lower.endsWith(".html")
+                    || lower.endsWith(".css")
+                    || lower.endsWith(".js")
+                    || lower.endsWith(".json")
+                    || lower.endsWith(".png")
+                    || lower.endsWith(".jpg")
+                    || lower.endsWith(".jpeg")
+                    || lower.endsWith(".gif")
+                    || lower.endsWith(".svg")
+                    || lower.endsWith(".ico")
+                    || lower.endsWith(".woff")
+                    || lower.endsWith(".woff2")
+                    || lower.endsWith(".ttf");
+        }
+
+        private void sendForbidden(HttpExchange exchange, String message) throws IOException {
+            String body = "<html><body><h1>403 - " + message + "</h1></body></html>";
+            exchange.sendResponseHeaders(403, body.getBytes(StandardCharsets.UTF_8).length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+
         private String getContentType(String filename) {
-            if (filename.endsWith(".html")) return "text/html; charset=UTF-8";
-            if (filename.endsWith(".css")) return "text/css; charset=UTF-8";
-            if (filename.endsWith(".js")) return "application/javascript; charset=UTF-8";
-            if (filename.endsWith(".json")) return "application/json; charset=UTF-8";
-            if (filename.endsWith(".png")) return "image/png";
-            if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+            String lower = filename.toLowerCase();
+            if (lower.endsWith(".html")) return "text/html; charset=UTF-8";
+            if (lower.endsWith(".css")) return "text/css; charset=UTF-8";
+            if (lower.endsWith(".js")) return "application/javascript; charset=UTF-8";
+            if (lower.endsWith(".json")) return "application/json; charset=UTF-8";
+            if (lower.endsWith(".png")) return "image/png";
+            if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+            if (lower.endsWith(".gif")) return "image/gif";
+            if (lower.endsWith(".svg")) return "image/svg+xml";
+            if (lower.endsWith(".ico")) return "image/x-icon";
+            if (lower.endsWith(".woff")) return "font/woff";
+            if (lower.endsWith(".woff2")) return "font/woff2";
+            if (lower.endsWith(".ttf")) return "font/ttf";
             return "application/octet-stream";
         }
     }

@@ -1,10 +1,32 @@
 const API_BASE = '/api/checkin';
+const RECENT_DAYS = 30;
 let currentFilter = 'all';
 let allRecords = [];
 
+function formatDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function parseDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+function getTodayStr() {
+    return formatDate(new Date());
+}
+
+function getDaysAgoStr(days) {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return formatDate(date);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('checkinDate').value = today;
+    document.getElementById('checkinDate').value = getTodayStr();
 
     loadRecords();
     setupEventListeners();
@@ -47,12 +69,14 @@ function renderRecords() {
     const recordsList = document.getElementById('recordsList');
     const emptyState = document.getElementById('emptyState');
 
-    let filtered = allRecords;
+    const cutoffDate = getDaysAgoStr(RECENT_DAYS - 1);
+    let filtered = allRecords.filter(r => r.checkinDate >= cutoffDate);
+
     if (currentFilter !== 'all') {
-        filtered = allRecords.filter(r => r.exerciseType === currentFilter);
+        filtered = filtered.filter(r => r.exerciseType === currentFilter);
     }
 
-    filtered.sort((a, b) => new Date(b.checkinDate) - new Date(a.checkinDate));
+    filtered.sort((a, b) => b.checkinDate.localeCompare(a.checkinDate));
 
     document.getElementById('filteredCount').textContent = filtered.length;
 
@@ -120,40 +144,37 @@ function updateStats() {
 function calculateWeekMinutes() {
     const today = new Date();
     const dayOfWeek = today.getDay() || 7;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (dayOfWeek - 1));
-    monday.setHours(0, 0, 0, 0);
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (dayOfWeek - 1));
+    const mondayStr = formatDate(monday);
 
     return allRecords
-        .filter(r => new Date(r.checkinDate) >= monday)
+        .filter(r => r.checkinDate >= mondayStr)
         .reduce((sum, r) => sum + r.duration, 0);
 }
 
 function calculateStreak() {
     if (allRecords.length === 0) return 0;
 
-    const dates = [...new Set(allRecords.map(r => r.checkinDate))]
-        .sort((a, b) => new Date(b) - new Date(a));
+    const dateSet = new Set(allRecords.map(r => r.checkinDate));
+    const sortedDates = [...dateSet].sort((a, b) => b.localeCompare(a));
 
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().split('T')[0];
+    const todayStr = getTodayStr();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = formatDate(yesterday);
 
-    if (dates[0] !== todayStr && dates[0] !== yesterdayStr) {
+    if (sortedDates[0] !== todayStr && sortedDates[0] !== yesterdayStr) {
         return 0;
     }
 
     let streak = 0;
-    let checkDate = new Date(dates[0]);
+    let checkDateStr = sortedDates[0];
 
-    for (let i = 0; i < dates.length; i++) {
-        const dateStr = checkDate.toISOString().split('T')[0];
-        if (dates.includes(dateStr)) {
-            streak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            break;
-        }
+    while (dateSet.has(checkDateStr)) {
+        streak++;
+        const d = parseDate(checkDateStr);
+        d.setDate(d.getDate() - 1);
+        checkDateStr = formatDate(d);
     }
 
     return streak;
@@ -193,7 +214,7 @@ async function handleSubmit(e) {
 
 function resetForm() {
     document.getElementById('checkinForm').reset();
-    document.getElementById('checkinDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('checkinDate').value = getTodayStr();
 }
 
 function openEditModal(id) {

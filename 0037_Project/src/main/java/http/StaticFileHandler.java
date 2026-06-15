@@ -4,14 +4,23 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.*;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 public class StaticFileHandler implements HttpHandler {
     private final String staticDir;
+    private final String canonicalStaticDir;
 
     public StaticFileHandler(String staticDir) {
         this.staticDir = staticDir;
+        String canonical = staticDir;
+        try {
+            canonical = new File(staticDir).getCanonicalPath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.canonicalStaticDir = canonical;
     }
 
     @Override
@@ -22,7 +31,22 @@ public class StaticFileHandler implements HttpHandler {
             path = "/index.html";
         }
 
+        path = URLDecoder.decode(path, "UTF-8");
+
+        if (path.contains("..")) {
+            sendResponse(exchange, 403, "text/plain", "403 Forbidden");
+            return;
+        }
+
         File file = new File(staticDir, path);
+        String canonicalPath = file.getCanonicalPath();
+
+        if (!canonicalPath.startsWith(canonicalStaticDir + File.separator)
+                && !canonicalPath.equals(canonicalStaticDir)) {
+            sendResponse(exchange, 403, "text/plain", "403 Forbidden");
+            return;
+        }
+
         if (!file.exists() || !file.isFile()) {
             sendResponse(exchange, 404, "text/plain", "404 Not Found");
             return;

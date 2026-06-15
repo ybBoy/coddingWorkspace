@@ -1,90 +1,74 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Recipe {
     private String id;
     private String name;
     private String taste;
     private String category;
+    private int difficulty;
+    private int servings;
+    private double cost;
+    private int rating;
     private int estimatedTime;
     private String mainIngredients;
+    private List<String> steps;
     private String notes;
+    private String image;
     private long createdAt;
+    private Long lastMadeAt;
 
     public Recipe() {
+        this.steps = new ArrayList<>();
+        this.rating = 0;
+        this.difficulty = 1;
+        this.servings = 2;
     }
 
-    public Recipe(String id, String name, String taste, String category, int estimatedTime, String mainIngredients, String notes) {
-        this.id = id;
-        this.name = name;
-        this.taste = taste;
-        this.category = category;
-        this.estimatedTime = estimatedTime;
-        this.mainIngredients = mainIngredients;
-        this.notes = notes;
-        this.createdAt = System.currentTimeMillis();
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public String getId() {
-        return id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    public String getTaste() { return taste; }
+    public void setTaste(String taste) { this.taste = taste; }
 
-    public String getName() {
-        return name;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public int getDifficulty() { return difficulty; }
+    public void setDifficulty(int difficulty) { this.difficulty = difficulty; }
 
-    public String getTaste() {
-        return taste;
-    }
+    public int getServings() { return servings; }
+    public void setServings(int servings) { this.servings = servings; }
 
-    public void setTaste(String taste) {
-        this.taste = taste;
-    }
+    public double getCost() { return cost; }
+    public void setCost(double cost) { this.cost = cost; }
 
-    public String getCategory() {
-        return category;
-    }
+    public int getRating() { return rating; }
+    public void setRating(int rating) { this.rating = rating; }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
+    public int getEstimatedTime() { return estimatedTime; }
+    public void setEstimatedTime(int estimatedTime) { this.estimatedTime = estimatedTime; }
 
-    public int getEstimatedTime() {
-        return estimatedTime;
-    }
+    public String getMainIngredients() { return mainIngredients; }
+    public void setMainIngredients(String mainIngredients) { this.mainIngredients = mainIngredients; }
 
-    public void setEstimatedTime(int estimatedTime) {
-        this.estimatedTime = estimatedTime;
-    }
+    public List<String> getSteps() { return steps; }
+    public void setSteps(List<String> steps) { this.steps = steps; }
 
-    public String getMainIngredients() {
-        return mainIngredients;
-    }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
-    public void setMainIngredients(String mainIngredients) {
-        this.mainIngredients = mainIngredients;
-    }
+    public String getImage() { return image; }
+    public void setImage(String image) { this.image = image; }
 
-    public String getNotes() {
-        return notes;
-    }
+    public long getCreatedAt() { return createdAt; }
+    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Long getLastMadeAt() { return lastMadeAt; }
+    public void setLastMadeAt(Long lastMadeAt) { this.lastMadeAt = lastMadeAt; }
 }

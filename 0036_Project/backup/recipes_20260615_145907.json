@@ -9,7 +9,7 @@
     "rating": 0,
     "steps": [],
     "difficulty": 1,
-    "lastMadeAt": 1781506766200,
+    "lastMadeAt": null,
     "createdAt": 1781454424397,
     "servings": 2,
     "name": "番茄炒蛋",
@@ -75,22 +75,5 @@
     "name": "红烧五花肉",
     "id": "1f2e094b-fcb2-4fa3-8dbd-b6fdb770f416",
     "category": "常做"
-  },
-  {
-    "estimatedTime": 15,
-    "image": "",
-    "cost": 0,
-    "notes": "测试PUT更新！包含'单引号'和\n换行符\n还有\"双引号\"",
-    "mainIngredients": "鸡蛋、番茄、葱花",
-    "taste": "清淡",
-    "rating": 0,
-    "steps": [],
-    "difficulty": 1,
-    "lastMadeAt": null,
-    "createdAt": 1781506747421,
-    "servings": 2,
-    "name": "番茄炒蛋 (副本)",
-    "id": "7b0a99b0-bc3b-4896-b28a-24bc7da69ac5",
-    "category": ""
   }
 ]

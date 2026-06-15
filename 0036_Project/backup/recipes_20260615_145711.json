@@ -9,7 +9,7 @@
     "rating": 0,
     "steps": [],
     "difficulty": 1,
-    "lastMadeAt": 1781506766200,
+    "lastMadeAt": null,
     "createdAt": 1781454424397,
     "servings": 2,
     "name": "番茄炒蛋",
@@ -52,12 +52,12 @@
   },
   {
     "estimatedTime": 60,
-    "image": "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=chinese%20braised%20pork%20belly%20hongshao%20rou%20in%20a%20ceramic%20pot%20food%20photography&image_size=square",
+    "image": "",
     "cost": 30,
     "notes": "糖色要小火慢炒，颜色枣红即可，别炒糊了发苦\n收汁时要不停翻动，防止粘锅",
     "mainIngredients": "五花肉、冰糖、生抽、老抽、料酒、八角、桂皮、姜片",
     "taste": "咸鲜",
-    "rating": 4,
+    "rating": 5,
     "steps": [
       "五花肉切块，冷水下锅焯水去血沫",
       "锅中放少许油，加入冰糖小火炒出糖色",
@@ -65,32 +65,14 @@
       "加入生抽、老抽、料酒调味",
       "加入八角、桂皮、姜片，加热水没过肉块",
       "大火烧开后转小火炖45分钟",
-      "最后大火收汁即可",
-      "撒上葱花即可出锅"
+      "最后大火收汁即可"
     ],
     "difficulty": 3,
     "lastMadeAt": null,
     "createdAt": 1781506581605,
     "servings": 4,
-    "name": "红烧五花肉",
+    "name": "红烧肉",
     "id": "1f2e094b-fcb2-4fa3-8dbd-b6fdb770f416",
     "category": "常做"
-  },
-  {
-    "estimatedTime": 15,
-    "image": "",
-    "cost": 0,
-    "notes": "测试PUT更新！包含'单引号'和\n换行符\n还有\"双引号\"",
-    "mainIngredients": "鸡蛋、番茄、葱花",
-    "taste": "清淡",
-    "rating": 0,
-    "steps": [],
-    "difficulty": 1,
-    "lastMadeAt": null,
-    "createdAt": 1781506747421,
-    "servings": 2,
-    "name": "番茄炒蛋 (副本)",
-    "id": "7b0a99b0-bc3b-4896-b28a-24bc7da69ac5",
-    "category": ""
   }
 ]

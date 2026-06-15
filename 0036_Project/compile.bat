@@ -3,7 +3,7 @@ echo ========================================
 echo  编译菜谱收藏夹后端服务
 echo ========================================
 
-setlocal
+setlocal enabledelayedexpansion
 
 set "SRC_DIR=server\src\main\java"
 set "BUILD_DIR=server\build\classes"
@@ -21,8 +21,10 @@ echo.
 echo [3/3] 编译 Java 源代码...
 pushd "%SRC_DIR%"
 set "JAVA_FILES="
-for /r %%f in (*.java) do call set "JAVA_FILES=%%JAVA_FILES%% %%~pnxf"
-javac -encoding UTF-8 -d "..\..\..\build\classes" -cp "..\..\..\lib\json-20210307.jar" %%JAVA_FILES%%
+for /r %%f in (*.java) do (
+    set "JAVA_FILES=!JAVA_FILES! "%%~pnxf""
+)
+javac -encoding UTF-8 -d "..\..\..\build\classes" -cp "..\..\..\lib\json-20210307.jar" %JAVA_FILES%
 set "ERR_LEVEL=%ERRORLEVEL%"
 popd
 

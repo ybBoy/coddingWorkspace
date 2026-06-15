@@ -23,9 +23,9 @@ public class AppServer {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
                 if (exchange.getRequestMethod().equals("OPTIONS")) {
-                    controller.handleOptions(exchange);
+                    handleCorsOptions(exchange);
                 } else {
-                    controller.handleRequest(exchange);
+                    controller.handle(exchange);
                 }
             }
         });
@@ -77,5 +77,12 @@ public class AppServer {
             return "image/jpeg";
         }
         return "application/octet-stream";
+    }
+
+    private static void handleCorsOptions(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+        exchange.sendResponseHeaders(204, -1);
     }
 }

@@ -7,9 +7,19 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="toast-container" id="toastContainer"></div>
+
     <div class="container">
         <header class="header">
-            <h1>🍳 我的菜谱收藏夹</h1>
+            <div class="header-top">
+                <h1>🍳 我的菜谱收藏夹</h1>
+                <div class="header-actions">
+                    <button class="btn btn-ghost" id="btnImport">📥 导入</button>
+                    <button class="btn btn-ghost" id="btnExport">📤 导出</button>
+                    <button class="btn btn-ghost" id="btnShopping">🛒 购物清单</button>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display:none">
+            </div>
             <div class="stats">
                 <div class="stat-card">
                     <span class="stat-number" id="totalCount">0</span>
@@ -21,42 +31,108 @@
                 </div>
                 <div class="stat-card">
                     <span class="stat-number" id="filteredCount">0</span>
-                    <span class="stat-label">当前筛选</span>
+                    <span class="stat-label">当前结果</span>
                 </div>
             </div>
         </header>
+
+        <section class="search-section">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="搜索菜名、食材、备注...">
+            </div>
+            <div class="search-box">
+                <span class="search-icon">🥕</span>
+                <input type="text" id="ingredientInput" placeholder="我有这些食材（逗号分隔），能做什么？">
+            </div>
+        </section>
 
         <section class="add-form">
             <h2>📝 新增菜谱</h2>
             <form id="recipeForm">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="name">菜名</label>
-                        <input type="text" id="name" name="name" required placeholder="例如：番茄炒蛋">
+                        <label for="name">菜名 <span class="req">*</span></label>
+                        <input type="text" id="name" name="name" placeholder="例如：番茄炒蛋">
+                        <div class="error-text" id="err-name"></div>
                     </div>
                     <div class="form-group">
                         <label for="taste">口味</label>
-                        <select id="taste" name="taste" required>
-                            <option value="">请选择</option>
+                        <select id="taste" name="taste">
+                            <option value="">不指定</option>
                             <option value="清淡">清淡</option>
                             <option value="香辣">香辣</option>
                             <option value="甜口">甜口</option>
                             <option value="咸鲜">咸鲜</option>
                             <option value="酸辣">酸辣</option>
+                            <option value="麻辣">麻辣</option>
+                            <option value="酸甜">酸甜</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="estimatedTime">预计用时（分钟）</label>
-                        <input type="number" id="estimatedTime" name="estimatedTime" required min="1" placeholder="例如：15">
+                        <label for="category">分类</label>
+                        <select id="category" name="category">
+                            <option value="">不指定</option>
+                            <option value="常做">常做</option>
+                            <option value="想尝试">想尝试</option>
+                            <option value="已学会">已学会</option>
+                            <option value="拿手菜">拿手菜</option>
+                            <option value="招待客人">招待客人</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="estimatedTime">预计用时（分钟）<span class="req">*</span></label>
+                        <input type="number" id="estimatedTime" name="estimatedTime" min="1" placeholder="例如：15">
+                        <div class="error-text" id="err-estimatedTime"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">难度</label>
+                        <select id="difficulty" name="difficulty">
+                            <option value="1">⭐ 简单</option>
+                            <option value="2">⭐⭐ 中等</option>
+                            <option value="3">⭐⭐⭐ 较难</option>
+                            <option value="4">⭐⭐⭐⭐ 挑战</option>
+                            <option value="5">⭐⭐⭐⭐⭐ 大师</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="servings">份量（人份）</label>
+                        <input type="number" id="servings" name="servings" min="1" value="2">
+                    </div>
+                    <div class="form-group">
+                        <label for="cost">成本（元）</label>
+                        <input type="number" id="cost" name="cost" min="0" step="0.5" placeholder="例如：10">
+                    </div>
+                    <div class="form-group">
+                        <label for="rating">评分</label>
+                        <select id="rating" name="rating">
+                            <option value="0">未评分</option>
+                            <option value="1">⭐</option>
+                            <option value="2">⭐⭐</option>
+                            <option value="3">⭐⭐⭐</option>
+                            <option value="4">⭐⭐⭐⭐</option>
+                            <option value="5">⭐⭐⭐⭐⭐</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="mainIngredients">主要食材</label>
-                    <input type="text" id="mainIngredients" name="mainIngredients" required placeholder="例如：鸡蛋、番茄、葱花">
+                    <label for="mainIngredients">主要食材 <span class="req">*</span></label>
+                    <input type="text" id="mainIngredients" name="mainIngredients" placeholder="例如：鸡蛋、番茄、葱花">
+                    <div class="error-text" id="err-mainIngredients"></div>
                 </div>
                 <div class="form-group">
-                    <label for="notes">做法备注</label>
-                    <textarea id="notes" name="notes" rows="3" placeholder="烹饪步骤、小贴士等..."></textarea>
+                    <label for="steps">做法步骤（每行一步）</label>
+                    <textarea id="steps" name="steps" rows="4" placeholder="1. 准备食材&#10;2. 热锅下油&#10;3. ..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="notes">备注/小贴士</label>
+                    <textarea id="notes" name="notes" rows="2" placeholder="烹饪小贴士、注意事项..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="image">封面图（URL，可选）</label>
+                    <input type="text" id="image" name="image" placeholder="https://...">
                 </div>
                 <button type="submit" class="btn btn-primary">＋ 添加菜谱</button>
             </form>
@@ -64,7 +140,18 @@
 
         <section class="filter-section">
             <div class="filter-group">
-                <label>按口味筛选：</label>
+                <label>分类：</label>
+                <div class="filter-buttons" id="categoryFilters">
+                    <button class="filter-btn active" data-category="">全部</button>
+                    <button class="filter-btn" data-category="常做">常做</button>
+                    <button class="filter-btn" data-category="想尝试">想尝试</button>
+                    <button class="filter-btn" data-category="已学会">已学会</button>
+                    <button class="filter-btn" data-category="拿手菜">拿手菜</button>
+                    <button class="filter-btn" data-category="招待客人">招待客人</button>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>口味：</label>
                 <div class="filter-buttons" id="tasteFilters">
                     <button class="filter-btn active" data-taste="">全部</button>
                     <button class="filter-btn" data-taste="清淡">清淡</button>
@@ -75,13 +162,27 @@
                 </div>
             </div>
             <div class="filter-group">
-                <label>按用时筛选：</label>
+                <label>用时：</label>
                 <div class="filter-buttons" id="timeFilters">
                     <button class="filter-btn active" data-time="">全部</button>
                     <button class="filter-btn" data-time="15">15分钟内</button>
                     <button class="filter-btn" data-time="30">30分钟内</button>
                     <button class="filter-btn" data-time="60">1小时内</button>
                 </div>
+            </div>
+            <div class="filter-group">
+                <label>排序：</label>
+                <select id="sortBy" class="sort-select">
+                    <option value="createdAt_desc">最新创建</option>
+                    <option value="createdAt_asc">最早创建</option>
+                    <option value="time_asc">用时最短</option>
+                    <option value="time_desc">用时最长</option>
+                    <option value="rating_desc">评分最高</option>
+                    <option value="difficulty_asc">难度从低到高</option>
+                    <option value="name_asc">按名称 A-Z</option>
+                    <option value="category_asc">按分类</option>
+                    <option value="taste_asc">按口味</option>
+                </select>
             </div>
         </section>
 
@@ -90,27 +191,156 @@
             <div class="recipes-grid" id="recipesGrid">
             </div>
             <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">🍽️</div>
                 <p>还没有菜谱，快来添加第一道吧！</p>
+            </div>
+            <div id="errorState" class="empty-state" style="display: none;">
+                <div class="empty-icon">⚠️</div>
+                <p id="errorText">加载失败，请检查服务器是否启动</p>
+                <button class="btn btn-primary" id="retryBtn">重新加载</button>
             </div>
         </section>
     </div>
 
     <div id="editModal" class="modal" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3>编辑备注</h3>
+                <h3 id="modalTitle">编辑菜谱</h3>
                 <span class="close" id="closeModal">&times;</span>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editRecipeId">
-                <div class="form-group">
-                    <label for="editNotes">做法备注</label>
-                    <textarea id="editNotes" rows="5" placeholder="烹饪步骤、小贴士等..."></textarea>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editName">菜名 <span class="req">*</span></label>
+                        <input type="text" id="editName">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTaste">口味</label>
+                        <select id="editTaste">
+                            <option value="">不指定</option>
+                            <option value="清淡">清淡</option>
+                            <option value="香辣">香辣</option>
+                            <option value="甜口">甜口</option>
+                            <option value="咸鲜">咸鲜</option>
+                            <option value="酸辣">酸辣</option>
+                            <option value="麻辣">麻辣</option>
+                            <option value="酸甜">酸甜</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCategory">分类</label>
+                        <select id="editCategory">
+                            <option value="">不指定</option>
+                            <option value="常做">常做</option>
+                            <option value="想尝试">想尝试</option>
+                            <option value="已学会">已学会</option>
+                            <option value="拿手菜">拿手菜</option>
+                            <option value="招待客人">招待客人</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editEstimatedTime">预计用时（分钟）<span class="req">*</span></label>
+                        <input type="number" id="editEstimatedTime" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDifficulty">难度</label>
+                        <select id="editDifficulty">
+                            <option value="1">⭐ 简单</option>
+                            <option value="2">⭐⭐ 中等</option>
+                            <option value="3">⭐⭐⭐ 较难</option>
+                            <option value="4">⭐⭐⭐⭐ 挑战</option>
+                            <option value="5">⭐⭐⭐⭐⭐ 大师</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editServings">份量（人份）</label>
+                        <input type="number" id="editServings" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="editCost">成本（元）</label>
+                        <input type="number" id="editCost" min="0" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRating">评分</label>
+                        <select id="editRating">
+                            <option value="0">未评分</option>
+                            <option value="1">⭐</option>
+                            <option value="2">⭐⭐</option>
+                            <option value="3">⭐⭐⭐</option>
+                            <option value="4">⭐⭐⭐⭐</option>
+                            <option value="5">⭐⭐⭐⭐⭐</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editMainIngredients">主要食材 <span class="req">*</span></label>
+                    <input type="text" id="editMainIngredients">
+                </div>
+                <div class="form-group">
+                    <label for="editSteps">做法步骤（每行一步）</label>
+                    <textarea id="editSteps" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editNotes">备注/小贴士</label>
+                    <textarea id="editNotes" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editImage">封面图 URL</label>
+                    <input type="text" id="editImage">
+                </div>
+                <div class="error-text" id="editError"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelEdit">取消</button>
-                <button class="btn btn-primary" id="saveEdit">保存</button>
+                <button class="btn btn-primary" id="saveEdit">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shoppingModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🛒 购物清单</h3>
+                <span class="close" id="closeShoppingModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="muted">选择要加入购物清单的菜谱：</p>
+                <div id="shoppingRecipeList" class="shopping-list"></div>
+                <hr>
+                <div id="shoppingResult"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeShoppingBtn">关闭</button>
+                <button class="btn btn-primary" id="genShoppingBtn">生成清单</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📥 导入数据</h3>
+                <span class="close" id="closeImportModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="muted">选择 JSON 文件进行导入：</p>
+                <div class="form-group">
+                    <label class="file-label" for="importFile2">
+                        <span>点击选择文件</span>
+                        <input type="file" id="importFile2" accept=".json" style="display:none">
+                    </label>
+                    <div id="importFileName" class="muted" style="margin-top:8px">未选择文件</div>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="importMerge" checked> 合并到现有数据（取消勾选则覆盖）</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelImportBtn">取消</button>
+                <button class="btn btn-primary" id="confirmImportBtn">开始导入</button>
             </div>
         </div>
     </div>

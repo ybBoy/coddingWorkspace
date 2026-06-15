@@ -1,4 +1,4 @@
-import { Plant, CareLog, CreatePlantRequest, AddCareLogRequest, UpdateStatusRequest } from '../types';
+import { Plant, CareLog, CreatePlantRequest, AddCareLogRequest, UpdateStatusRequest, UpdatePhotoRequest, PlantStatistics } from '../types';
 
 const BASE_URL = 'http://localhost:8088/api';
 
@@ -20,6 +20,11 @@ export const plantApi = {
     if (status) params.append('status', status);
     const query = params.toString() ? `?${params.toString()}` : '';
     const response = await fetch(`${BASE_URL}/plants${query}`);
+    return handleResponse<Plant[]>(response);
+  },
+
+  async getPlantsSortedByUrgency(): Promise<Plant[]> {
+    const response = await fetch(`${BASE_URL}/plants/sorted`);
     return handleResponse<Plant[]>(response);
   },
 
@@ -62,6 +67,18 @@ export const plantApi = {
     return handleResponse<Plant>(response);
   },
 
+  async updatePlantPhoto(id: string, photoUrl: string): Promise<Plant> {
+    const body: UpdatePhotoRequest = { photoUrl };
+    const response = await fetch(`${BASE_URL}/plants/${id}/photo`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    return handleResponse<Plant>(response);
+  },
+
   async deletePlant(id: string): Promise<void> {
     const response = await fetch(`${BASE_URL}/plants/${id}`, {
       method: 'DELETE',
@@ -70,7 +87,7 @@ export const plantApi = {
   },
 
   async addCareLog(plantId: string, type: string, note: string): Promise<CareLog> {
-    const body: AddCareLogRequest = { type, note };
+    const body: AddCareLogRequest = { type: type as any, note };
     const response = await fetch(`${BASE_URL}/plants/${plantId}/care-logs`, {
       method: 'POST',
       headers: {
@@ -86,9 +103,35 @@ export const plantApi = {
     return handleResponse<CareLog[]>(response);
   },
 
+  async getCareTimeline(plantId: string): Promise<Record<string, CareLog[]>> {
+    const response = await fetch(`${BASE_URL}/plants/${plantId}/timeline`);
+    return handleResponse<Record<string, CareLog[]>>(response);
+  },
+
   async getPlantsNeedingWater(): Promise<Plant[]> {
     const response = await fetch(`${BASE_URL}/plants/needing-water`);
     return handleResponse<Plant[]>(response);
+  },
+
+  async getStatistics(): Promise<PlantStatistics> {
+    const response = await fetch(`${BASE_URL}/statistics`);
+    return handleResponse<PlantStatistics>(response);
+  },
+
+  async exportPlants(): Promise<Plant[]> {
+    const response = await fetch(`${BASE_URL}/plants/export`);
+    return handleResponse<Plant[]>(response);
+  },
+
+  async importPlants(plants: Plant[]): Promise<{ message: string }> {
+    const response = await fetch(`${BASE_URL}/plants/import`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(plants),
+    });
+    return handleResponse<{ message: string }>(response);
   },
 };
 

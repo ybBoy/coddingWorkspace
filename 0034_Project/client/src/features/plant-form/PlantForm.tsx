@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plant, CreatePlantRequest } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plant, CreatePlantRequest, PLANT_STATUS_OPTIONS } from '../../types';
 import styles from '../../styles/plantForm.module.css';
 
 interface PlantFormProps {
@@ -15,9 +15,12 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
     lightRequirement: '',
     status: '健康',
     wateringIntervalDays: 7,
+    photoUrl: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (plant) {
@@ -27,7 +30,9 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
         lightRequirement: plant.lightRequirement,
         status: plant.status,
         wateringIntervalDays: plant.wateringIntervalDays,
+        photoUrl: plant.photoUrl || '',
       });
+      setPhotoPreview(plant.photoUrl || '');
     } else {
       setFormData({
         name: '',
@@ -35,7 +40,9 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
         lightRequirement: '',
         status: '健康',
         wateringIntervalDays: 7,
+        photoUrl: '',
       });
+      setPhotoPreview('');
     }
   }, [plant]);
 
@@ -68,7 +75,9 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
           lightRequirement: '',
           status: '健康',
           wateringIntervalDays: 7,
+          photoUrl: '',
         });
+        setPhotoPreview('');
         setErrors({});
       }
     }
@@ -76,16 +85,79 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: name === 'wateringIntervalDays' ? parseInt(value) || 0 : value,
     }));
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, photo: '照片大小不能超过 5MB' }));
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        setErrors((prev) => ({ ...prev, photo: '请选择图片文件' }));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setPhotoPreview(base64);
+        setFormData((prev) => ({ ...prev, photoUrl: base64 }));
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.photo;
+          return newErrors;
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleClearPhoto = () => {
+    setPhotoPreview('');
+    setFormData((prev) => ({ ...prev, photoUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
     <div className={styles.formContainer}>
       <h2 className={styles.formTitle}>{plant ? '编辑植物' : '新增植物'}</h2>
       <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>植物照片</label>
+          <div className={styles.photoUploadArea}>
+            {photoPreview ? (
+              <div className={styles.photoPreview}>
+                <img src={photoPreview} alt="预览" className={styles.previewImage} />
+                <button type="button" className={styles.removePhotoBtn} onClick={handleClearPhoto}>
+                  ✕ 移除
+                </button>
+              </div>
+            ) : (
+              <div className={styles.photoPlaceholder} onClick={() => fileInputRef.current?.click()}>
+                <div className={styles.photoIcon}>📷</div>
+                <div className={styles.photoText}>点击上传照片</div>
+                <div className={styles.photoHint}>Support JPG, PNG, max 5MB</div>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className={styles.hiddenFileInput}
+            />
+          </div>
+          {errors.photo && <span className={styles.error}>{errors.photo}</span>}
+        </div>
+
         <div className={styles.formGroup}>
           <label className={styles.label}>植物名称 *</label>
           <input
@@ -121,10 +193,10 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
             className={`${styles.select} ${errors.lightRequirement ? styles.inputError : ''}`}
           >
             <option value="">请选择</option>
-            <option value="全日照">全日照</option>
-            <option value="半日照">半日照</option>
-            <option value="散射光">散射光</option>
-            <option value="耐阴">耐阴</option>
+            <option value="全日照">全日照 ☀️</option>
+            <option value="半日照">半日照 🌤️</option>
+            <option value="散射光">散射光 ☁️</option>
+            <option value="耐阴">耐阴 🌙</option>
           </select>
           {errors.lightRequirement && <span className={styles.error}>{errors.lightRequirement}</span>}
         </div>
@@ -137,11 +209,11 @@ const PlantForm: React.FC<PlantFormProps> = ({ plant, onSubmit, onCancel }) => {
             onChange={handleChange}
             className={styles.select}
           >
-            <option value="健康">健康</option>
-            <option value="生长良好">生长良好</option>
-            <option value="需要关注">需要关注</option>
-            <option value="生病">生病</option>
-            <option value="休眠">休眠</option>
+            {PLANT_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.label}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 

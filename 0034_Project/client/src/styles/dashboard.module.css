@@ -6,7 +6,7 @@
 .header {
   background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
   color: #ffffff;
-  padding: 24px 0;
+  padding: 20px 0 16px 0;
   box-shadow: 0 2px 12px rgba(27, 67, 50, 0.15);
 }
 
@@ -19,6 +19,80 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.toolbar {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 24px 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.sortGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortLabel {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sortBtn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.sortBtnActive {
+  background: #ffffff;
+  color: #2d6a4f;
+  border-color: #ffffff;
+}
+
+.actionGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.toolBtn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.hiddenFileInput {
+  display: none;
 }
 
 .titleSection {
@@ -177,8 +251,71 @@
   color: #2d6a4f;
 }
 
+.statisticsSection {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.1);
+  overflow: hidden;
+}
+
 .content {
   min-width: 0;
+}
+
+.detailPanel {
+  margin-top: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.1);
+  overflow: hidden;
+}
+
+.detailTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #f8fcf9;
+  border-bottom: 1px solid #d8f3dc;
+}
+
+.tabBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #52796f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+  background: #e8f5e9;
+  color: #2d6a4f;
+}
+
+.tabBtnActive {
+  background: #2d6a4f;
+  color: #ffffff;
+  border-color: #2d6a4f;
+}
+
+.closeDetailBtn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #868e96;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.closeDetailBtn:hover {
+  background: #e9ecef;
+  color: #495057;
 }
 
 .loading {

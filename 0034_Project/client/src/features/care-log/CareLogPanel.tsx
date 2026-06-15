@@ -6,9 +6,10 @@ interface CareLogPanelProps {
   plantName: string;
   logs: CareLog[];
   onClose: () => void;
+  hideHeader?: boolean;
 }
 
-const CareLogPanel: React.FC<CareLogPanelProps> = ({ plantName, logs, onClose }) => {
+const CareLogPanel: React.FC<CareLogPanelProps> = ({ plantName, logs, onClose, hideHeader = false }) => {
   const getCareTypeLabel = (type: string) => {
     switch (type) {
       case 'WATERING':
@@ -49,15 +50,17 @@ const CareLogPanel: React.FC<CareLogPanelProps> = ({ plantName, logs, onClose })
 
   return (
     <div className={styles.panelContainer}>
-      <div className={styles.panelHeader}>
-        <div className={styles.panelTitle}>
-          <span className={styles.titleIcon}>📋</span>
-          <h3>「{plantName}」的养护记录</h3>
+      {!hideHeader && (
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitle}>
+            <span className={styles.titleIcon}>📋</span>
+            <h3>「{plantName}」的养护记录</h3>
+          </div>
+          <button className={styles.closeBtn} onClick={onClose}>
+            ×
+          </button>
         </div>
-        <button className={styles.closeBtn} onClick={onClose}>
-          ×
-        </button>
-      </div>
+      )}
 
       {logs.length === 0 ? (
         <div className={styles.emptyLogs}>

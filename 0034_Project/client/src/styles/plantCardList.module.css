@@ -39,6 +39,7 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 500;
+  z-index: 2;
 }
 
 .alertIcon {
@@ -52,6 +53,22 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.8; }
+}
+
+.photoContainer {
+  width: 100%;
+  height: 140px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f7f0;
+  margin-top: 8px;
+}
+
+.plantPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .cardHeader {
@@ -134,6 +151,20 @@
   color: #52796f;
   font-size: 12px;
   margin-left: 4px;
+}
+
+.nextWateringUrgent {
+  color: #e76f51 !important;
+  font-weight: 600;
+}
+
+.nextWateringSoon {
+  color: #f4a261 !important;
+  font-weight: 500;
+}
+
+.nextWateringNormal {
+  color: #2d6a4f !important;
 }
 
 .cardActions {

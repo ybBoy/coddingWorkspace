@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PlantForm from '../features/plant-form/PlantForm';
 import PlantCardList from '../features/plant-list/PlantCardList';
 import CareLogPanel from '../features/care-log/CareLogPanel';
-import { Plant, CareLog, CareType, CreatePlantRequest } from '../types';
+import CareTimeline from '../features/care-log/CareTimeline';
+import StatisticsPanel from '../features/statistics/StatisticsPanel';
+import { Plant, CareLog, CareType, CreatePlantRequest, PLANT_STATUS_OPTIONS } from '../types';
 import { plantApi } from '../api/plantApi';
 import styles from '../styles/dashboard.module.css';
 
@@ -13,7 +15,7 @@ const calculateNeedsWatering = (plant: Plant): boolean => {
   try {
     const dateStr = plant.lastWateredTime;
     let lastWateredDate: Date;
-    
+
     if (dateStr.includes('T')) {
       const [datePart, timePart] = dateStr.split('T');
       const [year, month, day] = datePart.split('-');
@@ -30,11 +32,11 @@ const calculateNeedsWatering = (plant: Plant): boolean => {
     } else {
       lastWateredDate = new Date(dateStr);
     }
-    
+
     if (isNaN(lastWateredDate.getTime())) {
       return true;
     }
-    
+
     const now = new Date();
     const dueTime = new Date(lastWateredDate.getTime() + plant.wateringIntervalDays * 24 * 60 * 60 * 1000);
     return now.getTime() > dueTime.getTime();
@@ -42,6 +44,9 @@ const calculateNeedsWatering = (plant: Plant): boolean => {
     return true;
   }
 };
+
+type SortMode = 'default' | 'urgency';
+type DetailView = 'logs' | 'timeline';
 
 const PlantDashboard: React.FC = () => {
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -55,17 +60,27 @@ const PlantDashboard: React.FC = () => {
   const [careNoteInput, setCareNoteInput] = useState<string>('');
   const [showCareNoteDialog, setShowCareNoteDialog] = useState<{ plantId: string; type: CareType } | null>(null);
   const [showInfoMessage, setShowInfoMessage] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>('default');
+  const [showStatistics, setShowStatistics] = useState<boolean>(false);
+  const [detailView, setDetailView] = useState<DetailView>('logs');
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const locations = [...new Set(plants.map(p => p.location))].filter(Boolean);
-  const statuses = ['健康', '生长良好', '需要关注', '生病', '休眠'];
+  const locations = [...new Set(plants.map((p) => p.location))].filter(Boolean);
+  const statuses = PLANT_STATUS_OPTIONS.map((s) => s.label);
 
-  const needsWaterCount = plants.filter(p => p.needsWatering).length;
+  const needsWaterCount = plants.filter((p) => p.needsWatering).length;
 
   const loadPlants = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await plantApi.getAllPlants(locationFilter, statusFilter);
-      const plantsWithWaterStatus = data.map(plant => ({
+      let data: Plant[];
+      if (sortMode === 'urgency') {
+        data = await plantApi.getPlantsSortedByUrgency();
+      } else {
+        data = await plantApi.getAllPlants(locationFilter, statusFilter);
+      }
+      const plantsWithWaterStatus = data.map((plant) => ({
         ...plant,
         needsWatering: calculateNeedsWatering(plant),
       }));
@@ -77,7 +92,7 @@ const PlantDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [locationFilter, statusFilter]);
+  }, [locationFilter, statusFilter, sortMode]);
 
   const loadCareLogs = async (plantId: string) => {
     try {
@@ -95,10 +110,12 @@ const PlantDashboard: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPlants(prev => prev.map(plant => ({
-        ...plant,
-        needsWatering: calculateNeedsWatering(plant),
-      })));
+      setPlants((prev) =>
+        prev.map((plant) => ({
+          ...plant,
+          needsWatering: calculateNeedsWatering(plant),
+        }))
+      );
     }, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -159,7 +176,7 @@ const PlantDashboard: React.FC = () => {
 
   const confirmCareAction = async () => {
     if (!showCareNoteDialog) return;
-    
+
     const { plantId, type } = showCareNoteDialog;
     try {
       await plantApi.addCareLog(plantId, type, careNoteInput || '');
@@ -187,13 +204,67 @@ const PlantDashboard: React.FC = () => {
   };
 
   const handleShowNeedingWater = () => {
-    const needsWater = plants.filter(p => p.needsWatering);
+    const needsWater = plants.filter((p) => p.needsWatering);
     if (needsWater.length > 0) {
-      const message = `以下 ${needsWater.length} 盆植物需要浇水：\n${needsWater.map(p => `• ${p.name}（${p.location}）`).join('\n')}`;
+      const message = `以下 ${needsWater.length} 盆植物需要浇水：\n${needsWater
+        .map((p) => `• ${p.name}（${p.location}）`)
+        .join('\n')}`;
       setShowInfoMessage(message);
     } else {
       setShowInfoMessage('所有植物都不需要浇水，真棒！🌿');
     }
+  };
+
+  const handleExport = async () => {
+    try {
+      const data = await plantApi.exportPlants();
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plants_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShowInfoMessage('导出成功！已下载植物数据 JSON 文件');
+    } catch (err) {
+      setError('导出失败');
+      console.error('Export error:', err);
+    }
+  };
+
+  const handleImportClick = () => {
+    setImportError(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) {
+        throw new Error('JSON 文件格式不正确，应为数组');
+      }
+      const result = await plantApi.importPlants(data);
+      await loadPlants();
+      setShowInfoMessage(result.message || `成功导入 ${data.length} 条植物数据`);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : '导入失败，请检查 JSON 文件格式');
+      console.error('Import error:', err);
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleSortChange = (mode: SortMode) => {
+    setSortMode(mode);
   };
 
   return (
@@ -205,9 +276,7 @@ const PlantDashboard: React.FC = () => {
             <h1 className={styles.title}>植物养护记录</h1>
           </div>
           <div className={styles.stats}>
-            <span className={styles.statItem}>
-              🪴 共 {plants.length} 盆植物
-            </span>
+            <span className={styles.statItem}>🪴 共 {plants.length} 盆植物</span>
             {needsWaterCount > 0 && (
               <button className={styles.alertBtn} onClick={handleShowNeedingWater}>
                 💧 {needsWaterCount} 盆需要浇水
@@ -215,12 +284,58 @@ const PlantDashboard: React.FC = () => {
             )}
           </div>
         </div>
+        <div className={styles.toolbar}>
+          <div className={styles.sortGroup}>
+            <span className={styles.sortLabel}>排序：</span>
+            <button
+              className={`${styles.sortBtn} ${sortMode === 'default' ? styles.sortBtnActive : ''}`}
+              onClick={() => handleSortChange('default')}
+            >
+              默认
+            </button>
+            <button
+              className={`${styles.sortBtn} ${sortMode === 'urgency' ? styles.sortBtnActive : ''}`}
+              onClick={() => handleSortChange('urgency')}
+            >
+              ⚡ 按紧急程度
+            </button>
+          </div>
+          <div className={styles.actionGroup}>
+            <button className={styles.toolBtn} onClick={() => setShowStatistics(!showStatistics)}>
+              📊 统计
+            </button>
+            <button className={styles.toolBtn} onClick={handleExport}>
+              📤 导出
+            </button>
+            <button className={styles.toolBtn} onClick={handleImportClick}>
+              📥 导入
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+              className={styles.hiddenFileInput}
+            />
+          </div>
+        </div>
       </header>
 
       {error && (
         <div className={styles.errorBanner}>
           <span>⚠️ {error}</span>
-          <button onClick={() => setError(null)} className={styles.errorClose}>×</button>
+          <button onClick={() => setError(null)} className={styles.errorClose}>
+            ×
+          </button>
+        </div>
+      )}
+
+      {importError && (
+        <div className={styles.errorBanner}>
+          <span>⚠️ {importError}</span>
+          <button onClick={() => setImportError(null)} className={styles.errorClose}>
+            ×
+          </button>
         </div>
       )}
 
@@ -243,8 +358,10 @@ const PlantDashboard: React.FC = () => {
                 className={styles.filterSelect}
               >
                 <option value="">全部位置</option>
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
+                {locations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
                 ))}
               </select>
             </div>
@@ -257,8 +374,10 @@ const PlantDashboard: React.FC = () => {
                 className={styles.filterSelect}
               >
                 <option value="">全部状态</option>
-                {statuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
+                {statuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
                 ))}
               </select>
             </div>
@@ -269,6 +388,12 @@ const PlantDashboard: React.FC = () => {
               </button>
             )}
           </div>
+
+          {showStatistics && (
+            <div className={styles.statisticsSection}>
+              <StatisticsPanel onClose={() => setShowStatistics(false)} />
+            </div>
+          )}
         </aside>
 
         <main className={styles.content}>
@@ -289,11 +414,30 @@ const PlantDashboard: React.FC = () => {
               />
 
               {selectedPlant && (
-                <CareLogPanel
-                  plantName={selectedPlant.name}
-                  logs={selectedPlantLogs}
-                  onClose={handleCloseLogs}
-                />
+                <div className={styles.detailPanel}>
+                  <div className={styles.detailTabs}>
+                    <button
+                      className={`${styles.tabBtn} ${detailView === 'logs' ? styles.tabBtnActive : ''}`}
+                      onClick={() => setDetailView('logs')}
+                    >
+                      📝 最近记录
+                    </button>
+                    <button
+                      className={`${styles.tabBtn} ${detailView === 'timeline' ? styles.tabBtnActive : ''}`}
+                      onClick={() => setDetailView('timeline')}
+                    >
+                      📅 养护时间线
+                    </button>
+                    <button className={styles.closeDetailBtn} onClick={handleCloseLogs}>
+                      ✕ 关闭
+                    </button>
+                  </div>
+                  {detailView === 'logs' ? (
+                    <CareLogPanel plantName={selectedPlant.name} logs={selectedPlantLogs} onClose={handleCloseLogs} hideHeader />
+                  ) : (
+                    <CareTimeline plantId={selectedPlant.id} plantName={selectedPlant.name} />
+                  )}
+                </div>
               )}
             </>
           )}
@@ -304,7 +448,12 @@ const PlantDashboard: React.FC = () => {
         <div className={styles.dialogOverlay}>
           <div className={styles.dialog}>
             <h3 className={styles.dialogTitle}>
-              记录{showCareNoteDialog.type === 'WATERING' ? '浇水' : showCareNoteDialog.type === 'FERTILIZING' ? '施肥' : '修剪'}
+              记录
+              {showCareNoteDialog.type === 'WATERING'
+                ? '浇水'
+                : showCareNoteDialog.type === 'FERTILIZING'
+                ? '施肥'
+                : '修剪'}
             </h3>
             <textarea
               className={styles.dialogTextarea}
@@ -328,7 +477,7 @@ const PlantDashboard: React.FC = () => {
       {showInfoMessage && (
         <div className={styles.dialogOverlay}>
           <div className={styles.dialog}>
-            <h3 className={styles.dialogTitle}>💧 浇水提醒</h3>
+            <h3 className={styles.dialogTitle}>💡 提示</h3>
             <p className={styles.dialogMessage}>
               {showInfoMessage.split('\n').map((line, idx) => (
                 <span key={idx}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plant, CareType } from '../../types';
+import { Plant, CareType, PLANT_STATUS_OPTIONS } from '../../types';
 import styles from '../../styles/plantCardList.module.css';
 
 interface PlantCardListProps {
@@ -41,21 +41,8 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case '健康':
-        return styles.statusHealthy;
-      case '生长良好':
-        return styles.statusGrowing;
-      case '需要关注':
-        return styles.statusWarning;
-      case '生病':
-        return styles.statusSick;
-      case '休眠':
-        return styles.statusDormant;
-      default:
-        return styles.statusDefault;
-    }
+  const getStatusInfo = (statusLabel: string) => {
+    return PLANT_STATUS_OPTIONS.find((s) => s.label === statusLabel) || PLANT_STATUS_OPTIONS[0];
   };
 
   const getLightIcon = (light: string) => {
@@ -75,11 +62,79 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
 
   const calculateDaysSinceWatering = (lastWatered: string | null) => {
     if (!lastWatered) return null;
-    const now = new Date();
-    const last = new Date(lastWatered);
-    const diffTime = now.getTime() - last.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    try {
+      let lastDate: Date;
+      if (lastWatered.includes('T')) {
+        const [datePart, timePart] = lastWatered.split('T');
+        const [year, month, day] = datePart.split('-');
+        const timeMain = timePart.split('.')[0];
+        const [hour, minute, second] = timeMain.split(':');
+        lastDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          parseInt(hour),
+          parseInt(minute),
+          parseInt(second || '0')
+        );
+      } else {
+        lastDate = new Date(lastWatered);
+      }
+      if (isNaN(lastDate.getTime())) return null;
+      const now = new Date();
+      const diffTime = now.getTime() - lastDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const calculateNextWatering = (plant: Plant) => {
+    if (!plant.lastWateredTime || plant.wateringIntervalDays <= 0) {
+      return '立即浇水';
+    }
+    try {
+      let lastDate: Date;
+      if (plant.lastWateredTime.includes('T')) {
+        const [datePart, timePart] = plant.lastWateredTime.split('T');
+        const [year, month, day] = datePart.split('-');
+        const timeMain = timePart.split('.')[0];
+        const [hour, minute, second] = timeMain.split(':');
+        lastDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          parseInt(hour),
+          parseInt(minute),
+          parseInt(second || '0')
+        );
+      } else {
+        lastDate = new Date(plant.lastWateredTime);
+      }
+      if (isNaN(lastDate.getTime())) return '未知';
+      
+      const nextDate = new Date(lastDate.getTime() + plant.wateringIntervalDays * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const diffTime = nextDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) return `已逾期 ${Math.abs(diffDays)} 天`;
+      if (diffDays === 0) return '今天需要浇水';
+      if (diffDays === 1) return '明天需要浇水';
+      return `${diffDays} 天后浇水`;
+    } catch (e) {
+      return '未知';
+    }
+  };
+
+  const getNextWateringColor = (plant: Plant) => {
+    if (plant.needsWatering) return styles.nextWateringUrgent;
+    const nextWateringText = calculateNextWatering(plant);
+    if (nextWateringText.includes('今天') || nextWateringText.includes('明天')) {
+      return styles.nextWateringSoon;
+    }
+    return styles.nextWateringNormal;
   };
 
   const handleCareAction = (e: React.MouseEvent, plantId: string, type: CareType) => {
@@ -114,6 +169,7 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
       {plants.map((plant) => {
         const daysSince = calculateDaysSinceWatering(plant.lastWateredTime);
         const needsWater = plant.needsWatering;
+        const statusInfo = getStatusInfo(plant.status);
 
         return (
           <div
@@ -128,10 +184,19 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
               </div>
             )}
 
+            {plant.photoUrl && (
+              <div className={styles.photoContainer}>
+                <img src={plant.photoUrl} alt={plant.name} className={styles.plantPhoto} />
+              </div>
+            )}
+
             <div className={styles.cardHeader}>
               <h3 className={styles.plantName}>{plant.name}</h3>
-              <span className={`${styles.statusBadge} ${getStatusColor(plant.status)}`}>
-                {plant.status}
+              <span
+                className={styles.statusBadge}
+                style={{ backgroundColor: statusInfo.color + '20', color: statusInfo.color, borderColor: statusInfo.color }}
+              >
+                {statusInfo.label}
               </span>
             </div>
 
@@ -151,6 +216,12 @@ const PlantCardList: React.FC<PlantCardListProps> = ({
                   {daysSince !== null && (
                     <span className={styles.daysAgo}>（{daysSince} 天前）</span>
                   )}
+                </span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>⏰ 下次浇水</span>
+                <span className={`${styles.infoValue} ${getNextWateringColor(plant)}`}>
+                  {calculateNextWatering(plant)}
                 </span>
               </div>
               <div className={styles.infoRow}>

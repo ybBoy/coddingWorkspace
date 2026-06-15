@@ -18,18 +18,22 @@
                     <div class="stat-label">预计可回收金额</div>
                     <div class="stat-value">¥ <span id="expectedRevenue">0.00</span></div>
                 </div>
+                <div class="stat-card sold-card">
+                    <div class="stat-label">已售出金额</div>
+                    <div class="stat-value">¥ <span id="soldRevenue">0.00</span></div>
+                </div>
                 <div class="stat-row">
                     <div class="stat-mini">
                         <span class="stat-mini-label">总物品</span>
                         <span class="stat-mini-value" id="totalItems">0</span>
                     </div>
                     <div class="stat-mini">
-                        <span class="stat-mini-label">出售</span>
-                        <span class="stat-mini-value sell" id="sellCount">0</span>
+                        <span class="stat-mini-label">出售中</span>
+                        <span class="stat-mini-value selling" id="sellingCount">0</span>
                     </div>
                     <div class="stat-mini">
-                        <span class="stat-mini-label">丢弃</span>
-                        <span class="stat-mini-value discard" id="discardCount">0</span>
+                        <span class="stat-mini-label">已完成</span>
+                        <span class="stat-mini-value done" id="doneCount">0</span>
                     </div>
                 </div>
             </div>
@@ -60,6 +64,12 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label for="itemStatus">状态</label>
+                        <select id="itemStatus" name="status">
+                            <option value="">（自动）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="itemPrice">预估价格（元）</label>
                         <input type="number" id="itemPrice" name="estimatedPrice" min="0" step="0.01" placeholder="0.00">
                     </div>
@@ -68,19 +78,64 @@
                         <input type="text" id="itemLocation" name="location" placeholder="例如：储物间第二层">
                     </div>
                     <div class="form-group">
+                        <label>物品图片</label>
+                        <div class="image-upload-area">
+                            <div class="image-preview" id="imagePreview">
+                                <span class="image-placeholder">📷</span>
+                            </div>
+                            <div class="image-actions">
+                                <input type="file" id="imageFile" accept="image/*" style="display:none;">
+                                <button type="button" class="btn btn-secondary btn-sm" id="uploadImageBtn">上传图片</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="clearImageBtn">清除</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemImageUrl">图片地址</label>
+                        <input type="text" id="itemImageUrl" name="imageUrl" placeholder="或输入图片URL">
+                    </div>
+                    <div class="form-group">
                         <label for="itemRemark">备注</label>
                         <textarea id="itemRemark" name="remark" rows="3" placeholder="成色、购买时间等..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">保存物品</button>
                 </form>
             </div>
+
+            <div class="card stats-card">
+                <h2 class="card-title">📊 详细统计</h2>
+                <div class="stats-section">
+                    <h3 class="stats-subtitle">处理方式分布</h3>
+                    <div class="stats-bars" id="planStats">
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <h3 class="stats-subtitle">状态分布</h3>
+                    <div class="stats-bars" id="statusStats">
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <h3 class="stats-subtitle">分类分布</h3>
+                    <div class="stats-list" id="categoryStats">
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <section class="content">
             <div class="card filter-card">
+                <div class="search-row">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="🔍 搜索物品名称、位置、分类、备注...">
+                    </div>
+                    <div class="export-actions">
+                        <button class="btn btn-outline" id="exportCsvBtn">📄 导出 CSV</button>
+                        <button class="btn btn-outline" id="exportJsonBtn">📋 导出 JSON</button>
+                    </div>
+                </div>
                 <div class="filter-row">
                     <div class="filter-group">
-                        <label>分类筛选</label>
+                        <label>分类</label>
                         <select id="categoryFilter">
                             <option value="ALL">全部分类</option>
                         </select>
@@ -95,9 +150,66 @@
                             <option value="DISCARD">丢弃</option>
                         </select>
                     </div>
-                    <div class="filter-actions">
-                        <button class="btn btn-secondary" id="refreshBtn">🔄 刷新</button>
+                    <div class="filter-group">
+                        <label>状态</label>
+                        <select id="statusFilter">
+                            <option value="ALL">全部状态</option>
+                        </select>
                     </div>
+                    <div class="filter-group filter-group-small">
+                        <label>最低价格</label>
+                        <input type="number" id="minPriceFilter" min="0" step="1" placeholder="0">
+                    </div>
+                    <div class="filter-group filter-group-small">
+                        <label>最高价格</label>
+                        <input type="number" id="maxPriceFilter" min="0" step="1" placeholder="不限">
+                    </div>
+                    <div class="filter-group filter-group-small">
+                        <label>排序</label>
+                        <select id="sortBySelect">
+                            <option value="createdAt">最近添加</option>
+                            <option value="updatedAt">最近更新</option>
+                            <option value="name">名称</option>
+                            <option value="price">价格</option>
+                            <option value="category">分类</option>
+                        </select>
+                    </div>
+                    <div class="filter-group filter-group-tiny">
+                        <label>&nbsp;</label>
+                        <select id="sortOrderSelect">
+                            <option value="desc">降序</option>
+                            <option value="asc">升序</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card batch-card" id="batchBar" style="display:none;">
+                <div class="batch-info">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="selectAllCheckbox">
+                        全选
+                    </label>
+                    <span class="batch-count">已选择 <strong id="selectedCount">0</strong> 件物品</span>
+                </div>
+                <div class="batch-actions">
+                    <select id="batchDisposePlan">
+                        <option value="">批量修改处理方式...</option>
+                        <option value="KEEP">→ 留下</option>
+                        <option value="GIVE_AWAY">→ 送人</option>
+                        <option value="SELL">→ 出售</option>
+                        <option value="DISCARD">→ 丢弃</option>
+                    </select>
+                    <select id="batchStatus">
+                        <option value="">批量修改状态...</option>
+                        <option value="PENDING">→ 待处理</option>
+                        <option value="SELLING">→ 出售中</option>
+                        <option value="SOLD">→ 已出售</option>
+                        <option value="GIVEN_AWAY">→ 已送出</option>
+                        <option value="DISCARDED">→ 已丢弃</option>
+                        <option value="KEPT">→ 已保留</option>
+                    </select>
+                    <button class="btn btn-danger" id="batchDeleteBtn">🗑️ 批量删除</button>
                 </div>
             </div>
 
@@ -114,15 +226,20 @@
     <div class="modal" id="editModal" style="display:none;">
         <div class="modal-overlay"></div>
         <div class="modal-content">
-            <h3>修改处理方式</h3>
+            <h3>修改处理方式 & 状态</h3>
             <p id="editItemName" class="edit-item-name"></p>
             <div class="form-group">
-                <label for="editDisposePlan">新的处理方式</label>
+                <label for="editDisposePlan">处理方式</label>
                 <select id="editDisposePlan">
                     <option value="KEEP">留下</option>
                     <option value="GIVE_AWAY">送人</option>
                     <option value="SELL">出售</option>
                     <option value="DISCARD">丢弃</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editStatus">状态</label>
+                <select id="editStatus">
                 </select>
             </div>
             <div class="modal-actions">

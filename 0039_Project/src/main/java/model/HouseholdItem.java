@@ -8,20 +8,28 @@ public class HouseholdItem {
     private String name;
     private String category;
     private DisposePlan disposePlan;
+    private ItemStatus status;
     private BigDecimal estimatedPrice;
     private String location;
+    private String imageUrl;
     private String remark;
+    private long createdAt;
+    private long updatedAt;
 
     public HouseholdItem() {
         this.id = UUID.randomUUID().toString();
+        long now = System.currentTimeMillis();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     public HouseholdItem(String name, String category, DisposePlan disposePlan,
                          BigDecimal estimatedPrice, String location, String remark) {
-        this.id = UUID.randomUUID().toString();
+        this();
         this.name = name;
         this.category = category;
         this.disposePlan = disposePlan;
+        this.status = ItemStatus.getDefaultForPlan(disposePlan);
         this.estimatedPrice = estimatedPrice;
         this.location = location;
         this.remark = remark;
@@ -59,6 +67,14 @@ public class HouseholdItem {
         this.disposePlan = disposePlan;
     }
 
+    public ItemStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ItemStatus status) {
+        this.status = status;
+    }
+
     public BigDecimal getEstimatedPrice() {
         return estimatedPrice;
     }
@@ -75,11 +91,39 @@ public class HouseholdItem {
         this.location = location;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     public String getRemark() {
         return remark;
     }
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public long getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(long updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void touch() {
+        this.updatedAt = System.currentTimeMillis();
     }
 }

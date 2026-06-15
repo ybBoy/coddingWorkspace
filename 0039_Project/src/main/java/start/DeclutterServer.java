@@ -22,19 +22,21 @@ public class DeclutterServer {
         String baseDir = new File("").getAbsolutePath();
         String dataDir = baseDir + File.separator + "data";
         String uiDir = baseDir + File.separator + "ui";
+        String uploadDir = dataDir + File.separator + "uploads";
 
         System.out.println("========================================");
         System.out.println("  二手物品整理清单 - Declutter Server");
         System.out.println("========================================");
-        System.out.println("工作目录: " + baseDir);
-        System.out.println("数据目录: " + dataDir);
-        System.out.println("UI目录:   " + uiDir);
-        System.out.println("监听端口: " + port);
+        System.out.println("工作目录:   " + baseDir);
+        System.out.println("数据目录:   " + dataDir);
+        System.out.println("图片目录:   " + uploadDir);
+        System.out.println("UI目录:     " + uiDir);
+        System.out.println("监听端口:   " + port);
         System.out.println("========================================");
 
         ItemJsonStore store = new ItemJsonStore(dataDir);
         DeclutterService service = new DeclutterService(store);
-        ItemHttpAdapter adapter = new ItemHttpAdapter(service, uiDir);
+        ItemHttpAdapter adapter = new ItemHttpAdapter(service, uiDir, uploadDir);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", adapter);

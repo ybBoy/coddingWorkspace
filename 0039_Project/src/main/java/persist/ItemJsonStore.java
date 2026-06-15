@@ -2,6 +2,7 @@ package persist;
 
 import model.DisposePlan;
 import model.HouseholdItem;
+import model.ItemStatus;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -40,6 +41,8 @@ public class ItemJsonStore {
         for (int i = 0; i < items.size(); i++) {
             if (items.get(i).getId().equals(id)) {
                 updated.setId(id);
+                updated.setCreatedAt(items.get(i).getCreatedAt());
+                updated.touch();
                 items.set(i, updated);
                 saveToFile();
                 return true;
@@ -52,6 +55,65 @@ public class ItemJsonStore {
         HouseholdItem item = findById(id);
         if (item != null) {
             item.setDisposePlan(plan);
+            ItemStatus newStatus = ItemStatus.getDefaultForPlan(plan);
+            if (item.getStatus() == null || !item.getStatus().isCompleted()) {
+                item.setStatus(newStatus);
+            }
+            item.touch();
+            saveToFile();
+            return true;
+        }
+        return false;
+    }
+
+    public synchronized boolean updateStatus(String id, ItemStatus status) {
+        HouseholdItem item = findById(id);
+        if (item != null) {
+            item.setStatus(status);
+            item.touch();
+            saveToFile();
+            return true;
+        }
+        return false;
+    }
+
+    public synchronized int batchUpdateStatus(List<String> ids, ItemStatus status) {
+        int count = 0;
+        for (String id : ids) {
+            HouseholdItem item = findById(id);
+            if (item != null) {
+                item.setStatus(status);
+                item.touch();
+                count++;
+            }
+        }
+        if (count > 0) saveToFile();
+        return count;
+    }
+
+    public synchronized int batchUpdateDisposePlan(List<String> ids, DisposePlan plan) {
+        int count = 0;
+        ItemStatus defaultStatus = ItemStatus.getDefaultForPlan(plan);
+        for (String id : ids) {
+            HouseholdItem item = findById(id);
+            if (item != null) {
+                item.setDisposePlan(plan);
+                if (item.getStatus() == null || !item.getStatus().isCompleted()) {
+                    item.setStatus(defaultStatus);
+                }
+                item.touch();
+                count++;
+            }
+        }
+        if (count > 0) saveToFile();
+        return count;
+    }
+
+    public synchronized boolean updateImageUrl(String id, String imageUrl) {
+        HouseholdItem item = findById(id);
+        if (item != null) {
+            item.setImageUrl(imageUrl);
+            item.touch();
             saveToFile();
             return true;
         }
@@ -68,6 +130,20 @@ public class ItemJsonStore {
             }
         }
         return false;
+    }
+
+    public synchronized int batchDelete(List<String> ids) {
+        int count = 0;
+        Set<String> idSet = new HashSet<>(ids);
+        Iterator<HouseholdItem> it = items.iterator();
+        while (it.hasNext()) {
+            if (idSet.contains(it.next().getId())) {
+                it.remove();
+                count++;
+            }
+        }
+        if (count > 0) saveToFile();
+        return count;
     }
 
     private void loadFromFile() {
@@ -123,18 +199,27 @@ public class ItemJsonStore {
         sb.append("[");
         for (int i = 0; i < list.size(); i++) {
             if (i > 0) sb.append(",");
-            HouseholdItem it = list.get(i);
-            sb.append("{");
-            sb.append("\"id\":\"").append(escapeJson(it.getId())).append("\",");
-            sb.append("\"name\":\"").append(escapeJson(it.getName())).append("\",");
-            sb.append("\"category\":\"").append(escapeJson(it.getCategory())).append("\",");
-            sb.append("\"disposePlan\":\"").append(it.getDisposePlan().name()).append("\",");
-            sb.append("\"estimatedPrice\":").append(it.getEstimatedPrice() != null ? it.getEstimatedPrice().toPlainString() : "0").append(",");
-            sb.append("\"location\":\"").append(escapeJson(it.getLocation())).append("\",");
-            sb.append("\"remark\":\"").append(escapeJson(it.getRemark())).append("\"");
-            sb.append("}");
+            sb.append(serializeItemForStorage(list.get(i)));
         }
         sb.append("]");
+        return sb.toString();
+    }
+
+    private static String serializeItemForStorage(HouseholdItem it) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"id\":\"").append(escapeJson(it.getId())).append("\",");
+        sb.append("\"name\":\"").append(escapeJson(it.getName())).append("\",");
+        sb.append("\"category\":\"").append(escapeJson(it.getCategory())).append("\",");
+        sb.append("\"disposePlan\":\"").append(it.getDisposePlan() != null ? it.getDisposePlan().name() : "").append("\",");
+        sb.append("\"status\":\"").append(it.getStatus() != null ? it.getStatus().name() : "").append("\",");
+        sb.append("\"estimatedPrice\":").append(it.getEstimatedPrice() != null ? it.getEstimatedPrice().toPlainString() : "0").append(",");
+        sb.append("\"location\":\"").append(escapeJson(it.getLocation())).append("\",");
+        sb.append("\"imageUrl\":\"").append(escapeJson(it.getImageUrl())).append("\",");
+        sb.append("\"remark\":\"").append(escapeJson(it.getRemark())).append("\",");
+        sb.append("\"createdAt\":").append(it.getCreatedAt()).append(",");
+        sb.append("\"updatedAt\":").append(it.getUpdatedAt());
+        sb.append("}");
         return sb.toString();
     }
 
@@ -144,11 +229,16 @@ public class ItemJsonStore {
         sb.append("\"id\":\"").append(escapeJson(it.getId())).append("\",");
         sb.append("\"name\":\"").append(escapeJson(it.getName())).append("\",");
         sb.append("\"category\":\"").append(escapeJson(it.getCategory())).append("\",");
-        sb.append("\"disposePlan\":\"").append(it.getDisposePlan().name()).append("\",");
-        sb.append("\"disposePlanDisplay\":\"").append(it.getDisposePlan().getDisplayName()).append("\",");
+        sb.append("\"disposePlan\":\"").append(it.getDisposePlan() != null ? it.getDisposePlan().name() : "").append("\",");
+        sb.append("\"disposePlanDisplay\":\"").append(it.getDisposePlan() != null ? it.getDisposePlan().getDisplayName() : "").append("\",");
+        sb.append("\"status\":\"").append(it.getStatus() != null ? it.getStatus().name() : "").append("\",");
+        sb.append("\"statusDisplay\":\"").append(it.getStatus() != null ? it.getStatus().getDisplayName() : "").append("\",");
         sb.append("\"estimatedPrice\":").append(it.getEstimatedPrice() != null ? it.getEstimatedPrice().toPlainString() : "0").append(",");
         sb.append("\"location\":\"").append(escapeJson(it.getLocation())).append("\",");
-        sb.append("\"remark\":\"").append(escapeJson(it.getRemark())).append("\"");
+        sb.append("\"imageUrl\":\"").append(escapeJson(it.getImageUrl())).append("\",");
+        sb.append("\"remark\":\"").append(escapeJson(it.getRemark())).append("\",");
+        sb.append("\"createdAt\":").append(it.getCreatedAt()).append(",");
+        sb.append("\"updatedAt\":").append(it.getUpdatedAt());
         sb.append("}");
         return sb.toString();
     }
@@ -214,12 +304,46 @@ public class ItemJsonStore {
             if (fields.containsKey("id")) item.setId(fields.get("id"));
             item.setName(fields.getOrDefault("name", ""));
             item.setCategory(fields.getOrDefault("category", ""));
-            String dp = fields.getOrDefault("disposePlan", "KEEP");
-            item.setDisposePlan(DisposePlan.valueOf(dp));
+
+            String dpStr = fields.get("disposePlan");
+            if (dpStr != null && !dpStr.isEmpty()) {
+                try {
+                    item.setDisposePlan(DisposePlan.valueOf(dpStr));
+                } catch (Exception e) {
+                    item.setDisposePlan(DisposePlan.KEEP);
+                }
+            } else {
+                item.setDisposePlan(DisposePlan.KEEP);
+            }
+
+            String statusStr = fields.get("status");
+            if (statusStr != null && !statusStr.isEmpty()) {
+                try {
+                    item.setStatus(ItemStatus.valueOf(statusStr));
+                } catch (Exception e) {
+                    item.setStatus(ItemStatus.getDefaultForPlan(item.getDisposePlan()));
+                }
+            } else {
+                    item.setStatus(ItemStatus.getDefaultForPlan(item.getDisposePlan()));
+                }
+
             String price = fields.getOrDefault("estimatedPrice", "0");
             item.setEstimatedPrice(new BigDecimal(price));
             item.setLocation(fields.getOrDefault("location", ""));
+            item.setImageUrl(fields.getOrDefault("imageUrl", ""));
             item.setRemark(fields.getOrDefault("remark", ""));
+
+            if (fields.containsKey("createdAt")) {
+                try {
+                    item.setCreatedAt(Long.parseLong(fields.get("createdAt")));
+                } catch (Exception ignored) {}
+            }
+            if (fields.containsKey("updatedAt")) {
+                try {
+                    item.setUpdatedAt(Long.parseLong(fields.get("updatedAt")));
+                } catch (Exception ignored) {}
+            }
+
             return item;
         } catch (Exception e) {
             return null;

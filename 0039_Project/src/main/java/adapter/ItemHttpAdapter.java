@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import model.DisposePlan;
 import model.HouseholdItem;
+import model.ItemStatus;
 import persist.ItemJsonStore;
 
 import java.io.*;
@@ -15,17 +16,17 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ItemHttpAdapter implements HttpHandler {
     private final DeclutterService service;
     private final String uiDir;
+    private final String uploadDir;
 
-    public ItemHttpAdapter(DeclutterService service, String uiDir) {
+    public ItemHttpAdapter(DeclutterService service, String uiDir, String uploadDir) {
         this.service = service;
         this.uiDir = uiDir;
+        this.uploadDir = uploadDir;
     }
 
     @Override
@@ -37,10 +38,13 @@ public class ItemHttpAdapter implements HttpHandler {
 
             if (path.startsWith("/api/")) {
                 handleApi(exchange, method, path);
+            } else if (path.startsWith("/uploads/")) {
+                handleUpload(exchange, path);
             } else {
                 handleStatic(exchange, path);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             sendError(exchange, 500, "Internal Server Error: " + e.getMessage());
         }
     }
@@ -52,10 +56,28 @@ public class ItemHttpAdapter implements HttpHandler {
             handleAddItem(exchange);
         } else if ("PUT".equals(method) && path.startsWith("/api/items/") && path.endsWith("/dispose-plan")) {
             handleUpdateDisposePlan(exchange, path);
+        } else if ("PUT".equals(method) && path.startsWith("/api/items/") && path.endsWith("/status")) {
+            handleUpdateStatus(exchange, path);
+        } else if ("PUT".equals(method) && path.startsWith("/api/items/") && path.endsWith("/image")) {
+            handleUpdateImage(exchange, path);
         } else if ("DELETE".equals(method) && path.startsWith("/api/items/")) {
             handleDeleteItem(exchange, path);
+        } else if ("POST".equals(method) && "/api/items/batch/dispose-plan".equals(path)) {
+            handleBatchUpdateDisposePlan(exchange);
+        } else if ("POST".equals(method) && "/api/items/batch/status".equals(path)) {
+            handleBatchUpdateStatus(exchange);
+        } else if ("POST".equals(method) && "/api/items/batch/delete".equals(path)) {
+            handleBatchDelete(exchange);
         } else if ("GET".equals(method) && "/api/stats".equals(path)) {
             handleStats(exchange);
+        } else if ("GET".equals(method) && "/api/stats/detailed".equals(path)) {
+            handleDetailedStats(exchange);
+        } else if ("GET".equals(method) && "/api/export/csv".equals(path)) {
+            handleExportCsv(exchange);
+        } else if ("GET".equals(method) && "/api/export/json".equals(path)) {
+            handleExportJson(exchange);
+        } else if ("POST".equals(method) && "/api/upload".equals(path)) {
+            handleUploadImage(exchange);
         } else if ("OPTIONS".equals(method)) {
             handleOptions(exchange);
         } else {
@@ -65,11 +87,23 @@ public class ItemHttpAdapter implements HttpHandler {
 
     private void handleListItems(HttpExchange exchange) throws IOException {
         Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
+        String keyword = query.get("keyword");
         String category = query.get("category");
         String disposePlan = query.get("disposePlan");
-        List<HouseholdItem> items = service.listItems(category, disposePlan);
-        String json = ItemJsonStore.serializeList(items);
-        sendJson(exchange, 200, json);
+        String status = query.get("status");
+        String minPriceStr = query.get("minPrice");
+        String maxPriceStr = query.get("maxPrice");
+        String sortBy = query.get("sortBy");
+        String sortOrder = query.get("sortOrder");
+
+        BigDecimal minPrice = null, maxPrice = null;
+        try { if (minPriceStr != null && !minPriceStr.isEmpty()) minPrice = new BigDecimal(minPriceStr); } catch (Exception ignored) {}
+        try { if (maxPriceStr != null && !maxPriceStr.isEmpty()) maxPrice = new BigDecimal(maxPriceStr); } catch (Exception ignored) {}
+
+        List<HouseholdItem> items = service.searchItems(
+                keyword, category, disposePlan, status,
+                minPrice, maxPrice, sortBy, sortOrder);
+        sendJson(exchange, 200, ItemJsonStore.serializeList(items));
     }
 
     private void handleAddItem(HttpExchange exchange) throws IOException {
@@ -81,9 +115,14 @@ public class ItemHttpAdapter implements HttpHandler {
             item.setCategory(fields.getOrDefault("category", ""));
             String dp = fields.getOrDefault("disposePlan", "KEEP");
             item.setDisposePlan(DisposePlan.fromNameOrDisplayName(dp));
+            String statusStr = fields.get("status");
+            if (statusStr != null && !statusStr.isEmpty()) {
+                item.setStatus(ItemStatus.fromNameOrDisplayName(statusStr));
+            }
             String priceStr = fields.getOrDefault("estimatedPrice", "0");
             item.setEstimatedPrice(new BigDecimal(priceStr));
             item.setLocation(fields.getOrDefault("location", ""));
+            item.setImageUrl(fields.getOrDefault("imageUrl", ""));
             item.setRemark(fields.getOrDefault("remark", ""));
             service.addItem(item);
             sendJson(exchange, 201, ItemJsonStore.serializeSingle(item));
@@ -100,28 +139,124 @@ public class ItemHttpAdapter implements HttpHandler {
             String dp = fields.getOrDefault("disposePlan", "");
             DisposePlan plan = DisposePlan.fromNameOrDisplayName(dp);
             boolean ok = service.updateDisposePlan(id, plan);
-            if (ok) {
-                sendJson(exchange, 200, "{\"success\":true}");
-            } else {
-                sendError(exchange, 404, "Item not found");
-            }
+            if (ok) sendJson(exchange, 200, "{\"success\":true}");
+            else sendError(exchange, 404, "Item not found");
         } catch (Exception e) {
             sendError(exchange, 400, "Bad Request: " + e.getMessage());
         }
     }
 
+    private void handleUpdateStatus(HttpExchange exchange, String path) throws IOException {
+        String id = extractId(path, "/api/items/", "/status");
+        String body = readBody(exchange);
+        Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
+        try {
+            String st = fields.getOrDefault("status", "");
+            ItemStatus status = ItemStatus.fromNameOrDisplayName(st);
+            boolean ok = service.updateStatus(id, status);
+            if (ok) sendJson(exchange, 200, "{\"success\":true}");
+            else sendError(exchange, 404, "Item not found");
+        } catch (Exception e) {
+            sendError(exchange, 400, "Bad Request: " + e.getMessage());
+        }
+    }
+
+    private void handleUpdateImage(HttpExchange exchange, String path) throws IOException {
+        String id = extractId(path, "/api/items/", "/image");
+        String body = readBody(exchange);
+        Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
+        String imageUrl = fields.getOrDefault("imageUrl", "");
+        boolean ok = service.updateImageUrl(id, imageUrl);
+        if (ok) sendJson(exchange, 200, "{\"success\":true}");
+        else sendError(exchange, 404, "Item not found");
+    }
+
     private void handleDeleteItem(HttpExchange exchange, String path) throws IOException {
         String id = extractId(path, "/api/items/", null);
         boolean ok = service.deleteItem(id);
-        if (ok) {
-            sendJson(exchange, 200, "{\"success\":true}");
-        } else {
-            sendError(exchange, 404, "Item not found");
+        if (ok) sendJson(exchange, 200, "{\"success\":true}");
+        else sendError(exchange, 404, "Item not found");
+    }
+
+    private List<String> parseIdList(String body) {
+        Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
+        String idsStr = fields.get("ids");
+        if (idsStr == null || idsStr.isEmpty()) return Collections.emptyList();
+        if (idsStr.startsWith("[") && idsStr.endsWith("]")) {
+            idsStr = idsStr.substring(1, idsStr.length() - 1);
+        }
+        List<String> result = new ArrayList<>();
+        for (String s : idsStr.split(",")) {
+            String t = s.trim();
+            if (t.startsWith("\"") && t.endsWith("\"")) {
+                t = t.substring(1, t.length() - 1);
+            }
+            if (!t.isEmpty()) result.add(t);
+        }
+        return result;
+    }
+
+    private static List<String> parseJsonStringArray(String arr) {
+        List<String> result = new ArrayList<>();
+        arr = arr.trim();
+        if (arr.equals("[]")) return result;
+        arr = arr.substring(1, arr.length() - 1);
+        boolean inString = false;
+        StringBuilder cur = new StringBuilder();
+        for (int i = 0; i < arr.length(); i++) {
+            char c = arr.charAt(i);
+            if (c == '"' && (i == 0 || arr.charAt(i - 1) != '\\')) {
+                if (!inString) { inString = true; continue; }
+                else { inString = false; result.add(cur.toString()); cur = new StringBuilder(); continue; }
+            }
+            if (inString) cur.append(c);
+            else if (c == ',') continue;
+        }
+        return result;
+    }
+
+    private void handleBatchUpdateDisposePlan(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        try {
+            List<String> ids = parseIdList(body);
+            Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
+            String dp = fields.getOrDefault("disposePlan", "");
+            DisposePlan plan = DisposePlan.fromNameOrDisplayName(dp);
+            int count = service.batchUpdateDisposePlan(ids, plan);
+            sendJson(exchange, 200, "{\"success\":true,\"updated\":" + count + "}");
+        } catch (Exception e) {
+            sendError(exchange, 400, "Bad Request: " + e.getMessage());
+        }
+    }
+
+    private void handleBatchUpdateStatus(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        try {
+            List<String> ids = parseIdList(body);
+            Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
+            String st = fields.getOrDefault("status", "");
+            ItemStatus status = ItemStatus.fromNameOrDisplayName(st);
+            int count = service.batchUpdateStatus(ids, status);
+            sendJson(exchange, 200, "{\"success\":true,\"updated\":" + count + "}");
+        } catch (Exception e) {
+            sendError(exchange, 400, "Bad Request: " + e.getMessage());
+        }
+    }
+
+    private void handleBatchDelete(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        try {
+            List<String> ids = parseIdList(body);
+            int count = service.batchDelete(ids);
+            sendJson(exchange, 200, "{\"success\":true,\"deleted\":" + count + "}");
+        } catch (Exception e) {
+            sendError(exchange, 400, "Bad Request: " + e.getMessage());
         }
     }
 
     private void handleStats(HttpExchange exchange) throws IOException {
         BigDecimal revenue = service.calculateExpectedRevenue();
+        BigDecimal soldRevenue = service.calculateSoldRevenue();
         Set<String> categories = service.listCategories();
         int total = service.countItems();
         int keepCount = service.countByDisposePlan(DisposePlan.KEEP);
@@ -132,6 +267,7 @@ public class ItemHttpAdapter implements HttpHandler {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         sb.append("\"expectedRevenue\":").append(revenue.toPlainString()).append(",");
+        sb.append("\"soldRevenue\":").append(soldRevenue.toPlainString()).append(",");
         sb.append("\"totalItems\":").append(total).append(",");
         sb.append("\"keepCount\":").append(keepCount).append(",");
         sb.append("\"giveAwayCount\":").append(giveCount).append(",");
@@ -146,6 +282,152 @@ public class ItemHttpAdapter implements HttpHandler {
         sb.append("]");
         sb.append("}");
         sendJson(exchange, 200, sb.toString());
+    }
+
+    private void handleDetailedStats(HttpExchange exchange) throws IOException {
+        Map<String, Object> stats = service.getDetailedStats();
+        String json = serializeObject(stats);
+        sendJson(exchange, 200, json);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String serializeObject(Object obj) {
+        if (obj == null) return "null";
+        if (obj instanceof String) {
+            return "\"" + escapeJson((String) obj) + "\"";
+        }
+        if (obj instanceof Number || obj instanceof Boolean) {
+            return obj.toString();
+        }
+        if (obj instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) obj;
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
+            boolean first = true;
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                if (!first) sb.append(",");
+                first = false;
+                sb.append("\"").append(escapeJson(entry.getKey())).append("\":");
+                sb.append(serializeObject(entry.getValue()));
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+        if (obj instanceof List) {
+            List<?> list = (List<?>) obj;
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (int i = 0; i < list.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append(serializeObject(list.get(i)));
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof Set) {
+            return serializeObject(new ArrayList<>((Set<?>) obj));
+        }
+        return "\"" + escapeJson(String.valueOf(obj)) + "\"";
+    }
+
+    private void handleExportCsv(HttpExchange exchange) throws IOException {
+        Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
+        String keyword = query.get("keyword");
+        String category = query.get("category");
+        String disposePlan = query.get("disposePlan");
+        String status = query.get("status");
+
+        List<HouseholdItem> items = service.searchItems(
+                keyword, category, disposePlan, status, null, null, "createdAt", "desc");
+
+        String csv = service.exportCsv(items);
+        byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+
+        Headers headers = exchange.getResponseHeaders();
+        headers.set("Content-Type", "text/csv; charset=utf-8");
+        headers.set("Content-Disposition", "attachment; filename=\"declutter-items.csv\"");
+        addCorsHeaders(headers);
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
+    }
+
+    private void handleExportJson(HttpExchange exchange) throws IOException {
+        Map<String, String> query = parseQuery(exchange.getRequestURI().getQuery());
+        String keyword = query.get("keyword");
+        String category = query.get("category");
+        String disposePlan = query.get("disposePlan");
+        String status = query.get("status");
+
+        List<HouseholdItem> items = service.searchItems(
+                keyword, category, disposePlan, status, null, null, "createdAt", "desc");
+
+        String json = service.exportJson(items);
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+
+        Headers headers = exchange.getResponseHeaders();
+        headers.set("Content-Type", "application/json; charset=utf-8");
+        headers.set("Content-Disposition", "attachment; filename=\"declutter-items.json\"");
+        addCorsHeaders(headers);
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
+    }
+
+    private void handleUploadImage(HttpExchange exchange) throws IOException {
+        String body = readBody(exchange);
+        Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
+        String dataUrl = fields.get("image");
+        if (dataUrl == null || !dataUrl.startsWith("data:image/")) {
+            sendError(exchange, 400, "Invalid image data");
+            return;
+        }
+        try {
+            int commaIdx = dataUrl.indexOf(',');
+            if (commaIdx < 0) throw new IllegalArgumentException("Invalid data URL");
+            String mimePart = dataUrl.substring(5, commaIdx);
+            String base64 = dataUrl.substring(commaIdx + 1);
+            String ext = "png";
+            if (mimePart.contains("jpeg") || mimePart.contains("jpg")) ext = "jpg";
+            else if (mimePart.contains("png")) ext = "png";
+            else if (mimePart.contains("gif")) ext = "gif";
+            else if (mimePart.contains("webp")) ext = "webp";
+
+            byte[] imageBytes = Base64.getDecoder().decode(base64);
+
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+            String fileName = UUID.randomUUID().toString() + "." + ext;
+            Path filePath = uploadPath.resolve(fileName);
+            Files.write(filePath, imageBytes);
+
+            String url = "/uploads/" + fileName;
+            sendJson(exchange, 200, "{\"success\":true,\"url\":\"" + url + "\"}");
+        } catch (Exception e) {
+            sendError(exchange, 400, "Upload failed: " + e.getMessage());
+        }
+    }
+
+    private void handleUpload(HttpExchange exchange, String path) throws IOException {
+        if (!"GET".equals(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Method Not Allowed");
+            return;
+        }
+        String fileName = path.substring("/uploads/".length());
+        Path filePath = Paths.get(uploadDir, fileName);
+        if (!filePath.normalize().startsWith(Paths.get(uploadDir).normalize())) {
+            sendError(exchange, 403, "Forbidden");
+            return;
+        }
+        if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
+            sendError(exchange, 404, "Not Found");
+            return;
+        }
+        byte[] content = Files.readAllBytes(filePath);
+        Headers headers = exchange.getResponseHeaders();
+        headers.set("Content-Type", guessContentType(fileName));
+        addCorsHeaders(headers);
+        exchange.sendResponseHeaders(200, content.length);
+        try (OutputStream os = exchange.getResponseBody()) { os.write(content); }
     }
 
     private void handleOptions(HttpExchange exchange) throws IOException {
@@ -173,32 +455,26 @@ public class ItemHttpAdapter implements HttpHandler {
         headers.set("Content-Type", contentType);
         addCorsHeaders(headers);
         exchange.sendResponseHeaders(200, content.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(content);
-        }
+        try (OutputStream os = exchange.getResponseBody()) { os.write(content); }
     }
 
-    private void sendJson(HttpExchange exchange, int status, String json) throws IOException {
+    private static void sendJson(HttpExchange exchange, int status, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         Headers headers = exchange.getResponseHeaders();
         headers.set("Content-Type", "application/json; charset=utf-8");
         addCorsHeaders(headers);
         exchange.sendResponseHeaders(status, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
+        try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
     }
 
-    private void sendError(HttpExchange exchange, int status, String message) throws IOException {
+    private static void sendError(HttpExchange exchange, int status, String message) throws IOException {
         String json = "{\"error\":\"" + escapeJson(message) + "\"}";
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
         Headers headers = exchange.getResponseHeaders();
         headers.set("Content-Type", "application/json; charset=utf-8");
         addCorsHeaders(headers);
         exchange.sendResponseHeaders(status, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
+        try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
     }
 
     private static void addCorsHeaders(Headers headers) {
@@ -210,7 +486,7 @@ public class ItemHttpAdapter implements HttpHandler {
     private static String readBody(HttpExchange exchange) throws IOException {
         try (InputStream is = exchange.getRequestBody();
              ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            byte[] buf = new byte[4096];
+            byte[] buf = new byte[8192];
             int n;
             while ((n = is.read(buf)) > 0) {
                 baos.write(buf, 0, n);
@@ -220,7 +496,7 @@ public class ItemHttpAdapter implements HttpHandler {
     }
 
     private static Map<String, String> parseQuery(String query) {
-        Map<String, String> result = new java.util.HashMap<>();
+        Map<String, String> result = new HashMap<>();
         if (query == null || query.isEmpty()) return result;
         try {
             for (String pair : query.split("&")) {
@@ -255,7 +531,10 @@ public class ItemHttpAdapter implements HttpHandler {
         if (filename.endsWith(".json")) return "application/json; charset=utf-8";
         if (filename.endsWith(".png")) return "image/png";
         if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+        if (filename.endsWith(".gif")) return "image/gif";
+        if (filename.endsWith(".webp")) return "image/webp";
         if (filename.endsWith(".svg")) return "image/svg+xml";
+        if (filename.endsWith(".csv")) return "text/csv; charset=utf-8";
         return "application/octet-stream";
     }
 

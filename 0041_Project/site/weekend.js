@@ -61,7 +61,7 @@ function renderCards(places) {
             <div class="card-notes">${escHtml(p.notes || "")}</div>
             <div class="card-actions">
                 <button class="btn btn-visited" onclick="toggleVisited('${p.id}')">
-                    ${p.visited ? "未去过" : "已去过"}
+                    ${p.visited ? "✓ 已去过" : "未去过"}
                 </button>
                 <button class="btn btn-primary btn-sm" onclick="openEdit('${p.id}', ${p.want_level})">修改想去程度</button>
                 <button class="btn btn-danger" onclick="deletePlace('${p.id}')">删除</button>
@@ -99,6 +99,7 @@ async function fetchRecommend() {
     isRecommendMode = true;
     const res = await fetch(API_BASE + "/recommend");
     const data = await res.json();
+    renderStats(data.stats);
     renderCards(data.places);
     $("#filteredCount").textContent = data.places.length + " 个（推荐）";
 }
@@ -106,7 +107,6 @@ async function fetchRecommend() {
 function exitRecommendMode() {
     if (!isRecommendMode) return;
     isRecommendMode = false;
-    fetchPlaces();
 }
 
 addForm.addEventListener("submit", async (e) => {
@@ -221,6 +221,7 @@ maxCostInput.addEventListener("input", () => {
 recommendBtn.addEventListener("click", () => {
     if (isRecommendMode) {
         exitRecommendMode();
+        fetchPlaces();
     } else {
         fetchRecommend();
     }

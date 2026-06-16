@@ -16,7 +16,12 @@ def get_places():
     sort_by_cost = request.args.get("sort_by_cost", "0") == "1"
     keyword = request.args.get("keyword") or None
     max_cost_str = request.args.get("max_cost")
-    max_cost = float(max_cost_str) if max_cost_str else None
+    max_cost = None
+    if max_cost_str:
+        try:
+            max_cost = float(max_cost_str)
+        except (ValueError, TypeError):
+            return jsonify({"error": "max_cost 必须是有效的数字"}), 400
     places = _manager.list_places(
         place_type=place_type,
         sort_by_cost=sort_by_cost,
@@ -32,7 +37,8 @@ def get_places():
 @api_bp.route("/recommend", methods=["GET"])
 def get_recommend():
     places = _manager.get_weekend_recommend()
-    return jsonify({"places": [p.to_dict() for p in places]})
+    all_stats = _manager.get_stats()
+    return jsonify({"places": [p.to_dict() for p in places], "stats": all_stats})
 
 
 @api_bp.route("", methods=["POST"])

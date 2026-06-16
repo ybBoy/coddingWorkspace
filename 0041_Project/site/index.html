@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>周末短途计划本</title>
+    <link rel="stylesheet" href="weekend.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>周末短途计划本</h1>
+            <p class="subtitle">整理你想去的周边地点，轻松规划周末</p>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-label">平均预计花费</span>
+                    <span class="stat-value" id="avgCost">¥0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最想去 Top3</span>
+                    <span class="stat-value" id="top3Count">0 个</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">当前筛选结果</span>
+                    <span class="stat-value" id="filteredCount">0 个</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <h2 class="section-title">新增地点</h2>
+                <form id="addForm" class="add-form">
+                    <div class="form-row">
+                        <input type="text" id="inputName" placeholder="地点名称" required>
+                        <select id="inputType">
+                            <option value="">选择类型</option>
+                            <option value="公园">公园</option>
+                            <option value="咖啡店">咖啡店</option>
+                            <option value="展览">展览</option>
+                            <option value="徒步路线">徒步路线</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="inputCost" placeholder="预计花费(元)" min="0" step="1" value="0">
+                        <select id="inputTransport">
+                            <option value="">交通方式</option>
+                            <option value="地铁">地铁</option>
+                            <option value="公交">公交</option>
+                            <option value="自驾">自驾</option>
+                            <option value="骑行">骑行</option>
+                            <option value="步行">步行</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="want-label">想去程度：
+                            <select id="inputWant">
+                                <option value="5">5 - 非常想去</option>
+                                <option value="4">4 - 挺想去</option>
+                                <option value="3" selected>3 - 一般</option>
+                                <option value="2">2 - 可去可不去</option>
+                                <option value="1">1 - 顺路再说</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="inputNotes" placeholder="备注（选填）">
+                    </div>
+                    <button type="submit" class="btn btn-primary">添加地点</button>
+                </form>
+            </div>
+
+            <div class="toolbar-right">
+                <h2 class="section-title">筛选与排序</h2>
+                <div class="filter-group">
+                    <label>按类型筛选：
+                        <select id="filterType">
+                            <option value="">全部</option>
+                            <option value="公园">公园</option>
+                            <option value="咖啡店">咖啡店</option>
+                            <option value="展览">展览</option>
+                            <option value="徒步路线">徒步路线</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="filter-group">
+                    <label>
+                        <input type="checkbox" id="sortByCost"> 按预计花费从低到高排序
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <main class="card-list" id="cardList">
+            <div class="empty-tip" id="emptyTip">还没有添加任何地点，从上方表单开始吧 ✨</div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="editModal" style="display:none;">
+        <div class="modal">
+            <h3>修改想去程度</h3>
+            <input type="hidden" id="editId">
+            <label class="want-label">想去程度：
+                <select id="editWant">
+                    <option value="5">5 - 非常想去</option>
+                    <option value="4">4 - 挺想去</option>
+                    <option value="3">3 - 一般</option>
+                    <option value="2">2 - 可去可不去</option>
+                    <option value="1">1 - 顺路再说</option>
+                </select>
+            </label>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="editSave">保存</button>
+                <button class="btn btn-secondary" id="editCancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="weekend.js"></script>
+</body>
+</html>

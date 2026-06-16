@@ -1,0 +1,11 @@
+[
+  {
+    "id": "44cd56cf",
+    "name": "西湖公园",
+    "place_type": "公园",
+    "estimated_cost": 30.0,
+    "transport": "地铁",
+    "want_level": 4,
+    "notes": "周末散步好去处"
+  }
+]

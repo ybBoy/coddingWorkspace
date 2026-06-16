@@ -1,0 +1,350 @@
+/*
+  文件职责：
+    零食库存小柜子的前端样式，采用"便利店货架"风格。
+    浅黄色整体背景，零食卡片模拟货架标签，
+    红色用于提醒标记，蓝色用于主要操作按钮。
+
+  数据流中的位置：
+    snacks.html 加载此样式 → 页面元素获得视觉呈现
+*/
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background-color: #fff8e1;
+  color: #333;
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+/* ===== 顶部区域 ===== */
+.header {
+  background: #fff;
+  border: 2px solid #e6c77a;
+  border-radius: 10px;
+  padding: 18px 22px;
+  box-shadow: 0 3px 0 #d4a94a;
+  margin-bottom: 20px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 26px;
+  color: #b8860b;
+}
+
+.stats {
+  display: flex;
+  gap: 10px;
+}
+
+.stat {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stat.total {
+  background: #e8f4ff;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+}
+
+.stat.attention {
+  background: #ffebee;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter label {
+  font-size: 14px;
+  color: #666;
+  margin-right: 6px;
+}
+
+.filter select {
+  padding: 7px 12px;
+  border: 1px solid #e6c77a;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fffef5;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ===== 按钮样式 ===== */
+.btn {
+  display: inline-block;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: none;
+}
+
+.btn-primary {
+  background: #1976d2;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1565c0;
+}
+
+.btn-default {
+  background: #eee;
+  color: #555;
+}
+
+.btn-default:hover {
+  background: #ddd;
+}
+
+.btn-danger {
+  background: #e53935;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #c62828;
+}
+
+.btn-warn {
+  background: #fb8c00;
+  color: #fff;
+}
+
+.btn-warn:hover {
+  background: #ef6c00;
+}
+
+/* ===== 新增表单 ===== */
+.add-form {
+  background: #fffef5;
+  border: 2px dashed #e6c77a;
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 18px;
+}
+
+.add-form.hidden {
+  display: none;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row label {
+  font-size: 13px;
+  color: #8a6d3b;
+  font-weight: 600;
+}
+
+.form-row input {
+  padding: 8px 10px;
+  border: 1px solid #e6c77a;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+}
+
+.form-row input:focus {
+  border-color: #1976d2;
+}
+
+.required {
+  color: #d32f2f;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+/* ===== 货架区域 ===== */
+.shelf {
+  background: linear-gradient(180deg, #fff6d6 0%, #fff0b3 100%);
+  border: 2px solid #c9a84b;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: inset 0 2px 0 #fff8cc, 0 4px 0 #b5932e;
+}
+
+.snack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state.hidden {
+  display: none;
+}
+
+.empty-icon {
+  font-size: 60px;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  font-size: 16px;
+}
+
+/* ===== 零食卡片（货架标签风格） ===== */
+.snack-card {
+  background: #fff;
+  border: 2px solid #d4af37;
+  border-radius: 8px;
+  padding: 14px;
+  position: relative;
+  box-shadow: 0 2px 0 #b5932e;
+}
+
+.snack-card.attention {
+  border-color: #e53935;
+  box-shadow: 0 2px 0 #c62828;
+}
+
+.snack-card.disabled {
+  opacity: 0.6;
+  background: #f5f5f5;
+}
+
+.snack-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.snack-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #5d4037;
+  line-height: 1.3;
+}
+
+.snack-flavor {
+  font-size: 13px;
+  color: #8d6e63;
+  margin-top: 2px;
+}
+
+.snack-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-warn {
+  background: #ffebee;
+  color: #d32f2f;
+  border: 1px solid #ef9a9a;
+}
+
+.badge-disabled {
+  background: #eeeeee;
+  color: #616161;
+  border: 1px solid #bdbdbd;
+}
+
+.snack-info {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+.snack-info .label {
+  color: #999;
+  margin-right: 4px;
+}
+
+.snack-quantity {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1976d2;
+}
+
+.snack-quantity.low {
+  color: #d32f2f;
+}
+
+.snack-quantity.zero {
+  color: #9e9e9e;
+}
+
+.snack-expiry.warn {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+.snack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed #e0c879;
+}
+
+.snack-actions .btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 13px;
+  min-width: 0;
+}

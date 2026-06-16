@@ -10,8 +10,10 @@ const $ = (sel) => document.querySelector(sel);
 
 const filterType = $("#filterType");
 const sortByCost = $("#sortByCost");
+const searchInput = $("#searchInput");
+const maxCostInput = $("#maxCost");
+const recommendBtn = $("#recommendBtn");
 const cardList = $("#cardList");
-const emptyTip = $("#emptyTip");
 const addForm = $("#addForm");
 
 const editModal = $("#editModal");
@@ -19,6 +21,9 @@ const editIdInput = $("#editId");
 const editWantSelect = $("#editWant");
 const editSaveBtn = $("#editSave");
 const editCancelBtn = $("#editCancel");
+
+let isRecommendMode = false;
+let searchDebounceTimer = null;
 
 function wantStars(level) {
     return "★".repeat(level) + "☆".repeat(5 - level);
@@ -32,18 +37,22 @@ function renderStats(stats) {
 
 function renderCards(places) {
     if (places.length === 0) {
-        cardList.innerHTML = '<div class="empty-tip" id="emptyTip">还没有添加任何地点，从上方表单开始吧 ✨</div>';
+        const tip = isRecommendMode
+            ? "还没有可推荐的地点，快去添加一些吧~ 🌟"
+            : "还没有添加任何地点，从上方表单开始吧 ✨";
+        cardList.innerHTML = `<div class="empty-tip" id="emptyTip">${tip}</div>`;
         return;
     }
 
     cardList.innerHTML = places
         .map(
             (p) => `
-        <div class="place-card" data-id="${p.id}">
+        <div class="place-card ${p.visited ? "visited" : ""}" data-id="${p.id}">
             <div class="card-header">
                 <span class="card-name">${escHtml(p.name)}</span>
                 <span class="card-type">${escHtml(p.place_type || "未分类")}</span>
             </div>
+            ${p.plan_date ? `<div class="card-date" style="align-self:flex-start;">📅 ${escHtml(p.plan_date)}</div>` : ""}
             <div class="card-info">
                 <span><span class="card-info-label">预计花费</span> ¥${p.estimated_cost}</span>
                 <span><span class="card-info-label">交通方式</span> ${escHtml(p.transport || "未设定")}</span>
@@ -51,6 +60,9 @@ function renderCards(places) {
             </div>
             <div class="card-notes">${escHtml(p.notes || "")}</div>
             <div class="card-actions">
+                <button class="btn btn-visited" onclick="toggleVisited('${p.id}')">
+                    ${p.visited ? "未去过" : "已去过"}
+                </button>
                 <button class="btn btn-primary btn-sm" onclick="openEdit('${p.id}', ${p.want_level})">修改想去程度</button>
                 <button class="btn btn-danger" onclick="deletePlace('${p.id}')">删除</button>
             </div>
@@ -67,15 +79,34 @@ function escHtml(str) {
 }
 
 async function fetchPlaces() {
+    if (isRecommendMode) return;
     const params = new URLSearchParams();
     const type = filterType.value;
     if (type) params.set("type", type);
     if (sortByCost.checked) params.set("sort_by_cost", "1");
+    const keyword = searchInput.value.trim();
+    if (keyword) params.set("keyword", keyword);
+    const maxCost = maxCostInput.value.trim();
+    if (maxCost !== "") params.set("max_cost", maxCost);
 
     const res = await fetch(API_BASE + "?" + params.toString());
     const data = await res.json();
     renderStats(data.stats);
     renderCards(data.places);
+}
+
+async function fetchRecommend() {
+    isRecommendMode = true;
+    const res = await fetch(API_BASE + "/recommend");
+    const data = await res.json();
+    renderCards(data.places);
+    $("#filteredCount").textContent = data.places.length + " 个（推荐）";
+}
+
+function exitRecommendMode() {
+    if (!isRecommendMode) return;
+    isRecommendMode = false;
+    fetchPlaces();
 }
 
 addForm.addEventListener("submit", async (e) => {
@@ -87,6 +118,7 @@ addForm.addEventListener("submit", async (e) => {
         transport: $("#inputTransport").value,
         want_level: parseInt($("#inputWant").value),
         notes: $("#inputNotes").value.trim(),
+        plan_date: $("#inputDate").value || "",
     };
     if (!body.name) return;
 
@@ -99,6 +131,7 @@ addForm.addEventListener("submit", async (e) => {
     if (res.ok) {
         addForm.reset();
         $("#inputWant").value = "3";
+        exitRecommendMode();
         fetchPlaces();
     } else {
         const err = await res.json();
@@ -130,25 +163,67 @@ editSaveBtn.addEventListener("click", async () => {
     });
     editModal.style.display = "none";
     if (res.ok) {
-        fetchPlaces();
+        if (isRecommendMode) fetchRecommend();
+        else fetchPlaces();
     } else {
         const err = await res.json();
         alert(err.error || "修改失败");
     }
 });
 
+async function toggleVisited(id) {
+    const res = await fetch(API_BASE + "/" + id + "/toggle-visited", {
+        method: "POST",
+    });
+    if (res.ok) {
+        if (isRecommendMode) fetchRecommend();
+        else fetchPlaces();
+    } else {
+        const err = await res.json();
+        alert(err.error || "切换失败");
+    }
+}
+
 async function deletePlace(id) {
     if (!confirm("确定要删除这个地点吗？")) return;
     const res = await fetch(API_BASE + "/" + id, { method: "DELETE" });
     if (res.ok) {
-        fetchPlaces();
+        if (isRecommendMode) fetchRecommend();
+        else fetchPlaces();
     } else {
         const err = await res.json();
         alert(err.error || "删除失败");
     }
 }
 
-filterType.addEventListener("change", fetchPlaces);
-sortByCost.addEventListener("change", fetchPlaces);
+filterType.addEventListener("change", () => {
+    exitRecommendMode();
+    fetchPlaces();
+});
+
+sortByCost.addEventListener("change", () => {
+    exitRecommendMode();
+    fetchPlaces();
+});
+
+searchInput.addEventListener("input", () => {
+    exitRecommendMode();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(fetchPlaces, 300);
+});
+
+maxCostInput.addEventListener("input", () => {
+    exitRecommendMode();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(fetchPlaces, 300);
+});
+
+recommendBtn.addEventListener("click", () => {
+    if (isRecommendMode) {
+        exitRecommendMode();
+    } else {
+        fetchRecommend();
+    }
+});
 
 fetchPlaces();

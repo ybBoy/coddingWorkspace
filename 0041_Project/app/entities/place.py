@@ -16,6 +16,8 @@ class Place:
     transport: str = ""
     want_level: int = 3
     notes: str = ""
+    plan_date: str = ""
+    visited: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -30,4 +32,6 @@ class Place:
             transport=data.get("transport", ""),
             want_level=int(data.get("want_level", 3)),
             notes=data.get("notes", ""),
+            plan_date=data.get("plan_date", ""),
+            visited=bool(data.get("visited", False)),
         )

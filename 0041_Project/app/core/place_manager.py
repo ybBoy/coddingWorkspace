@@ -24,10 +24,22 @@ class PlaceManager:
         self,
         place_type: Optional[str] = None,
         sort_by_cost: bool = False,
+        keyword: Optional[str] = None,
+        max_cost: Optional[float] = None,
     ) -> List[Place]:
         result = list(self._places)
         if place_type:
             result = [p for p in result if p.place_type == place_type]
+        if keyword:
+            kw = keyword.lower()
+            result = [
+                p for p in result
+                if kw in p.name.lower()
+                or kw in p.notes.lower()
+                or kw in p.place_type.lower()
+            ]
+        if max_cost is not None:
+            result = [p for p in result if p.estimated_cost <= max_cost]
         if sort_by_cost:
             result.sort(key=lambda p: p.estimated_cost)
         return result
@@ -47,6 +59,18 @@ class PlaceManager:
                     place.want_level = int(data["want_level"])
                 if "notes" in data:
                     place.notes = data["notes"]
+                if "plan_date" in data:
+                    place.plan_date = data["plan_date"]
+                if "visited" in data:
+                    place.visited = bool(data["visited"])
+                self._persist()
+                return place
+        return None
+
+    def toggle_visited(self, place_id: str) -> Optional[Place]:
+        for place in self._places:
+            if place.id == place_id:
+                place.visited = not place.visited
                 self._persist()
                 return place
         return None
@@ -59,8 +83,15 @@ class PlaceManager:
             return True
         return False
 
-    def get_stats(self, place_type: Optional[str] = None) -> Dict:
-        places = self.list_places(place_type=place_type)
+    def get_stats(
+        self,
+        place_type: Optional[str] = None,
+        keyword: Optional[str] = None,
+        max_cost: Optional[float] = None,
+    ) -> Dict:
+        places = self.list_places(
+            place_type=place_type, keyword=keyword, max_cost=max_cost
+        )
         all_places = self._places
 
         if all_places:
@@ -77,3 +108,8 @@ class PlaceManager:
             "filtered_count": len(places),
             "total_count": len(all_places),
         }
+
+    def get_weekend_recommend(self) -> List[Place]:
+        candidates = [p for p in self._places if not p.visited]
+        candidates.sort(key=lambda p: (-p.want_level, p.estimated_cost))
+        return candidates[:3]

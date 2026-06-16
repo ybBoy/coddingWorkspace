@@ -11,6 +11,10 @@
         <header class="header">
             <h1>周末短途计划本</h1>
             <p class="subtitle">整理你想去的周边地点，轻松规划周末</p>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="搜索地点名称、类型或备注..." class="search-input">
+                <button class="btn btn-primary" id="recommendBtn">🎯 推荐本周末</button>
+            </div>
             <div class="stats-bar">
                 <div class="stat-item">
                     <span class="stat-label">平均预计花费</span>
@@ -44,6 +48,9 @@
                     </div>
                     <div class="form-row">
                         <input type="number" id="inputCost" placeholder="预计花费(元)" min="0" step="1" value="0">
+                        <input type="date" id="inputDate">
+                    </div>
+                    <div class="form-row">
                         <select id="inputTransport">
                             <option value="">交通方式</option>
                             <option value="地铁">地铁</option>
@@ -83,6 +90,11 @@
                             <option value="徒步路线">徒步路线</option>
                             <option value="其他">其他</option>
                         </select>
+                    </label>
+                </div>
+                <div class="filter-group">
+                    <label>最高预算：
+                        <input type="number" id="maxCost" placeholder="不限" min="0" step="10" class="budget-input">
                     </label>
                 </div>
                 <div class="filter-group">

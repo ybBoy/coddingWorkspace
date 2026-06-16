@@ -6,6 +6,19 @@
     "estimated_cost": 30.0,
     "transport": "地铁",
     "want_level": 4,
-    "notes": "周末散步好去处"
+    "notes": "周末散步好去处",
+    "plan_date": "",
+    "visited": false
+  },
+  {
+    "id": "1a6b30cd",
+    "name": "美术馆展览",
+    "place_type": "展览",
+    "estimated_cost": 80.0,
+    "transport": "地铁",
+    "want_level": 5,
+    "notes": "周末新展",
+    "plan_date": "2026-06-22",
+    "visited": false
   }
 ]

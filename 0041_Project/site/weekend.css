@@ -22,7 +22,7 @@ body {
 
 .header {
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
 }
 
 .header h1 {
@@ -92,6 +92,82 @@ body {
     font-size: 18px;
     font-weight: 700;
     color: #2e5c4f;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.dashboard-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.dash-label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.dash-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2e5c4f;
+}
+
+.dash-visited {
+    color: #7a9e8e;
+}
+
+.dash-unvisited {
+    color: #e8a96a;
+}
+
+.dash-budget {
+    color: #c47c3a;
+}
+
+.type-dash {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.type-dash-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: #f0ede8;
+    border-radius: 16px;
+    font-size: 13px;
+    color: #555;
+}
+
+.type-dash-name {
+    font-weight: 600;
+    color: #2e5c4f;
+}
+
+.type-dash-count {
+    background: #e8a96a;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0 8px;
+    font-size: 12px;
+    min-width: 20px;
+    text-align: center;
 }
 
 .toolbar {
@@ -216,6 +292,14 @@ body {
     height: 28px;
 }
 
+.btn-edit {
+    background: #5b8fb9;
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 10px;
+    height: 28px;
+}
+
 .filter-group {
     margin-bottom: 12px;
     font-size: 14px;
@@ -263,6 +347,26 @@ body {
 .budget-input:focus {
     outline: none;
     border-color: #e8a96a;
+}
+
+.date-group {
+    margin-bottom: 20px;
+}
+
+.date-group-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2e5c4f;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #e8a96a;
+    display: inline-block;
+}
+
+.date-group-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
 }
 
 .card-list {
@@ -332,6 +436,21 @@ body {
     padding: 2px 8px;
     border-radius: 10px;
     white-space: nowrap;
+    align-self: flex-start;
+}
+
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.card-tag {
+    font-size: 11px;
+    background: #eef2ff;
+    color: #4f5c9e;
+    padding: 2px 8px;
+    border-radius: 8px;
 }
 
 .card-info {
@@ -369,6 +488,7 @@ body {
     display: flex;
     gap: 8px;
     margin-top: 4px;
+    flex-wrap: wrap;
 }
 
 .modal-overlay {
@@ -387,6 +507,11 @@ body {
     padding: 24px;
     min-width: 320px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.modal-wide {
+    width: 460px;
+    max-width: 90vw;
 }
 
 .modal h3 {

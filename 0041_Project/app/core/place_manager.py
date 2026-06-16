@@ -3,6 +3,7 @@
 # 数据流：place_api 收到请求 → place_manager 操作内存数据 → place_store 持久化到 JSON
 
 from typing import List, Optional, Dict
+from datetime import datetime, timedelta
 from app.entities.place import Place
 from app.files.place_store import load_places, save_places
 
@@ -26,10 +27,14 @@ class PlaceManager:
         sort_by_cost: bool = False,
         keyword: Optional[str] = None,
         max_cost: Optional[float] = None,
+        tag: Optional[str] = None,
+        sort_by_date: bool = False,
     ) -> List[Place]:
         result = list(self._places)
         if place_type:
             result = [p for p in result if p.place_type == place_type]
+        if tag:
+            result = [p for p in result if tag in p.tags]
         if keyword:
             kw = keyword.lower()
             result = [
@@ -37,11 +42,14 @@ class PlaceManager:
                 if kw in p.name.lower()
                 or kw in p.notes.lower()
                 or kw in p.place_type.lower()
+                or any(kw in t.lower() for t in p.tags)
             ]
         if max_cost is not None:
             result = [p for p in result if p.estimated_cost <= max_cost]
         if sort_by_cost:
             result.sort(key=lambda p: p.estimated_cost)
+        if sort_by_date:
+            result.sort(key=lambda p: (p.plan_date == "", p.plan_date))
         return result
 
     def update_place(self, place_id: str, data: dict) -> Optional[Place]:
@@ -63,6 +71,11 @@ class PlaceManager:
                     place.plan_date = data["plan_date"]
                 if "visited" in data:
                     place.visited = bool(data["visited"])
+                if "tags" in data:
+                    tags = data["tags"]
+                    if isinstance(tags, str):
+                        tags = [t.strip() for t in tags.split(",") if t.strip()]
+                    place.tags = list(tags) if tags else []
                 self._persist()
                 return place
         return None
@@ -88,9 +101,10 @@ class PlaceManager:
         place_type: Optional[str] = None,
         keyword: Optional[str] = None,
         max_cost: Optional[float] = None,
+        tag: Optional[str] = None,
     ) -> Dict:
         places = self.list_places(
-            place_type=place_type, keyword=keyword, max_cost=max_cost
+            place_type=place_type, keyword=keyword, max_cost=max_cost, tag=tag
         )
         all_places = self._places
 
@@ -109,7 +123,46 @@ class PlaceManager:
             "total_count": len(all_places),
         }
 
+    def get_dashboard(self) -> Dict:
+        all_places = self._places
+        total_count = len(all_places)
+        visited_count = sum(1 for p in all_places if p.visited)
+        total_budget = round(sum(p.estimated_cost for p in all_places), 2)
+
+        type_counts: Dict[str, int] = {}
+        for p in all_places:
+            t = p.place_type or "未分类"
+            type_counts[t] = type_counts.get(t, 0) + 1
+
+        all_tags: List[str] = []
+        for p in all_places:
+            for t in p.tags:
+                if t not in all_tags:
+                    all_tags.append(t)
+
+        return {
+            "total_count": total_count,
+            "visited_count": visited_count,
+            "unvisited_count": total_count - visited_count,
+            "total_budget": total_budget,
+            "type_counts": type_counts,
+            "all_tags": all_tags,
+        }
+
     def get_weekend_recommend(self) -> List[Place]:
         candidates = [p for p in self._places if not p.visited]
         candidates.sort(key=lambda p: (-p.want_level, p.estimated_cost))
         return candidates[:3]
+
+    def export_all(self) -> List[dict]:
+        return [p.to_dict() for p in self._places]
+
+    def import_all(self, data_list: List[dict]) -> int:
+        new_places: List[Place] = []
+        for item in data_list:
+            if isinstance(item, dict) and item.get("name"):
+                new_places.append(Place.from_dict(item))
+        if new_places:
+            self._places = new_places
+            self._persist()
+        return len(new_places)

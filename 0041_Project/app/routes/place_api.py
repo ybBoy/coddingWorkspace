@@ -14,7 +14,9 @@ _manager = PlaceManager()
 def get_places():
     place_type = request.args.get("type")
     sort_by_cost = request.args.get("sort_by_cost", "0") == "1"
+    sort_by_date = request.args.get("sort_by_date", "0") == "1"
     keyword = request.args.get("keyword") or None
+    tag = request.args.get("tag") or None
     max_cost_str = request.args.get("max_cost")
     max_cost = None
     if max_cost_str:
@@ -25,20 +27,47 @@ def get_places():
     places = _manager.list_places(
         place_type=place_type,
         sort_by_cost=sort_by_cost,
+        sort_by_date=sort_by_date,
         keyword=keyword,
         max_cost=max_cost,
+        tag=tag,
     )
     stats = _manager.get_stats(
-        place_type=place_type, keyword=keyword, max_cost=max_cost
+        place_type=place_type, keyword=keyword, max_cost=max_cost, tag=tag
     )
-    return jsonify({"places": [p.to_dict() for p in places], "stats": stats})
+    dashboard = _manager.get_dashboard()
+    return jsonify({"places": [p.to_dict() for p in places], "stats": stats, "dashboard": dashboard})
+
+
+@api_bp.route("/dashboard", methods=["GET"])
+def get_dashboard():
+    return jsonify(_manager.get_dashboard())
 
 
 @api_bp.route("/recommend", methods=["GET"])
 def get_recommend():
     places = _manager.get_weekend_recommend()
     all_stats = _manager.get_stats()
-    return jsonify({"places": [p.to_dict() for p in places], "stats": all_stats})
+    dashboard = _manager.get_dashboard()
+    return jsonify({"places": [p.to_dict() for p in places], "stats": all_stats, "dashboard": dashboard})
+
+
+@api_bp.route("/export", methods=["GET"])
+def export_places():
+    data = _manager.export_all()
+    return jsonify(data)
+
+
+@api_bp.route("/import", methods=["POST"])
+def import_places():
+    try:
+        raw = request.get_json(force=True)
+    except Exception:
+        return jsonify({"error": "请求体必须是有效的 JSON"}), 400
+    if not isinstance(raw, list):
+        return jsonify({"error": "导入数据必须是数组格式"}), 400
+    count = _manager.import_all(raw)
+    return jsonify({"imported": count, "message": f"成功导入 {count} 个地点"})
 
 
 @api_bp.route("", methods=["POST"])

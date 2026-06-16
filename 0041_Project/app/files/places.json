@@ -1,24 +1,30 @@
 [
   {
-    "id": "44cd56cf",
-    "name": "西湖公园",
-    "place_type": "公园",
-    "estimated_cost": 30.0,
-    "transport": "地铁",
-    "want_level": 4,
-    "notes": "周末散步好去处",
+    "id": "a4046441",
+    "name": "导入测试1",
+    "place_type": "咖啡店",
+    "estimated_cost": 50.0,
+    "transport": "",
+    "want_level": 3,
+    "notes": "",
     "plan_date": "",
-    "visited": false
+    "visited": false,
+    "tags": [
+      "咖啡"
+    ]
   },
   {
-    "id": "1a6b30cd",
-    "name": "美术馆展览",
+    "id": "a145de1c",
+    "name": "导入测试2",
     "place_type": "展览",
-    "estimated_cost": 80.0,
-    "transport": "地铁",
-    "want_level": 5,
-    "notes": "周末新展",
-    "plan_date": "2026-06-22",
-    "visited": false
+    "estimated_cost": 120.0,
+    "transport": "",
+    "want_level": 4,
+    "notes": "",
+    "plan_date": "",
+    "visited": false,
+    "tags": [
+      "艺术"
+    ]
   }
 ]

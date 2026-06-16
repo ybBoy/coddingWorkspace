@@ -3,7 +3,7 @@
 # 数据流：Place 对象在整个后端各层之间传递，最终序列化为 JSON 返回前端
 
 from dataclasses import dataclass, field, asdict
-from typing import Optional
+from typing import Optional, List
 import uuid
 
 
@@ -18,12 +18,16 @@ class Place:
     notes: str = ""
     plan_date: str = ""
     visited: bool = False
+    tags: List[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @staticmethod
     def from_dict(data: dict) -> "Place":
+        tags = data.get("tags", [])
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",") if t.strip()]
         return Place(
             id=data.get("id", uuid.uuid4().hex[:8]),
             name=data.get("name", ""),
@@ -34,4 +38,5 @@ class Place:
             notes=data.get("notes", ""),
             plan_date=data.get("plan_date", ""),
             visited=bool(data.get("visited", False)),
+            tags=list(tags) if tags else [],
         )

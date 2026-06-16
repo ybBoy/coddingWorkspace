@@ -31,6 +31,27 @@
             </div>
         </header>
 
+        <section class="dashboard">
+            <div class="dashboard-card">
+                <div class="dash-label">总地点数</div>
+                <div class="dash-value" id="dashTotal">0</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="dash-label">已去过</div>
+                <div class="dash-value dash-visited" id="dashVisited">0</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="dash-label">未去过</div>
+                <div class="dash-value dash-unvisited" id="dashUnvisited">0</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="dash-label">预算总额</div>
+                <div class="dash-value dash-budget" id="dashBudget">¥0</div>
+            </div>
+        </section>
+
+        <section class="type-dash" id="typeDash"></section>
+
         <div class="toolbar">
             <div class="toolbar-left">
                 <h2 class="section-title">新增地点</h2>
@@ -72,6 +93,9 @@
                         </label>
                     </div>
                     <div class="form-row">
+                        <input type="text" id="inputTags" placeholder="标签（逗号分隔，如：亲子,户外">
+                    </div>
+                    <div class="form-row">
                         <input type="text" id="inputNotes" placeholder="备注（选填）">
                     </div>
                     <button type="submit" class="btn btn-primary">添加地点</button>
@@ -93,14 +117,31 @@
                     </label>
                 </div>
                 <div class="filter-group">
+                    <label>按标签筛选：
+                        <select id="filterTag">
+                            <option value="">全部</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="filter-group">
                     <label>最高预算：
                         <input type="number" id="maxCost" placeholder="不限" min="0" step="10" class="budget-input">
                     </label>
                 </div>
                 <div class="filter-group">
                     <label>
+                        <input type="checkbox" id="sortByDate"> 按计划日期排序
+                    </label>
+                </div>
+                <div class="filter-group">
+                    <label>
                         <input type="checkbox" id="sortByCost"> 按预计花费从低到高排序
                     </label>
+                </div>
+                <div class="filter-group" style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn btn-primary btn-sm" id="exportBtn">⬇ 导出 JSON</button>
+                    <button class="btn btn-secondary btn-sm" id="importBtn">⬆ 导入 JSON</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;">
                 </div>
             </div>
         </div>
@@ -111,18 +152,47 @@
     </div>
 
     <div class="modal-overlay" id="editModal" style="display:none;">
-        <div class="modal">
-            <h3>修改想去程度</h3>
+        <div class="modal modal-wide">
+            <h3>编辑地点</h3>
             <input type="hidden" id="editId">
-            <label class="want-label">想去程度：
+            <div class="form-row">
+                <input type="text" id="editName" placeholder="地点名称" required>
+                <select id="editType">
+                    <option value="">选择类型</option>
+                    <option value="公园">公园</option>
+                    <option value="咖啡店">咖啡店</option>
+                    <option value="展览">展览</option>
+                    <option value="徒步路线">徒步路线</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <input type="number" id="editCost" placeholder="预计花费(元)" min="0" step="1">
+                <input type="date" id="editDate">
+            </div>
+            <div class="form-row">
+                <select id="editTransport">
+                    <option value="">交通方式</option>
+                    <option value="地铁">地铁</option>
+                    <option value="公交">公交</option>
+                    <option value="自驾">自驾</option>
+                    <option value="骑行">骑行</option>
+                    <option value="步行">步行</option>
+                </select>
                 <select id="editWant">
                     <option value="5">5 - 非常想去</option>
-                    <option value="4">4 - 挺想去</option>
+                    <option value="4">4 - 确实</option>
                     <option value="3">3 - 一般</option>
                     <option value="2">2 - 可去可不去</option>
                     <option value="1">1 - 顺路再说</option>
                 </select>
-            </label>
+            </div>
+            <div class="form-row">
+                <input type="text" id="editTags" placeholder="标签（逗号分隔）">
+            </div>
+            <div class="form-row">
+                <input type="text" id="editNotes" placeholder="备注（选填）">
+            </div>
             <div class="modal-actions">
                 <button class="btn btn-primary" id="editSave">保存</button>
                 <button class="btn btn-secondary" id="editCancel">取消</button>

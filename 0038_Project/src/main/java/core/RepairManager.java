@@ -1,12 +1,16 @@
 package core;
 
 import entity.ItemType;
+import entity.RepairImage;
 import entity.RepairItem;
 import entity.RepairStatus;
 import file.RepairFileRepository;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -43,6 +47,7 @@ public class RepairManager {
                     if (item.getHistory() == null) {
                         item.setHistory(new ArrayList<>());
                     }
+                    item.enableHistory();
                 }
             }
         } catch (IOException e) {
@@ -64,6 +69,7 @@ public class RepairManager {
     }
 
     public RepairItem addItem(RepairItem item) {
+        item.enableHistory();
         item.markCreated();
         items.add(item);
         saveToFile();
@@ -174,11 +180,37 @@ public class RepairManager {
     }
 
     public boolean deleteItem(String id) {
+        Optional<RepairItem> toDelete = items.stream()
+                .filter(item -> item.getId().equals(id))
+                .findFirst();
+        if (toDelete.isPresent()) {
+            List<RepairImage> images = toDelete.get().getImages();
+            if (images != null && !images.isEmpty()) {
+                for (RepairImage img : images) {
+                    deleteImageFileIfExists(img.getFilePath());
+                }
+            }
+        }
         boolean removed = items.removeIf(item -> item.getId().equals(id));
         if (removed) {
             saveToFile();
         }
         return removed;
+    }
+
+    private void deleteImageFileIfExists(String filePath) {
+        if (filePath == null || filePath.isEmpty()) return;
+        try {
+            String pathStr = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+            Path p = Paths.get(pathStr).normalize();
+            Path uploadRoot = Paths.get("uploads").normalize();
+            Path dataRoot = Paths.get("data").normalize();
+            if (p.startsWith(uploadRoot) || p.startsWith(dataRoot)) {
+                Files.deleteIfExists(p);
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to delete image file: " + filePath + " - " + e.getMessage());
+        }
     }
 
     public BigDecimal getTotalCost() {

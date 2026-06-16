@@ -19,20 +19,54 @@ import java.util.Arrays;
 import java.util.List;
 
 public class RepairApplication {
-    private static final int PORT = 8081;
     private static final String STATIC_DIR = "static";
     private static final String UPLOAD_DIR = "uploads";
+    private static final int DEFAULT_PORT = 8081;
+    private static final int MAX_PORT_ATTEMPTS = 10;
 
     public static void main(String[] args) throws IOException {
         Files.createDirectories(Paths.get(UPLOAD_DIR));
 
+        int port = DEFAULT_PORT;
+        if (args != null && args.length > 0) {
+            try {
+                port = Integer.parseInt(args[0].trim());
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid port argument '" + args[0] + "', using default " + DEFAULT_PORT);
+                port = DEFAULT_PORT;
+            }
+        }
+
+        String envPort = System.getenv("HOME_REPAIR_PORT");
+        if (envPort != null && !envPort.trim().isEmpty()) {
+            try {
+                port = Integer.parseInt(envPort.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
         RepairManager manager = new RepairManager();
-        HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+
+        HttpServer server = null;
+        int boundPort = -1;
+        for (int attempt = 0; attempt < MAX_PORT_ATTEMPTS; attempt++) {
+            try {
+                int candidate = port + attempt;
+                server = HttpServer.create(new InetSocketAddress(candidate), 0);
+                boundPort = candidate;
+                break;
+            } catch (java.net.BindException e) {
+                System.out.println("端口 " + (port + attempt) + " 被占用，尝试下一个...");
+            }
+        }
+        if (server == null) {
+            throw new IOException("无法绑定端口，已尝试 " + MAX_PORT_ATTEMPTS + " 个端口");
+        }
 
         server.createContext("/api", new RepairApi(manager));
-        server.createContext("/uploads", new FileHandler(UPLOAD_DIR,
+        server.createContext("/uploads", new FileHandler(UPLOAD_DIR, "/uploads",
                 Arrays.asList("jpg", "jpeg", "png", "gif", "webp")));
-        server.createContext("/", new FileHandler(STATIC_DIR,
+        server.createContext("/", new FileHandler(STATIC_DIR, "/",
                 Arrays.asList("html", "css", "js", "json", "png", "jpg", "jpeg",
                         "gif", "svg", "ico", "woff", "woff2", "ttf")));
 
@@ -41,17 +75,19 @@ public class RepairApplication {
 
         System.out.println("========================================");
         System.out.println("  家庭维修记录本服务已启动");
-        System.out.println("  访问地址: http://localhost:" + PORT + "/home.html");
+        System.out.println("  访问地址: http://localhost:" + boundPort + "/home.html");
         System.out.println("  按 Ctrl+C 停止服务");
         System.out.println("========================================");
     }
 
     static class FileHandler implements HttpHandler {
         private final Path rootPath;
+        private final String contextPrefix;
         private final List<String> allowedExts;
 
-        FileHandler(String dir, List<String> allowedExts) {
+        FileHandler(String dir, String contextPrefix, List<String> allowedExts) {
             this.rootPath = Paths.get(dir).toAbsolutePath().normalize();
+            this.contextPrefix = contextPrefix == null ? "/" : contextPrefix;
             this.allowedExts = allowedExts;
             try {
                 Files.createDirectories(this.rootPath);
@@ -71,8 +107,13 @@ public class RepairApplication {
             }
 
             String requestPath = exchange.getRequestURI().getPath();
-            if ("/".equals(requestPath)) {
+            if ("/".equals(requestPath) && "/".equals(contextPrefix)) {
                 requestPath = "/home.html";
+            }
+
+            if (!contextPrefix.equals("/") && requestPath.startsWith(contextPrefix)) {
+                String stripped = requestPath.substring(contextPrefix.length());
+                requestPath = stripped.startsWith("/") ? stripped : ("/" + stripped);
             }
 
             if (requestPath.contains("..") || requestPath.contains("\\0")) {
@@ -83,6 +124,9 @@ public class RepairApplication {
             File file;
             try {
                 String relative = requestPath.startsWith("/") ? requestPath.substring(1) : requestPath;
+                if (relative.isEmpty()) {
+                    relative = "home.html";
+                }
                 Path filePath = rootPath.resolve(relative).normalize();
                 if (!filePath.startsWith(rootPath)) {
                     sendForbidden(exchange, "Forbidden");

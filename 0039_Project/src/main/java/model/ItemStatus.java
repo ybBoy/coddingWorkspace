@@ -50,4 +50,23 @@ public enum ItemStatus {
     public boolean isCompleted() {
         return this == SOLD || this == GIVEN_AWAY || this == DISCARDED || this == KEPT;
     }
+
+    public boolean isCompatibleWith(DisposePlan plan) {
+        if (plan == null) return true;
+        switch (this) {
+            case PENDING:
+                return true;
+            case SELLING:
+            case SOLD:
+                return plan == DisposePlan.SELL;
+            case GIVEN_AWAY:
+                return plan == DisposePlan.GIVE_AWAY;
+            case DISCARDED:
+                return plan == DisposePlan.DISCARD;
+            case KEPT:
+                return plan == DisposePlan.KEEP;
+            default:
+                return false;
+        }
+    }
 }

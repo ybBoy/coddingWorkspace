@@ -1,9 +1,9 @@
 (function() {
     var API_BASE = '/api';
-    var UPLOAD_BASE = '/uploads';
 
     var state = {
         items: [],
+        allCategories: [],
         selectedIds: {},
         editItemId: null,
         tempImageBase64: null,
@@ -62,6 +62,40 @@
         loadItems();
         loadStats();
         loadDetailedStats();
+    }
+
+    function apiFetch(url, options) {
+        return fetch(url, options).then(function(res) {
+            if (!res.ok) {
+                return res.text().then(function(text) {
+                    var msg = text;
+                    try {
+                        var json = JSON.parse(text);
+                        if (json.error || json.message) msg = json.error || json.message;
+                    } catch (e) {}
+                    throw new Error(msg || ('HTTP ' + res.status));
+                }, function() {
+                    throw new Error('HTTP ' + res.status);
+                });
+            }
+            if (res.status === 204) return null;
+            var ct = res.headers.get('Content-Type') || '';
+            if (ct.indexOf('json') >= 0) return res.json();
+            return res.text();
+        });
+    }
+
+    function buildFilterQuery() {
+        var params = [];
+        if (state.filters.keyword) params.push('keyword=' + encodeURIComponent(state.filters.keyword));
+        if (state.filters.category !== 'ALL') params.push('category=' + encodeURIComponent(state.filters.category));
+        if (state.filters.disposePlan !== 'ALL') params.push('disposePlan=' + state.filters.disposePlan);
+        if (state.filters.status !== 'ALL') params.push('status=' + state.filters.status);
+        if (state.filters.minPrice) params.push('minPrice=' + state.filters.minPrice);
+        if (state.filters.maxPrice) params.push('maxPrice=' + state.filters.maxPrice);
+        params.push('sortBy=' + state.filters.sortBy);
+        params.push('sortOrder=' + state.filters.sortOrder);
+        return params.length ? '?' + params.join('&') : '';
     }
 
     function bindEvents() {
@@ -136,10 +170,10 @@
         document.getElementById('batchDeleteBtn').addEventListener('click', handleBatchDelete);
 
         document.getElementById('exportCsvBtn').addEventListener('click', function() {
-            window.location.href = API_BASE + '/export/csv';
+            window.location.href = API_BASE + '/export/csv' + buildFilterQuery();
         });
         document.getElementById('exportJsonBtn').addEventListener('click', function() {
-            window.location.href = API_BASE + '/export/json';
+            window.location.href = API_BASE + '/export/json' + buildFilterQuery();
         });
 
         document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
@@ -225,69 +259,70 @@
     }
 
     function uploadImageAndAddItem(base64, itemData) {
-        fetch(API_BASE + '/upload', {
+        apiFetch(API_BASE + '/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageBase64: base64 })
         })
-        .then(function(res) { return res.json(); })
         .then(function(data) {
-            if (data.success && data.url) {
+            if (data && data.success && data.url) {
                 itemData.imageUrl = data.url;
-                addItem(itemData);
-            } else {
-                addItem(itemData);
             }
+            addItem(itemData);
         })
-        .catch(function() {
+        .catch(function(err) {
+            showToast('图片上传失败：' + err.message + '，将不带图片保存', 'error');
             addItem(itemData);
         });
     }
 
     function addItem(data) {
-        fetch(API_BASE + '/items', {
+        apiFetch(API_BASE + '/items', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-        .then(function(res) { return res.json(); })
         .then(function(item) {
             showToast('添加成功！', 'success');
             document.getElementById('addItemForm').reset();
             clearImagePreview();
-            loadItems();
-            loadStats();
-            loadDetailedStats();
+            refreshAll();
         })
         .catch(function(err) {
             showToast('添加失败：' + err.message, 'error');
         });
     }
 
+    function refreshAll() {
+        loadItems();
+        loadStats();
+        loadDetailedStats();
+    }
+
     function loadItems() {
-        var params = [];
-        if (state.filters.keyword) params.push('keyword=' + encodeURIComponent(state.filters.keyword));
-        if (state.filters.category !== 'ALL') params.push('category=' + encodeURIComponent(state.filters.category));
-        if (state.filters.disposePlan !== 'ALL') params.push('disposePlan=' + state.filters.disposePlan);
-        if (state.filters.status !== 'ALL') params.push('status=' + state.filters.status);
-        if (state.filters.minPrice) params.push('minPrice=' + state.filters.minPrice);
-        if (state.filters.maxPrice) params.push('maxPrice=' + state.filters.maxPrice);
-        params.push('sortBy=' + state.filters.sortBy);
-        params.push('sortOrder=' + state.filters.sortOrder);
+        var url = API_BASE + '/items' + buildFilterQuery();
 
-        var url = API_BASE + '/items' + (params.length ? '?' + params.join('&') : '');
-
-        fetch(url)
-        .then(function(res) { return res.json(); })
+        apiFetch(url)
         .then(function(data) {
             state.items = data.items || data || [];
             renderItems();
-            updateCategoryFilter();
+            loadAllCategories();
             updateBatchBar();
         })
         .catch(function(err) {
             console.error('加载失败', err);
+            showToast('加载列表失败：' + err.message, 'error');
         });
+    }
+
+    function loadAllCategories() {
+        apiFetch(API_BASE + '/stats/detailed')
+        .then(function(data) {
+            var counts = data.categoryCounts || {};
+            state.allCategories = Object.keys(counts).sort();
+            updateCategoryFilter();
+        })
+        .catch(function() {});
     }
 
     function renderItems() {
@@ -302,11 +337,7 @@
         state.items.forEach(function(item) {
             var imageHtml = '';
             if (item.imageUrl) {
-                var imgSrc = item.imageUrl;
-                if (imgSrc.indexOf('/uploads/') === 0) {
-                    imgSrc = imgSrc;
-                }
-                imageHtml = '<img src="' + imgSrc + '" alt="' + escapeHtml(item.name) + '">';
+                imageHtml = '<img src="' + item.imageUrl + '" alt="' + escapeHtml(item.name) + '">';
             } else {
                 imageHtml = '<span class="item-image-placeholder">📦</span>';
             }
@@ -329,9 +360,9 @@
             if (item.category) {
                 html += '<span class="tag tag-category">' + escapeHtml(item.category) + '</span>';
             }
-            html += '<span class="tag ' + planClass + '">' + (item.disposePlanDisplayName || PLAN_LABELS[item.disposePlan] || item.disposePlan) + '</span>';
+            html += '<span class="tag ' + planClass + '">' + (item.disposePlanDisplay || PLAN_LABELS[item.disposePlan] || item.disposePlan) + '</span>';
             if (item.status) {
-                html += '<span class="tag ' + statusClass + '">' + (item.statusDisplayName || STATUS_LABELS[item.status] || item.status) + '</span>';
+                html += '<span class="tag ' + statusClass + '">' + (item.statusDisplay || STATUS_LABELS[item.status] || item.status) + '</span>';
             }
             html += '</div><div class="item-info">';
 
@@ -387,14 +418,11 @@
         var datalist = document.getElementById('categoryList');
         var currentFilter = state.filters.category;
 
-        var categories = {};
-        state.items.forEach(function(item) {
-            if (item.category) {
-                categories[item.category] = true;
-            }
-        });
-
-        var allCategories = Object.keys(categories).sort();
+        var allCategories = state.allCategories.length ? state.allCategories : (function() {
+            var cats = {};
+            state.items.forEach(function(item) { if (item.category) cats[item.category] = true; });
+            return Object.keys(cats).sort();
+        })();
 
         filter.innerHTML = '<option value="ALL">全部分类</option>';
         allCategories.forEach(function(c) {
@@ -403,7 +431,7 @@
             opt.textContent = c;
             filter.appendChild(opt);
         });
-        filter.value = currentFilter;
+        filter.value = allCategories.indexOf(currentFilter) >= 0 || currentFilter === 'ALL' ? currentFilter : 'ALL';
 
         datalist.innerHTML = '';
         allCategories.forEach(function(c) {
@@ -479,57 +507,41 @@
         var plan = document.getElementById('editDisposePlan').value;
         var status = document.getElementById('editStatus').value;
 
-        var completed = 0;
-        var total = 2;
-        var hasError = false;
-
-        function done() {
-            completed++;
-            if (completed >= total) {
-                if (!hasError) {
-                    showToast('修改成功！', 'success');
-                    closeEditModal();
-                    loadItems();
-                    loadStats();
-                    loadDetailedStats();
-                }
-            }
-        }
-
-        fetch(API_BASE + '/items/' + id + '/dispose-plan', {
+        apiFetch(API_BASE + '/items/' + id + '/dispose-plan', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ disposePlan: plan })
         })
-        .then(function() { done(); })
-        .catch(function() { hasError = true; showToast('修改处理方式失败', 'error'); done(); });
-
-        if (status) {
-            fetch(API_BASE + '/items/' + id + '/status', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: status })
-            })
-            .then(function() { done(); })
-            .catch(function() { hasError = true; showToast('修改状态失败', 'error'); done(); });
-        } else {
-            done();
-        }
+        .then(function() {
+            if (status) {
+                return apiFetch(API_BASE + '/items/' + id + '/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status })
+                });
+            }
+        })
+        .then(function() {
+            showToast('修改成功！', 'success');
+            closeEditModal();
+            refreshAll();
+        })
+        .catch(function(err) {
+            showToast('修改失败：' + err.message, 'error');
+        });
     }
 
     function handleDeleteItem(id) {
         if (!confirm('确定要删除这个物品吗？')) return;
 
-        fetch(API_BASE + '/items/' + id, { method: 'DELETE' })
+        apiFetch(API_BASE + '/items/' + id, { method: 'DELETE' })
         .then(function() {
             showToast('删除成功！', 'success');
             delete state.selectedIds[id];
-            loadItems();
-            loadStats();
-            loadDetailedStats();
+            refreshAll();
         })
-        .catch(function() {
-            showToast('删除失败', 'error');
+        .catch(function(err) {
+            showToast('删除失败：' + err.message, 'error');
         });
     }
 
@@ -538,20 +550,17 @@
         if (!ids.length) return;
         if (!confirm('确定要将选中的 ' + ids.length + ' 件物品的处理方式改为 ' + PLAN_LABELS[plan] + ' 吗？')) return;
 
-        fetch(API_BASE + '/items/batch/dispose-plan', {
+        apiFetch(API_BASE + '/items/batch/dispose-plan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids: ids, disposePlan: plan })
         })
-        .then(function(res) { return res.json(); })
         .then(function(data) {
-            showToast('已批量修改 ' + (data.updated || 0) + ' 件物品', 'success');
-            loadItems();
-            loadStats();
-            loadDetailedStats();
+            showToast('已批量修改 ' + ((data && data.updated) || 0) + ' 件物品', 'success');
+            refreshAll();
         })
-        .catch(function() {
-            showToast('批量操作失败', 'error');
+        .catch(function(err) {
+            showToast('批量操作失败：' + err.message, 'error');
         });
     }
 
@@ -560,20 +569,17 @@
         if (!ids.length) return;
         if (!confirm('确定要将选中的 ' + ids.length + ' 件物品的状态改为 ' + STATUS_LABELS[status] + ' 吗？')) return;
 
-        fetch(API_BASE + '/items/batch/status', {
+        apiFetch(API_BASE + '/items/batch/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids: ids, status: status })
         })
-        .then(function(res) { return res.json(); })
         .then(function(data) {
-            showToast('已批量修改 ' + (data.updated || 0) + ' 件物品', 'success');
-            loadItems();
-            loadStats();
-            loadDetailedStats();
+            showToast('已批量修改 ' + ((data && data.updated) || 0) + ' 件物品', 'success');
+            refreshAll();
         })
-        .catch(function() {
-            showToast('批量操作失败', 'error');
+        .catch(function(err) {
+            showToast('批量操作失败：' + err.message, 'error');
         });
     }
 
@@ -582,27 +588,23 @@
         if (!ids.length) return;
         if (!confirm('确定要删除选中的 ' + ids.length + ' 件物品吗？此操作不可恢复！')) return;
 
-        fetch(API_BASE + '/items/batch/delete', {
+        apiFetch(API_BASE + '/items/batch/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids: ids })
         })
-        .then(function(res) { return res.json(); })
         .then(function(data) {
-            showToast('已删除 ' + (data.deleted || 0) + ' 件物品', 'success');
+            showToast('已删除 ' + ((data && data.deleted) || 0) + ' 件物品', 'success');
             state.selectedIds = {};
-            loadItems();
-            loadStats();
-            loadDetailedStats();
+            refreshAll();
         })
-        .catch(function() {
-            showToast('批量删除失败', 'error');
+        .catch(function(err) {
+            showToast('批量删除失败：' + err.message, 'error');
         });
     }
 
     function loadStats() {
-        fetch(API_BASE + '/stats')
-        .then(function(res) { return res.json(); })
+        apiFetch(API_BASE + '/stats')
         .then(function(data) {
             document.getElementById('expectedRevenue').textContent = formatPrice(data.expectedRevenue || 0);
             document.getElementById('soldRevenue').textContent = formatPrice(data.soldRevenue || 0);
@@ -612,8 +614,7 @@
     }
 
     function loadDetailedStats() {
-        fetch(API_BASE + '/stats/detailed')
-        .then(function(res) { return res.json(); })
+        apiFetch(API_BASE + '/stats/detailed')
         .then(function(data) {
             renderPlanStats(data.disposePlanCounts || {}, data.totalItems || 0);
             renderStatusStats(data.statusCounts || {}, data.totalItems || 0);
@@ -630,6 +631,10 @@
                     + (data.statusCounts.KEPT || 0);
             }
             document.getElementById('doneCount').textContent = doneCount;
+
+            var counts = data.categoryCounts || {};
+            state.allCategories = Object.keys(counts).sort();
+            updateCategoryFilter();
         })
         .catch(function() {});
     }

@@ -352,13 +352,19 @@ function renderHistory(history) {
         'CREATED': '📝 创建记录',
         'STATUS_CHANGED': '🔄 状态变更',
         'REMARK_UPDATED': '📝 备注修改',
+        'ITEM_NAME_CHANGED': '✏️ 物品名称',
+        'ITEM_TYPE_CHANGED': '🏷️ 物品类型',
+        'COST_CHANGED': '💰 费用调整',
+        'DESCRIPTION_CHANGED': '📋 问题描述',
         'IMAGE_ADDED': '📷 图片上传',
         'IMAGE_REMOVED': '🗑 图片删除'
     };
     container.innerHTML = sorted.map(h => {
         const action = actionLabels[h.action] || h.action;
         let detail = '';
-        if (h.action === 'STATUS_CHANGED' || h.action === 'REMARK_UPDATED') {
+        if (h.action === 'STATUS_CHANGED' || h.action === 'REMARK_UPDATED'
+                || h.action === 'ITEM_NAME_CHANGED' || h.action === 'ITEM_TYPE_CHANGED'
+                || h.action === 'COST_CHANGED' || h.action === 'DESCRIPTION_CHANGED') {
             detail = `「${escapeHtml(h.oldValue || '空')}」 → 「${escapeHtml(h.newValue || '空')}」`;
         } else if (h.action === 'IMAGE_ADDED') {
             detail = `上传图片：${escapeHtml(h.newValue || '')}`;

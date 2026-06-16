@@ -1,5 +1,7 @@
 package entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -8,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RepairItem {
     private String id;
     private String itemName;
@@ -19,6 +22,7 @@ public class RepairItem {
     private String remark;
     private List<RepairImage> images;
     private List<RepairHistoryEntry> history;
+    private transient boolean historyEnabled = false;
 
     public RepairItem() {
         this.id = UUID.randomUUID().toString();
@@ -38,6 +42,10 @@ public class RepairItem {
         this.remark = remark;
     }
 
+    public void enableHistory() {
+        this.historyEnabled = true;
+    }
+
     public String getId() {
         return id;
     }
@@ -51,7 +59,14 @@ public class RepairItem {
     }
 
     public void setItemName(String itemName) {
+        String old = this.itemName;
         this.itemName = itemName;
+        if ((old == null && itemName != null) || (old != null && !old.equals(itemName))) {
+            addHistory("ITEM_NAME_CHANGED",
+                    old == null ? "" : old,
+                    itemName == null ? "" : itemName,
+                    null);
+        }
     }
 
     public ItemType getItemType() {
@@ -59,7 +74,14 @@ public class RepairItem {
     }
 
     public void setItemType(ItemType itemType) {
+        ItemType old = this.itemType;
         this.itemType = itemType;
+        if (old != itemType) {
+            addHistory("ITEM_TYPE_CHANGED",
+                    old == null ? "" : old.getDisplayName(),
+                    itemType == null ? "" : itemType.getDisplayName(),
+                    null);
+        }
     }
 
     public String getProblemDescription() {
@@ -67,7 +89,14 @@ public class RepairItem {
     }
 
     public void setProblemDescription(String problemDescription) {
+        String old = this.problemDescription;
         this.problemDescription = problemDescription;
+        if ((old == null && problemDescription != null) || (old != null && !old.equals(problemDescription))) {
+            addHistory("DESCRIPTION_CHANGED",
+                    old == null ? "" : old,
+                    problemDescription == null ? "" : problemDescription,
+                    null);
+        }
     }
 
     public LocalDate getReportDate() {
@@ -98,7 +127,16 @@ public class RepairItem {
     }
 
     public void setCost(BigDecimal cost) {
+        BigDecimal old = this.cost;
         this.cost = cost;
+        if ((old == null && cost != null)
+                || (old != null && cost != null && old.compareTo(cost) != 0)
+                || (old != null && cost == null)) {
+            addHistory("COST_CHANGED",
+                    old == null ? "0" : old.toPlainString(),
+                    cost == null ? "0" : cost.toPlainString(),
+                    null);
+        }
     }
 
     public String getRemark() {
@@ -148,11 +186,16 @@ public class RepairItem {
     }
 
     public void addHistory(String action, String oldValue, String newValue, String remark) {
+        if (!historyEnabled) {
+            return;
+        }
         getHistory().add(new RepairHistoryEntry(action, oldValue, newValue, remark));
     }
 
     public void markCreated() {
-        addHistory("CREATED", null, null, "记录已创建");
+        if (historyEnabled) {
+            addHistory("CREATED", null, null, "记录已创建");
+        }
     }
 
     public boolean isOverdue() {

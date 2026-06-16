@@ -225,6 +225,34 @@
         </div>
     </div>
 
+    <div id="importModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>导入数据</h3>
+            <p class="modal-desc">请选择导入方式：</p>
+            <div class="import-options">
+                <div class="import-option">
+                    <label class="import-option-label">
+                        <input type="radio" name="importMode" value="merge" checked>
+                        <span class="import-option-title">合并导入</span>
+                        <span class="import-option-desc">保留现有记录，相同 ID 的记录会被替换</span>
+                    </label>
+                </div>
+                <div class="import-option">
+                    <label class="import-option-label">
+                        <input type="radio" name="importMode" value="overwrite">
+                        <span class="import-option-title">覆盖导入</span>
+                        <span class="import-option-desc">清空所有现有记录，用导入文件完全替换</span>
+                    </label>
+                </div>
+            </div>
+            <p class="import-warning">⚠️ 覆盖模式会删除所有现有数据，请谨慎操作</p>
+            <div class="form-actions">
+                <button type="button" class="btn-primary" id="confirmImportBtn">确认导入</button>
+                <button type="button" class="btn-secondary" id="cancelImport">取消</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="checkin.js"></script>

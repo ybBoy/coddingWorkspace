@@ -1,33 +1,57 @@
 [ {
   "id" : "1",
   "itemName" : "客厅空调",
+  "itemType" : "OTHER",
   "problemDescription" : "不制冷，需要加氟利昂",
   "reportDate" : "2026-06-08",
   "status" : "PENDING",
   "cost" : 180,
-  "remark" : "张师傅电话：13800138000"
+  "remark" : "张师傅电话：13800138000",
+  "images" : [ ],
+  "history" : [ ],
+  "overdue" : true,
+  "overdueDays" : 1,
+  "pendingDays" : 8
 }, {
   "id" : "2",
   "itemName" : "厨房水龙头",
+  "itemType" : "OTHER",
   "problemDescription" : "漏水，需要更换密封圈",
   "reportDate" : "2026-06-14",
   "status" : "IN_PROGRESS",
   "cost" : 50,
-  "remark" : "已购买配件，周末自己修"
+  "remark" : "已购买配件，周末自己修",
+  "images" : [ ],
+  "history" : [ ],
+  "overdue" : false,
+  "overdueDays" : 0,
+  "pendingDays" : 2
 }, {
   "id" : "3",
   "itemName" : "主卧台灯",
+  "itemType" : "OTHER",
   "problemDescription" : "开关接触不良，时亮时不亮",
   "reportDate" : "2026-06-10",
   "status" : "COMPLETED",
   "cost" : 35,
-  "remark" : "更换了新的开关，已正常使用"
+  "remark" : "更换了新的开关，已正常使用",
+  "images" : [ ],
+  "history" : [ ],
+  "overdue" : false,
+  "overdueDays" : 0,
+  "pendingDays" : 6
 }, {
   "id" : "4",
   "itemName" : "洗衣机",
+  "itemType" : "OTHER",
   "problemDescription" : "脱水时噪音很大",
   "reportDate" : "2026-06-15",
   "status" : "PENDING",
   "cost" : 0,
-  "remark" : "还在保修期内，联系厂家售后"
+  "remark" : "还在保修期内，联系厂家售后",
+  "images" : [ ],
+  "history" : [ ],
+  "overdue" : false,
+  "overdueDays" : 0,
+  "pendingDays" : 1
 } ]

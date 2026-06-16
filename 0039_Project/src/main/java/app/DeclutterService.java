@@ -13,6 +13,28 @@ public class DeclutterService {
 
     public DeclutterService(ItemJsonStore store) {
         this.store = store;
+        normalizeAllItems();
+    }
+
+    private void normalizeAllItems() {
+        int fixed = 0;
+        for (HouseholdItem item : store.findAll()) {
+            if (item.getStatus() == null) {
+                item.setStatus(ItemStatus.getDefaultForPlan(item.getDisposePlan()));
+                store.updateStatus(item.getId(), item.getStatus());
+                fixed++;
+                continue;
+            }
+            if (!item.getStatus().isCompatibleWith(item.getDisposePlan())) {
+                ItemStatus fixedStatus = ItemStatus.getDefaultForPlan(item.getDisposePlan());
+                item.setStatus(fixedStatus);
+                store.updateStatus(item.getId(), fixedStatus);
+                fixed++;
+            }
+        }
+        if (fixed > 0) {
+            System.out.println("[DeclutterService] 已自动修正 " + fixed + " 条不一致的状态数据");
+        }
     }
 
     public List<HouseholdItem> listItems(String categoryFilter, String disposePlanFilter) {
@@ -106,16 +128,31 @@ public class DeclutterService {
     public HouseholdItem addItem(HouseholdItem item) {
         if (item.getStatus() == null) {
             item.setStatus(ItemStatus.getDefaultForPlan(item.getDisposePlan()));
+        } else if (!item.getStatus().isCompatibleWith(item.getDisposePlan())) {
+            item.setStatus(ItemStatus.getDefaultForPlan(item.getDisposePlan()));
         }
         store.add(item);
         return item;
     }
 
     public boolean updateDisposePlan(String id, DisposePlan plan) {
-        return store.updateDisposePlan(id, plan);
+        HouseholdItem item = store.findById(id);
+        if (item == null) return false;
+        ItemStatus currentStatus = item.getStatus();
+        boolean ok = store.updateDisposePlan(id, plan);
+        if (ok && currentStatus != null && !currentStatus.isCompatibleWith(plan)) {
+            ItemStatus newStatus = ItemStatus.getDefaultForPlan(plan);
+            store.updateStatus(id, newStatus);
+        }
+        return ok;
     }
 
     public boolean updateStatus(String id, ItemStatus status) {
+        HouseholdItem item = store.findById(id);
+        if (item == null) return false;
+        if (status != null && !status.isCompatibleWith(item.getDisposePlan())) {
+            return false;
+        }
         return store.updateStatus(id, status);
     }
 
@@ -124,11 +161,32 @@ public class DeclutterService {
     }
 
     public int batchUpdateDisposePlan(List<String> ids, DisposePlan plan) {
-        return store.batchUpdateDisposePlan(ids, plan);
+        int updated = store.batchUpdateDisposePlan(ids, plan);
+        if (updated > 0) {
+            ItemStatus defaultStatus = ItemStatus.getDefaultForPlan(plan);
+            List<String> toFix = new ArrayList<>();
+            for (String id : ids) {
+                HouseholdItem item = store.findById(id);
+                if (item != null && item.getStatus() != null && !item.getStatus().isCompatibleWith(plan)) {
+                    toFix.add(id);
+                }
+            }
+            if (!toFix.isEmpty()) {
+                store.batchUpdateStatus(toFix, defaultStatus);
+            }
+        }
+        return updated;
     }
 
     public int batchUpdateStatus(List<String> ids, ItemStatus status) {
-        return store.batchUpdateStatus(ids, status);
+        List<String> validIds = new ArrayList<>();
+        for (String id : ids) {
+            HouseholdItem item = store.findById(id);
+            if (item != null && (status == null || status.isCompatibleWith(item.getDisposePlan()))) {
+                validIds.add(id);
+            }
+        }
+        return store.batchUpdateStatus(validIds, status);
     }
 
     public int batchDelete(List<String> ids) {
@@ -137,6 +195,10 @@ public class DeclutterService {
 
     public boolean deleteItem(String id) {
         return store.delete(id);
+    }
+
+    public HouseholdItem findItem(String id) {
+        return store.findById(id);
     }
 
     public BigDecimal calculateExpectedRevenue() {

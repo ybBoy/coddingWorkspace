@@ -153,9 +153,18 @@ public class ItemHttpAdapter implements HttpHandler {
         try {
             String st = fields.getOrDefault("status", "");
             ItemStatus status = ItemStatus.fromNameOrDisplayName(st);
+            HouseholdItem item = service.findItem(id);
+            if (item == null) {
+                sendError(exchange, 404, "Item not found");
+                return;
+            }
+            if (status != null && !status.isCompatibleWith(item.getDisposePlan())) {
+                sendError(exchange, 400, "状态 " + status.getDisplayName() + " 与处理方式 " + item.getDisposePlan().getDisplayName() + " 不兼容");
+                return;
+            }
             boolean ok = service.updateStatus(id, status);
             if (ok) sendJson(exchange, 200, "{\"success\":true}");
-            else sendError(exchange, 404, "Item not found");
+            else sendError(exchange, 500, "Update failed");
         } catch (Exception e) {
             sendError(exchange, 400, "Bad Request: " + e.getMessage());
         }
@@ -336,9 +345,17 @@ public class ItemHttpAdapter implements HttpHandler {
         String category = query.get("category");
         String disposePlan = query.get("disposePlan");
         String status = query.get("status");
+        String minPriceStr = query.get("minPrice");
+        String maxPriceStr = query.get("maxPrice");
+        String sortBy = query.getOrDefault("sortBy", "createdAt");
+        String sortOrder = query.getOrDefault("sortOrder", "desc");
+
+        BigDecimal minPrice = null, maxPrice = null;
+        try { if (minPriceStr != null && !minPriceStr.isEmpty()) minPrice = new BigDecimal(minPriceStr); } catch (Exception ignored) {}
+        try { if (maxPriceStr != null && !maxPriceStr.isEmpty()) maxPrice = new BigDecimal(maxPriceStr); } catch (Exception ignored) {}
 
         List<HouseholdItem> items = service.searchItems(
-                keyword, category, disposePlan, status, null, null, "createdAt", "desc");
+                keyword, category, disposePlan, status, minPrice, maxPrice, sortBy, sortOrder);
 
         String csv = service.exportCsv(items);
         byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
@@ -357,9 +374,17 @@ public class ItemHttpAdapter implements HttpHandler {
         String category = query.get("category");
         String disposePlan = query.get("disposePlan");
         String status = query.get("status");
+        String minPriceStr = query.get("minPrice");
+        String maxPriceStr = query.get("maxPrice");
+        String sortBy = query.getOrDefault("sortBy", "createdAt");
+        String sortOrder = query.getOrDefault("sortOrder", "desc");
+
+        BigDecimal minPrice = null, maxPrice = null;
+        try { if (minPriceStr != null && !minPriceStr.isEmpty()) minPrice = new BigDecimal(minPriceStr); } catch (Exception ignored) {}
+        try { if (maxPriceStr != null && !maxPriceStr.isEmpty()) maxPrice = new BigDecimal(maxPriceStr); } catch (Exception ignored) {}
 
         List<HouseholdItem> items = service.searchItems(
-                keyword, category, disposePlan, status, null, null, "createdAt", "desc");
+                keyword, category, disposePlan, status, minPrice, maxPrice, sortBy, sortOrder);
 
         String json = service.exportJson(items);
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
@@ -376,6 +401,9 @@ public class ItemHttpAdapter implements HttpHandler {
         String body = readBody(exchange);
         Map<String, String> fields = ItemJsonStore.parseJsonObject(body);
         String dataUrl = fields.get("image");
+        if (dataUrl == null || dataUrl.isEmpty()) {
+            dataUrl = fields.get("imageBase64");
+        }
         if (dataUrl == null || !dataUrl.startsWith("data:image/")) {
             sendError(exchange, 400, "Invalid image data");
             return;

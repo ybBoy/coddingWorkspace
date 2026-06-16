@@ -5,10 +5,14 @@ const IMPORT_API = '/api/checkin/import';
 
 let allRecords = [];
 let weeklyGoal = 150;
+let weeklyMinutes = 0;
+let streakDays = 0;
+let totalCount = 0;
 let timeFilter = '7';
 let typeFilter = 'all';
 let calendarDate = new Date();
 let selectedDate = null;
+let pendingImportData = null;
 
 function formatDate(date) {
     const y = date.getFullYear();
@@ -126,6 +130,11 @@ function setupEventListeners() {
     document.getElementById('goalModal').addEventListener('click', function(e) {
         if (e.target === this) closeGoalModal();
     });
+    document.getElementById('importModal').addEventListener('click', function(e) {
+        if (e.target === this) closeImportModal();
+    });
+    document.getElementById('confirmImportBtn').addEventListener('click', executeImport);
+    document.getElementById('cancelImport').addEventListener('click', closeImportModal);
 }
 
 async function loadAllData() {
@@ -139,7 +148,10 @@ async function loadAllData() {
 
         if (statsResp.ok) {
             const stats = await statsResp.json();
+            weeklyMinutes = stats.weeklyMinutes || 0;
+            streakDays = stats.streakDays || 0;
             weeklyGoal = stats.weeklyGoal || 150;
+            totalCount = stats.totalCount || 0;
         }
 
         renderStats();
@@ -153,55 +165,13 @@ async function loadAllData() {
 }
 
 function renderStats() {
-    const weekMinutes = calculateWeekMinutes();
-    const streakDays = calculateStreak();
-
-    document.getElementById('weekMinutes').textContent = weekMinutes;
+    document.getElementById('weekMinutes').textContent = weeklyMinutes;
     document.getElementById('weekGoal').textContent = weeklyGoal;
     document.getElementById('streakDays').textContent = streakDays;
 
-    const percentage = Math.min(100, Math.round((weekMinutes / weeklyGoal) * 100));
+    const percentage = weeklyGoal > 0 ? Math.min(100, Math.round((weeklyMinutes / weeklyGoal) * 100)) : 0;
     document.getElementById('progressFill').style.width = percentage + '%';
     document.getElementById('progressText').textContent = percentage + '%';
-}
-
-function calculateWeekMinutes() {
-    const today = new Date();
-    const dayOfWeek = today.getDay() || 7;
-    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (dayOfWeek - 1));
-    const mondayStr = formatDate(monday);
-
-    return allRecords
-        .filter(r => r.checkinDate >= mondayStr)
-        .reduce((sum, r) => sum + r.duration, 0);
-}
-
-function calculateStreak() {
-    if (allRecords.length === 0) return 0;
-
-    const dateSet = new Set(allRecords.map(r => r.checkinDate));
-    const sortedDates = [...dateSet].sort((a, b) => b.localeCompare(a));
-
-    const todayStr = getTodayStr();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = formatDate(yesterday);
-
-    if (sortedDates[0] !== todayStr && sortedDates[0] !== yesterdayStr) {
-        return 0;
-    }
-
-    let streak = 0;
-    let checkDateStr = sortedDates[0];
-
-    while (dateSet.has(checkDateStr)) {
-        streak++;
-        const d = parseDate(checkDateStr);
-        d.setDate(d.getDate() - 1);
-        checkDateStr = formatDate(d);
-    }
-
-    return streak;
 }
 
 function getTimeRangeStart() {
@@ -596,39 +566,66 @@ function handleExport() {
     showToast('导出成功！', 'success');
 }
 
-async function handleImport(e) {
+function handleImport(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const overwrite = confirm('点击"确定"覆盖现有数据，点击"取消"合并到现有数据');
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const data = JSON.parse(event.target.result);
+            if (!Array.isArray(data)) {
+                showToast('文件格式错误，需要是数组格式', 'error');
+                return;
+            }
+            pendingImportData = data;
+            openImportModal();
+        } catch (error) {
+            showToast('文件格式错误，无法解析', 'error');
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+function openImportModal() {
+    document.querySelector('input[name="importMode"][value="merge"]').checked = true;
+    document.getElementById('importModal').classList.remove('hidden');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+    pendingImportData = null;
+}
+
+async function executeImport() {
+    if (!pendingImportData) return;
+
+    const mode = document.querySelector('input[name="importMode"]:checked').value;
+    const overwrite = mode === 'overwrite';
+
+    setButtonLoading('confirmImportBtn', true, '确认导入');
 
     try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-
-        if (!Array.isArray(data)) {
-            showToast('文件格式错误，需要是数组格式', 'error');
-            return;
-        }
-
         const url = `${IMPORT_API}${overwrite ? '?overwrite=true' : ''}`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(pendingImportData)
         });
 
         if (response.ok) {
             const result = await response.json();
             await loadAllData();
+            closeImportModal();
             showToast(`成功导入 ${result.imported} 条记录`, 'success');
         } else {
             showToast('导入失败', 'error');
         }
     } catch (error) {
         console.error('导入失败:', error);
-        showToast('导入失败，文件格式可能不正确', 'error');
+        showToast('导入失败，请稍后重试', 'error');
     } finally {
-        e.target.value = '';
+        setButtonLoading('confirmImportBtn', false, '确认导入');
     }
 }

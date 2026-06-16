@@ -1,0 +1,99 @@
+<!--
+  静态页面：灵感碎片箱的主界面
+  结构：顶部统计栏 + 左侧表单筛选区 + 右侧便签卡片墙
+  数据流：用户操作 → inbox.js 调用 API → 刷新页面展示
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>灵感碎片箱</title>
+  <link rel="stylesheet" href="inbox.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 顶部统计栏 -->
+    <header class="header">
+      <h1>✨ 灵感碎片箱</h1>
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-num" id="stat-total">0</span>
+          <span class="stat-label">总灵感</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-favorites">0</span>
+          <span class="stat-label">已收藏</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" id="stat-filtered">0</span>
+          <span class="stat-label">当前展示</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="main">
+      <!-- 左侧：新增表单 + 筛选区 -->
+      <aside class="sidebar">
+        <!-- 新增灵感表单 -->
+        <section class="panel">
+          <h2>📝 记一条灵感</h2>
+          <form id="idea-form">
+            <div class="form-group">
+              <label for="title">标题</label>
+              <input type="text" id="title" placeholder="给灵感起个名字...">
+            </div>
+            <div class="form-group">
+              <label for="content">内容 <span class="required">*</span></label>
+              <textarea id="content" rows="4" placeholder="把灵感写下来..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="tags">标签（用逗号分隔）</label>
+              <input type="text" id="tags" placeholder="比如：文案, 产品, 梦境">
+            </div>
+            <div class="form-group">
+              <label for="source">来源</label>
+              <input type="text" id="source" placeholder="来自哪里？比如某本书、某个梦">
+            </div>
+            <button type="submit" class="btn-primary">丢进灵感箱</button>
+          </form>
+        </section>
+
+        <!-- 筛选区 -->
+        <section class="panel">
+          <h2>🔍 筛选灵感</h2>
+          <div class="form-group">
+            <label for="search">搜索标题或内容</label>
+            <input type="text" id="search" placeholder="输入关键词搜索...">
+          </div>
+          <div class="form-group">
+            <label>按标签筛选</label>
+            <div class="tag-list" id="tag-filter-list">
+              <span class="tag tag-all active" data-tag="">全部</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="only-favorite">
+              <span>⭐ 只看收藏</span>
+            </label>
+          </div>
+        </section>
+      </aside>
+
+      <!-- 右侧：灵感卡片墙 -->
+      <main class="content">
+        <div class="idea-wall" id="idea-wall">
+          <!-- 灵感卡片通过 JS 动态生成 -->
+        </div>
+        <div class="empty-state" id="empty-state" style="display:none;">
+          <div class="empty-icon">📭</div>
+          <p>还没有灵感呢，写一条吧～</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="inbox.js"></script>
+</body>
+</html>

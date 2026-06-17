@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人衣橱搭配记录</title>
+    <link rel="stylesheet" href="wardrobe.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">🧥 我的衣橱</h1>
+            <p class="subtitle">记录穿搭，整理生活</p>
+        </header>
+
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">衣物总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="filteredCount">0</div>
+                <div class="stat-label">当前筛选</div>
+            </div>
+            <div class="stat-card stat-card-wide">
+                <div class="stat-label">🏆 最常穿 Top 3</div>
+                <div class="top-worn-list" id="topWornList">
+                    <div class="top-worn-empty">暂无记录</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="filter-section">
+            <div class="filter-group">
+                <label>类型</label>
+                <select id="filterType">
+                    <option value="all">全部</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>颜色</label>
+                <select id="filterColor">
+                    <option value="all">全部</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>季节</label>
+                <select id="filterSeason">
+                    <option value="all">全部</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="resetFilterBtn">重置筛选</button>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">➕ 新增衣物</h2>
+            <form id="addClothingForm" class="clothing-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">名称 *</label>
+                        <input type="text" id="name" placeholder="如：白色T恤" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">类型 *</label>
+                        <input type="text" id="type" placeholder="如：上衣、裤子、外套" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="color">颜色 *</label>
+                        <input type="text" id="color" placeholder="如：白色、黑色、蓝色" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="season">季节 *</label>
+                        <input type="text" id="season" placeholder="如：春秋、夏季、冬季" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="remark">备注</label>
+                    <input type="text" id="remark" placeholder="购买日期、材质、搭配建议等">
+                </div>
+                <button type="submit" class="btn btn-primary">添加衣物</button>
+            </form>
+        </section>
+
+        <section class="action-section">
+            <button class="btn btn-outline" id="openOutfitModal">📝 记录今日穿搭</button>
+        </section>
+
+        <section class="clothes-section">
+            <h2 class="section-title">👕 衣物列表</h2>
+            <div class="clothes-grid" id="clothesGrid">
+                <div class="empty-state">
+                    <p>衣橱空空如也～</p>
+                    <p class="empty-sub">添加你的第一件衣物吧！</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal-overlay" id="outfitModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📝 记录今日穿搭</h3>
+                <button class="modal-close" id="closeOutfitModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-tip">选择今天穿了哪些衣物：</p>
+                <div class="outfit-select-list" id="outfitSelectList">
+                    <div class="empty-state small">暂无衣物可选择</div>
+                </div>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label for="outfitNote">今日穿搭备注</label>
+                    <input type="text" id="outfitNote" placeholder="如：去面试、周末郊游">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelOutfitBtn">取消</button>
+                <button class="btn btn-primary" id="confirmOutfitBtn">确认记录</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>✏️ 编辑衣物</h3>
+                <button class="modal-close" id="closeEditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editClothingForm">
+                    <input type="hidden" id="editId">
+                    <div class="form-group">
+                        <label for="editName">名称 *</label>
+                        <input type="text" id="editName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editType">类型 *</label>
+                        <input type="text" id="editType" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editColor">颜色 *</label>
+                        <input type="text" id="editColor" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSeason">季节 *</label>
+                        <input type="text" id="editSeason" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRemark">备注</label>
+                        <input type="text" id="editRemark">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEditBtn">取消</button>
+                <button class="btn btn-primary" id="saveEditBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="wardrobe.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+{
+  "clothes": [
+    {
+      "id": "6e10a5a1-44e0-4926-8c36-3444144da4e8",
+      "name": "白色T恤",
+      "type": "上衣",
+      "color": "白色",
+      "season": "夏季",
+      "remark": "纯棉，舒适透气",
+      "wear_count": 0,
+      "created_at": "2026-06-16T08:55:05.096467+00:00",
+      "last_worn_at": null
+    },
+    {
+      "id": "0dd4eb84-9997-4ceb-92ab-6dfb0fc875a8",
+      "name": "白色T恤",
+      "type": "上衣",
+      "color": "白色",
+      "season": "夏季",
+      "remark": "纯棉透气",
+      "wear_count": 0,
+      "created_at": "2026-06-16T08:57:39.842928+00:00",
+      "last_worn_at": null
+    },
+    {
+      "id": "063c16be-3b65-48f0-af61-1b33d2596bb5",
+      "name": "蓝色牛仔裤",
+      "type": "裤子",
+      "color": "蓝色",
+      "season": "春秋",
+      "remark": "百搭款",
+      "wear_count": 0,
+      "created_at": "2026-06-16T08:57:39.849696+00:00",
+      "last_worn_at": null
+    },
+    {
+      "id": "9e3cd1f9-84ea-4125-b00e-7336b253749b",
+      "name": "黑色外套",
+      "type": "外套",
+      "color": "黑色",
+      "season": "冬季",
+      "remark": "保暖",
+      "wear_count": 1,
+      "created_at": "2026-06-16T08:57:39.856860+00:00",
+      "last_worn_at": "2026-06-16T08:57:39.881677+00:00"
+    },
+    {
+      "id": "de7a3efe-fa6b-4b34-8e8d-511cba8f4ad2",
+      "name": "白色运动鞋",
+      "type": "鞋子",
+      "color": "白色",
+      "season": "春秋",
+      "remark": "舒适",
+      "wear_count": 1,
+      "created_at": "2026-06-16T08:57:39.864026+00:00",
+      "last_worn_at": "2026-06-16T08:57:39.881677+00:00"
+    },
+    {
+      "id": "5111675b-d552-44c9-b6cf-91b7da27ebcd",
+      "name": "灰色卫衣",
+      "type": "上衣",
+      "color": "灰色",
+      "season": "春秋",
+      "remark": "休闲",
+      "wear_count": 1,
+      "created_at": "2026-06-16T08:57:39.870407+00:00",
+      "last_worn_at": "2026-06-16T08:57:39.881677+00:00"
+    }
+  ],
+  "outfit_logs": [
+    {
+      "id": "ae46cfdf-ce3c-4b18-b627-415be90f639d",
+      "clothing_ids": [
+        "5111675b-d552-44c9-b6cf-91b7da27ebcd",
+        "9e3cd1f9-84ea-4125-b00e-7336b253749b",
+        "de7a3efe-fa6b-4b34-8e8d-511cba8f4ad2"
+      ],
+      "worn_at": "2026-06-16T08:57:39.884924+00:00",
+      "note": "今天上班穿的"
+    }
+  ]
+}

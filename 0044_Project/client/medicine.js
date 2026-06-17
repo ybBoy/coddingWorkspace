@@ -104,6 +104,7 @@ elements.modalConfirm.addEventListener("click", () => {
     } else {
         if (modalCallback) modalCallback();
     }
+    hideModal();
 });
 
 elements.modalOverlay.addEventListener("click", (e) => {
@@ -530,7 +531,6 @@ function handleEdit(id) {
                     const result = await response.json();
                     if (response.ok) {
                         showToast("药品信息已更新");
-                        hideModal();
                         loadMedicines();
                     } else {
                         showToast(result.message || "更新失败", "error");

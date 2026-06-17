@@ -198,7 +198,7 @@ class MedicineService:
 
         logs_data = data.get("operation_logs", [])
         if isinstance(logs_data, list):
-            pass
+            self.logs.import_logs(logs_data)
 
         return {"imported": imported_count, "skipped": len(medicines_data) - imported_count}
 

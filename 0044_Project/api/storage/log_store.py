@@ -54,5 +54,17 @@ class LogStore:
     def get_logs(self, limit: int = 50) -> list[dict]:
         return self._logs[:limit]
 
+    def import_logs(self, logs: list[dict]):
+        if not isinstance(logs, list):
+            return
+        existing_ids = {log.get("id") for log in self._logs}
+        for log in logs:
+            if isinstance(log, dict) and log.get("id") not in existing_ids:
+                self._logs.append(log)
+        self._logs.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        if len(self._logs) > 500:
+            self._logs = self._logs[:500]
+        self._save_to_file()
+
 
 log_store = LogStore()

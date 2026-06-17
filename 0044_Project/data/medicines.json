@@ -21,6 +21,17 @@
       "remark": "头痛时用",
       "id": "cd76ca50-16f7-4c9b-beaa-5c602f3b97f8",
       "created_at": "2026-06-17T11:11:13.110210"
+    },
+    {
+      "name": "测试药品",
+      "purpose": "测试用途",
+      "quantity": 4,
+      "unit": "片",
+      "expiry_date": "2028-01-01",
+      "location": "测试位置",
+      "remark": "用于测试删除弹窗关闭",
+      "id": "e192a89e-3cb3-4c7f-9063-06e2b5e411ff",
+      "created_at": "2026-06-17T16:38:38.673694"
     }
   ]
 }

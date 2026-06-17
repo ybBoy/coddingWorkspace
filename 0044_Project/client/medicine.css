@@ -81,6 +81,22 @@ body {
     color: #43a047;
 }
 
+.stats-badge.stats-check {
+    border-color: #ffe0b2;
+}
+
+.stats-badge.stats-check .stats-number {
+    color: #f57c00;
+}
+
+.stats-badge.stats-lowstock {
+    border-color: #ffccbc;
+}
+
+.stats-badge.stats-lowstock .stats-number {
+    color: #e64a19;
+}
+
 .main {
     max-width: 1200px;
     margin: 0 auto;
@@ -124,6 +140,55 @@ body {
 .filter-select:focus {
     outline: none;
     border-color: #90caf9;
+}
+
+.filter-input {
+    padding: 8px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #ffffff;
+    min-width: 200px;
+    transition: border-color 0.2s;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #90caf9;
+}
+
+.filter-checkbox {
+    padding: 8px 12px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555555;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #66bb6a;
+}
+
+.filter-spacer {
+    flex: 1;
+}
+
+.file-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
 }
 
 .btn {
@@ -448,6 +513,133 @@ body {
     background: linear-gradient(135deg, #ef9a9a 0%, #e57373 100%);
 }
 
+.modal.edit-modal {
+    max-width: 520px;
+}
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.edit-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.edit-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.edit-form label {
+    font-size: 13px;
+    color: #555555;
+    font-weight: 500;
+}
+
+.edit-form input,
+.edit-form textarea {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.edit-form input:focus,
+.edit-form textarea:focus {
+    outline: none;
+    border-color: #90caf9;
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);
+    color: #ffffff;
+}
+
+.btn-edit:hover {
+    background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+    box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+}
+
+.logs-section {
+    margin-top: 40px;
+}
+
+.logs-section h2 {
+    color: #1565c0;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.logs-list {
+    background: #ffffff;
+    border: 2px solid #e3f2fd;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.log-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 16px;
+    transition: background 0.2s;
+}
+
+.log-item:last-child {
+    border-bottom: none;
+}
+
+.log-item:hover {
+    background: #fafafa;
+}
+
+.log-icon {
+    font-size: 24px;
+    width: 40px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.log-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.log-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333333;
+}
+
+.log-title.use {
+    color: #e65100;
+}
+
+.log-title.replenish {
+    color: #2e7d32;
+}
+
+.log-meta {
+    font-size: 12px;
+    color: #888888;
+    margin-top: 2px;
+}
+
+.log-empty {
+    padding: 32px;
+    text-align: center;
+    color: #888888;
+    font-size: 14px;
+}
+
 @keyframes slideIn {
     from {
         transform: translateX(100%);
@@ -469,6 +661,20 @@ body {
         font-size: 22px;
     }
 
+    .header-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .stats-badge {
+        min-width: 80px;
+        padding: 8px 14px;
+    }
+
+    .stats-number {
+        font-size: 20px;
+    }
+
     .form-row {
         grid-template-columns: 1fr;
     }
@@ -483,8 +689,13 @@ body {
         align-items: stretch;
     }
 
-    .filter-select {
+    .filter-select,
+    .filter-input {
         width: 100%;
+    }
+
+    .filter-spacer {
+        display: none;
     }
 
     .medicine-grid {
@@ -493,5 +704,9 @@ body {
 
     .card-actions {
         flex-wrap: wrap;
+    }
+
+    .edit-form .form-row {
+        grid-template-columns: 1fr;
     }
 }

@@ -1,0 +1,12 @@
+{
+  "logs": [
+    {
+      "id": "1781682873543",
+      "operation_type": "使用",
+      "medicine_name": "阿莫西林",
+      "quantity": 1,
+      "unit": "片",
+      "created_at": "2026-06-17T15:54:33.543576"
+    }
+  ]
+}

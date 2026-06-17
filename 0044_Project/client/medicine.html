@@ -14,12 +14,20 @@
                 <h1>家庭药箱管理</h1>
             </div>
             <div class="header-right">
+                <div class="stats-badge stats-lowstock">
+                    <span class="stats-label">📦 库存不足</span>
+                    <span id="lowStockCount" class="stats-number">0</span>
+                </div>
                 <div class="stats-badge">
-                    <span class="stats-label">需要检查</span>
+                    <span class="stats-label">⏰ 即将过期</span>
+                    <span id="expiringCount" class="stats-number">0</span>
+                </div>
+                <div class="stats-badge stats-check">
+                    <span class="stats-label">⚠️ 需检查</span>
                     <span id="needsCheckCount" class="stats-number">0</span>
                 </div>
                 <div class="stats-badge stats-total">
-                    <span class="stats-label">药品总数</span>
+                    <span class="stats-label">📊 药品总数</span>
                     <span id="totalCount" class="stats-number">0</span>
                 </div>
             </div>
@@ -29,18 +37,34 @@
     <main class="main">
         <section class="filter-section">
             <div class="filter-group">
-                <label for="purposeFilter">按用途筛选：</label>
+                <label for="searchInput">🔍 搜索：</label>
+                <input type="text" id="searchInput" class="filter-input" placeholder="搜索药名或备注...">
+            </div>
+            <div class="filter-group">
+                <label for="purposeFilter">用途：</label>
                 <select id="purposeFilter" class="filter-select">
                     <option value="">全部用途</option>
                 </select>
             </div>
             <div class="filter-group">
-                <label for="locationFilter">按位置筛选：</label>
+                <label for="locationFilter">位置：</label>
                 <select id="locationFilter" class="filter-select">
                     <option value="">全部位置</option>
                 </select>
             </div>
+            <div class="filter-group filter-checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="onlyCheckFilter">
+                    <span>只看需检查</span>
+                </label>
+            </div>
             <button id="resetFilterBtn" class="btn btn-secondary">重置筛选</button>
+            <div class="filter-spacer"></div>
+            <button id="exportBtn" class="btn btn-secondary">📤 导出数据</button>
+            <label class="btn btn-secondary file-upload-btn">
+                📥 导入数据
+                <input type="file" id="importInput" accept=".json" style="display:none;">
+            </label>
         </section>
 
         <section class="form-section">
@@ -96,6 +120,13 @@
                 <p>还没有添加药品，快来添加吧！</p>
             </div>
         </section>
+
+        <section class="logs-section">
+            <h2>📜 操作记录</h2>
+            <div id="logsList" class="logs-list">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
     </main>
 
     <div id="modalOverlay" class="modal-overlay" style="display: none;">
@@ -105,6 +136,7 @@
             <div id="modalInputContainer" style="display: none;">
                 <input type="number" id="modalInput" min="1" value="1">
             </div>
+            <div id="modalFormContainer" style="display: none;"></div>
             <div class="modal-actions">
                 <button id="modalCancel" class="btn btn-secondary">取消</button>
                 <button id="modalConfirm" class="btn btn-primary">确定</button>

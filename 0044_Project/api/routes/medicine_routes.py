@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
+import io
+import json
 
 from api.services.medicine_service import medicine_service
 
@@ -19,8 +21,9 @@ def error_response(message, code=400):
 def get_medicines():
     purpose = request.args.get("purpose", "").strip() or None
     location = request.args.get("location", "").strip() or None
+    keyword = request.args.get("keyword", "").strip() or None
 
-    data, stats = medicine_service.get_medicines(purpose, location)
+    data, stats = medicine_service.get_medicines(purpose, location, keyword)
     return success_response(data, stats=stats)
 
 
@@ -28,6 +31,52 @@ def get_medicines():
 def get_filter_options():
     options = medicine_service.get_filter_options()
     return success_response(options)
+
+
+@medicine_bp.route("/logs", methods=["GET"])
+def get_operation_logs():
+    try:
+        limit = int(request.args.get("limit", 50))
+    except (ValueError, TypeError):
+        limit = 50
+    logs = medicine_service.get_operation_logs(limit)
+    return success_response(logs)
+
+
+@medicine_bp.route("/export", methods=["GET"])
+def export_data():
+    export_data = medicine_service.export_data()
+    json_str = json.dumps(export_data, ensure_ascii=False, indent=2)
+    buf = io.BytesIO(json_str.encode("utf-8"))
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="application/json",
+        as_attachment=True,
+        download_name="medicine_backup.json",
+    )
+
+
+@medicine_bp.route("/import", methods=["POST"])
+def import_data():
+    try:
+        if "file" in request.files:
+            file = request.files["file"]
+            content = file.read().decode("utf-8")
+            data = json.loads(content)
+        else:
+            data = request.get_json() or {}
+
+        result = medicine_service.import_data(data)
+        return success_response(
+            result, f"导入成功：{result['imported']} 条，跳过 {result['skipped']} 条"
+        )
+    except json.JSONDecodeError:
+        return error_response("JSON 格式错误", 400)
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        return error_response(f"导入失败：{str(e)}", 500)
 
 
 @medicine_bp.route("/<medicine_id>", methods=["GET"])

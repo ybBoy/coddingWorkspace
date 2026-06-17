@@ -3,11 +3,11 @@
     {
       "name": "阿莫西林",
       "purpose": "抗生素",
-      "quantity": 1,
+      "quantity": 0,
       "unit": "片",
       "expiry_date": "2027-12-31",
       "location": "客厅药箱",
-      "remark": "感冒备用",
+      "remark": "通过API编辑测试",
       "id": "4a52eb12-db7a-4be7-a358-803c4e3b0bcc",
       "created_at": "2026-06-17T11:09:16.143722"
     },

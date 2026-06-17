@@ -72,8 +72,8 @@ class Snack:
             return False
 
     def needs_attention(self) -> bool:
-        """判断是否需要处理（库存不足 或 临近保质期 或 已标记不再购买）"""
-        return self.is_low_stock() or self.is_expiring_soon() or self.disabled
+        """判断是否需要处理（库存不足 或 临近保质期）"""
+        return self.is_low_stock() or self.is_expiring_soon()
 
     def days_to_expiry(self) -> Optional[int]:
         """计算距离保质期的天数，过期返回负数，格式错误返回 None"""

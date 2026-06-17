@@ -15,6 +15,14 @@ from flask import Blueprint, request, jsonify
 from src.service.snack_service import SnackService
 
 
+def _safe_int(value, default: int = 0) -> int:
+    """安全解析整数，解析失败返回默认值"""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 def create_snack_blueprint(service: SnackService) -> Blueprint:
     """
     创建零食 API 蓝图
@@ -55,7 +63,7 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
         body = request.get_json(silent=True) or {}
         name = body.get("name", "").strip()
         flavor = body.get("flavor", "").strip()
-        quantity = int(body.get("quantity", 1))
+        quantity = _safe_int(body.get("quantity"), 1)
         location = body.get("location", "").strip()
         expiry_date = body.get("expiry_date", "").strip()
 
@@ -88,7 +96,7 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
         Body JSON: { amount } (可选，默认 1)
         """
         body = request.get_json(silent=True) or {}
-        amount = int(body.get("amount", 1))
+        amount = _safe_int(body.get("amount"), 1)
         snack = service.restock(snack_id, amount)
         if snack is None:
             return jsonify({"success": False, "message": "零食不存在"}), 404

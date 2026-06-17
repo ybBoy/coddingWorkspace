@@ -54,7 +54,7 @@ function isExpiringSoon(expiryDate) {
 }
 
 function needsAttention(snack) {
-  return isLowStock(snack.quantity) || isExpiringSoon(snack.expiry_date) || snack.disabled;
+  return isLowStock(snack.quantity) || isExpiringSoon(snack.expiry_date);
 }
 
 /* ---------- API 请求 ---------- */

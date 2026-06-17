@@ -3,12 +3,12 @@ import sys
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
 from backend.repository.gear_json_repository import GearJsonRepository
 from backend.core.gear_service import GearService
 from backend.api.gear_api import gear_bp
-
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
 
 data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 os.makedirs(data_dir, exist_ok=True)
@@ -37,6 +37,8 @@ if not repository.find_all():
 def create_app() -> Flask:
     app = Flask(__name__, static_folder=None)
     CORS(app)
+
+    app.config["GEAR_SERVICE"] = gear_service
 
     app.register_blueprint(gear_bp)
 

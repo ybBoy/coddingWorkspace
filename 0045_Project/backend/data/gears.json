@@ -6,7 +6,7 @@
     "packed": false,
     "essential": true,
     "notes": "双人帐篷",
-    "id": "9503f7ef-2abe-4b5f-a815-b5eb2e6b29f3"
+    "id": "0df1ac80-f64f-4c25-8520-6e1fcfe2492e"
   },
   {
     "name": "睡袋",
@@ -15,7 +15,7 @@
     "packed": false,
     "essential": true,
     "notes": "零下10度款",
-    "id": "a5166d08-8bfd-4d7c-affb-6175c8851568"
+    "id": "ad001d16-12a8-425c-8e6a-2ad071b1648d"
   },
   {
     "name": "头灯",
@@ -24,7 +24,7 @@
     "packed": false,
     "essential": true,
     "notes": "",
-    "id": "8e70f69b-3920-4ab9-b30c-ac57e4b78c2a"
+    "id": "45f0daa4-b205-498c-b5ea-6359701237a6"
   },
   {
     "name": "登山杖",
@@ -33,7 +33,7 @@
     "packed": false,
     "essential": false,
     "notes": "碳纤维",
-    "id": "b75c65ec-a755-4b63-a1f1-3dd2f57d65f7"
+    "id": "99a61391-4393-4dcd-b145-10327f140631"
   },
   {
     "name": "炉具",
@@ -42,7 +42,7 @@
     "packed": false,
     "essential": true,
     "notes": "气炉",
-    "id": "1f821715-c084-45f2-8f1f-f4e0cc9dd789"
+    "id": "dfb7f892-5ea5-4400-861b-20a213576ac3"
   },
   {
     "name": "急救包",
@@ -51,7 +51,7 @@
     "packed": false,
     "essential": true,
     "notes": "",
-    "id": "673174a8-bd1f-470b-8ce8-bbc19c8760d9"
+    "id": "c25ef4ca-f37b-4a4a-906a-22b803736b1a"
   },
   {
     "name": "水壶",
@@ -60,7 +60,7 @@
     "packed": false,
     "essential": false,
     "notes": "1L保温壶",
-    "id": "5876323d-6996-4ca5-9ace-63bcd0f45de8"
+    "id": "7b8325ef-0bae-4ba0-87c1-43e40b310053"
   },
   {
     "name": "防潮垫",
@@ -69,6 +69,15 @@
     "packed": false,
     "essential": false,
     "notes": "充气款",
-    "id": "4ef76f20-8136-4c6f-9515-f3693e587221"
+    "id": "0934ce15-5913-4257-9c72-6433851a9042"
+  },
+  {
+    "name": "折叠椅",
+    "category": "家具",
+    "weight": 1.2,
+    "packed": false,
+    "essential": false,
+    "notes": "舒适款",
+    "id": "7883ca12-7aad-4eb1-a408-e5049508428f"
   }
 ]

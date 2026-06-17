@@ -1,12 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from backend.core.gear_service import GearService
 
 gear_bp = Blueprint("gear", __name__, url_prefix="/api/gears")
 
 
 def get_service() -> GearService:
-    from backend.run import gear_service
-    return gear_service
+    return current_app.config["GEAR_SERVICE"]
 
 
 @gear_bp.route("", methods=["GET"])
@@ -35,10 +34,14 @@ def add_gear():
     data = request.get_json()
     if not data or not data.get("name"):
         return jsonify({"error": "装备名称不能为空"}), 400
+    try:
+        weight = float(data.get("weight", 0))
+    except (ValueError, TypeError):
+        return jsonify({"error": "重量必须是数字"}), 400
     gear = service.add_gear(
         name=data["name"],
         category=data.get("category", ""),
-        weight=float(data.get("weight", 0)),
+        weight=weight,
         essential=bool(data.get("essential", False)),
         notes=data.get("notes", ""),
     )

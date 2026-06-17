@@ -1,9 +1,29 @@
 const API_BASE = '/api';
 
 let currentClothes = [];
+let allClothes = [];
 let currentFilters = { type: 'all', color: 'all', season: 'all' };
 let selectedOutfitIds = [];
 let currentRecommendation = null;
+
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function safeImageUrl(url) {
+    if (!url) return '';
+    const str = String(url).trim();
+    if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('/') || str.startsWith('data:image/')) {
+        return str;
+    }
+    return '';
+}
 
 async function apiFetch(endpoint, options = {}) {
     try {
@@ -93,7 +113,7 @@ function renderTopWorn(topWorn) {
     list.innerHTML = topWorn.map((item, i) => `
         <div class="top-worn-item">
             <span class="top-worn-rank rank-${i + 1}">${i + 1}</span>
-            <span class="top-worn-name">${item.name}</span>
+            <span class="top-worn-name">${escapeHtml(item.name)}</span>
             <span class="top-worn-count">${item.wear_count} 次</span>
         </div>
     `).join('');
@@ -358,13 +378,26 @@ function populateSelect(selectId, options) {
 }
 
 async function loadClothes() {
-    const params = new URLSearchParams();
-    if (currentFilters.type !== 'all') params.set('type', currentFilters.type);
-    if (currentFilters.color !== 'all') params.set('color', currentFilters.color);
-    if (currentFilters.season !== 'all') params.set('season', currentFilters.season);
-
     try {
-        const clothes = await apiFetch('/clothes?' + params.toString());
+        const all = await apiFetch('/clothes');
+        allClothes = all;
+
+        const params = new URLSearchParams();
+        if (currentFilters.type !== 'all') params.set('type', currentFilters.type);
+        if (currentFilters.color !== 'all') params.set('color', currentFilters.color);
+        if (currentFilters.season !== 'all') params.set('season', currentFilters.season);
+
+        let clothes = all;
+        if (currentFilters.type !== 'all') {
+            clothes = clothes.filter(c => c.type.toLowerCase() === currentFilters.type.toLowerCase());
+        }
+        if (currentFilters.color !== 'all') {
+            clothes = clothes.filter(c => c.color.toLowerCase() === currentFilters.color.toLowerCase());
+        }
+        if (currentFilters.season !== 'all') {
+            clothes = clothes.filter(c => c.season.toLowerCase() === currentFilters.season.toLowerCase());
+        }
+
         currentClothes = clothes;
         document.getElementById('filteredCount').textContent = clothes.length;
         renderClothes(clothes);
@@ -398,20 +431,21 @@ function renderClothes(clothes) {
             warningBadge = '<div class="warning-badge" style="background:#95a5a6;">🆕 从未穿过</div>';
         }
 
-        const imageHtml = item.image_url
-            ? `<img src="${item.image_url}" alt="${item.name}" onerror="this.style.display='none';this.parentElement.innerHTML='${getTypeEmoji(item.type)}';">`
-            : getTypeEmoji(item.type);
+        const imgUrl = safeImageUrl(item.image_url);
+        const imgHtml = imgUrl
+            ? `<img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.name)}" onerror="this.style.display='none';this.parentElement.textContent='${escapeHtml(getTypeEmoji(item.type))}';">`
+            : escapeHtml(getTypeEmoji(item.type));
 
         return `
-            <div class="${cardClass}" data-id="${item.id}">
-                <div class="card-image">${imageHtml}</div>
+            <div class="${cardClass}" data-id="${escapeHtml(item.id)}">
+                <div class="card-image">${imgHtml}</div>
                 <div class="card-body">
                     <div class="card-header">
-                        <div class="card-name">${item.name}</div>
+                        <div class="card-name">${escapeHtml(item.name)}</div>
                     </div>
-                    <span class="card-tag type">${item.type}</span>
-                    <span class="card-tag color">${item.color}</span>
-                    <span class="card-tag season">${item.season}</span>
+                    <span class="card-tag type">${escapeHtml(item.type)}</span>
+                    <span class="card-tag color">${escapeHtml(item.color)}</span>
+                    <span class="card-tag season">${escapeHtml(item.season)}</span>
                     <div class="card-info">
                         <div class="card-info-row">
                             <span>穿着次数</span>
@@ -427,10 +461,10 @@ function renderClothes(clothes) {
                         </div>
                     </div>
                     ${warningBadge}
-                    <div class="card-remark">${item.remark || ''}</div>
+                    <div class="card-remark">${escapeHtml(item.remark || '')}</div>
                     <div class="card-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="openEditModal('${item.id}')">编辑</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteClothing('${item.id}')">删除</button>
+                        <button class="btn btn-secondary btn-sm" onclick="openEditModal('${escapeHtml(item.id)}')">编辑</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteClothing('${escapeHtml(item.id)}')">删除</button>
                     </div>
                 </div>
             </div>
@@ -549,27 +583,29 @@ function closeOutfitModal() {
 
 function renderOutfitSelectList() {
     const list = document.getElementById('outfitSelectList');
+    const source = allClothes.length > 0 ? allClothes : currentClothes;
 
-    if (currentClothes.length === 0) {
+    if (source.length === 0) {
         list.innerHTML = '<div class="empty-state small">暂无衣物可选择</div>';
         return;
     }
 
-    list.innerHTML = currentClothes.map(item => {
+    list.innerHTML = source.map(item => {
         const checked = selectedOutfitIds.includes(item.id) ? 'checked' : '';
         const itemClass = checked ? 'outfit-select-item selected' : 'outfit-select-item';
 
-        const imageHtml = item.image_url
-            ? `<img src="${item.image_url}" alt="" style="width:40px;height:40px;border-radius:6px;object-fit:cover;">`
-            : `<span style="font-size:28px;">${getTypeEmoji(item.type)}</span>`;
+        const imgUrl = safeImageUrl(item.image_url);
+        const imgHtml = imgUrl
+            ? `<img src="${escapeHtml(imgUrl)}" alt="" style="width:40px;height:40px;border-radius:6px;object-fit:cover;">`
+            : `<span style="font-size:28px;">${escapeHtml(getTypeEmoji(item.type))}</span>`;
 
         return `
-            <div class="${itemClass}" data-id="${item.id}" onclick="toggleOutfitItem('${item.id}')">
-                <input type="checkbox" ${checked} onclick="event.stopPropagation(); toggleOutfitItem('${item.id}');">
-                ${imageHtml}
+            <div class="${itemClass}" data-id="${escapeHtml(item.id)}" onclick="toggleOutfitItem('${escapeHtml(item.id)}')">
+                <input type="checkbox" ${checked} onclick="event.stopPropagation(); toggleOutfitItem('${escapeHtml(item.id)}');">
+                ${imgHtml}
                 <div class="outfit-select-info">
-                    <div class="outfit-select-name">${item.name}</div>
-                    <div class="outfit-select-meta">${item.type} · ${item.color}</div>
+                    <div class="outfit-select-name">${escapeHtml(item.name)}</div>
+                    <div class="outfit-select-meta">${escapeHtml(item.type)} · ${escapeHtml(item.color)}</div>
                 </div>
             </div>
         `;
@@ -633,14 +669,15 @@ function renderHistory(logs) {
         const month = date.getMonth() + 1;
 
         const clothesHtml = log.clothes.map(c => {
-            const imgHtml = c.image_url
-                ? `<img src="${c.image_url}" alt="">`
-                : `<span style="font-size:14px;">${getTypeEmoji(c.type)}</span>`;
-            return `<span class="history-clothing-tag">${imgHtml}${c.name}</span>`;
+            const imgUrl = safeImageUrl(c.image_url);
+            const imgHtml = imgUrl
+                ? `<img src="${escapeHtml(imgUrl)}" alt="">`
+                : `<span style="font-size:14px;">${escapeHtml(getTypeEmoji(c.type))}</span>`;
+            return `<span class="history-clothing-tag">${imgHtml}${escapeHtml(c.name)}</span>`;
         }).join('');
 
         const noteHtml = log.note
-            ? `<div class="history-note">📝 ${log.note}</div>`
+            ? `<div class="history-note">📝 ${escapeHtml(log.note)}</div>`
             : '';
 
         return `
@@ -693,14 +730,15 @@ function renderRecommendation(rec) {
             return `
                 <div class="recommend-item recommend-item-empty">
                     <div style="font-size:32px;margin-bottom:8px;">📭</div>
-                    <div>暂无${label}</div>
+                    <div>暂无${escapeHtml(label)}</div>
                 </div>
             `;
         }
 
-        const imageHtml = item.image_url
-            ? `<img src="${item.image_url}" alt="${item.name}">`
-            : getTypeEmoji(item.type);
+        const imgUrl = safeImageUrl(item.image_url);
+        const imgHtml = imgUrl
+            ? `<img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.name)}">`
+            : escapeHtml(getTypeEmoji(item.type));
 
         const tagHtml = item.is_long_time_no_wear
             ? '<span class="recommend-item-tag">很久没穿了</span>'
@@ -708,9 +746,9 @@ function renderRecommendation(rec) {
 
         return `
             <div class="recommend-item">
-                <div class="recommend-item-image">${imageHtml}</div>
-                <div class="recommend-item-name">${item.name}</div>
-                <div class="recommend-item-type">${item.type} · ${item.color}</div>
+                <div class="recommend-item-image">${imgHtml}</div>
+                <div class="recommend-item-name">${escapeHtml(item.name)}</div>
+                <div class="recommend-item-type">${escapeHtml(item.type)} · ${escapeHtml(item.color)}</div>
                 ${tagHtml}
             </div>
         `;

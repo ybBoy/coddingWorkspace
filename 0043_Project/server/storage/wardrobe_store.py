@@ -76,7 +76,7 @@ class WardrobeStore:
             if not clothing:
                 return None
             for key, value in fields.items():
-                if hasattr(clothing, key) and value is not None:
+                if hasattr(clothing, key):
                     setattr(clothing, key, value)
             self._persist()
             return clothing

@@ -2,14 +2,22 @@ const API_BASE = "/api/medicines";
 
 let currentPurposeFilter = "";
 let currentLocationFilter = "";
+let currentMemberFilter = "";
 let currentKeyword = "";
 let currentOnlyCheck = false;
+let currentSort = "created_desc";
+let currentView = "card";
+let showExpiredMode = false;
 let modalCallback = null;
 let modalType = "confirm";
 let searchTimeout = null;
 let editingMedicineId = null;
 let allMedicines = [];
 let allStats = {};
+let allFilterOptions = {};
+let currentSettings = { low_stock_threshold: 3, expiring_days: 30 };
+let pendingImageFile = null;
+let pendingImageDataUrl = null;
 
 const elements = {
     medicineList: document.getElementById("medicineList"),
@@ -17,13 +25,33 @@ const elements = {
     needsCheckCount: document.getElementById("needsCheckCount"),
     lowStockCount: document.getElementById("lowStockCount"),
     expiringCount: document.getElementById("expiringCount"),
+    expiredCount: document.getElementById("expiredCount"),
     totalCount: document.getElementById("totalCount"),
     medicineForm: document.getElementById("medicineForm"),
     purposeFilter: document.getElementById("purposeFilter"),
     locationFilter: document.getElementById("locationFilter"),
+    memberFilter: document.getElementById("memberFilter"),
+    sortSelect: document.getElementById("sortSelect"),
     resetFilterBtn: document.getElementById("resetFilterBtn"),
     searchInput: document.getElementById("searchInput"),
     onlyCheckFilter: document.getElementById("onlyCheckFilter"),
+    expiredViewBtn: document.getElementById("expiredViewBtn"),
+    exitExpiredBtn: document.getElementById("exitExpiredBtn"),
+    cleanupExpiredBtn: document.getElementById("cleanupExpiredBtn"),
+    expiredActions: document.getElementById("expiredActions"),
+    medicineSectionTitle: document.getElementById("medicineSectionTitle"),
+    cardViewBtn: document.getElementById("cardViewBtn"),
+    listViewBtn: document.getElementById("listViewBtn"),
+    settingsBtn: document.getElementById("settingsBtn"),
+    settingsSection: document.getElementById("settingsSection"),
+    lowStockThreshold: document.getElementById("lowStockThreshold"),
+    expiringDays: document.getElementById("expiringDays"),
+    saveSettingsBtn: document.getElementById("saveSettingsBtn"),
+    memberCheckboxes: document.getElementById("memberCheckboxes"),
+    imageInput: document.getElementById("imageInput"),
+    imagePreview: document.getElementById("imagePreview"),
+    previewImg: document.getElementById("previewImg"),
+    removeImageBtn: document.getElementById("removeImageBtn"),
     exportBtn: document.getElementById("exportBtn"),
     importInput: document.getElementById("importInput"),
     modalOverlay: document.getElementById("modalOverlay"),
@@ -117,7 +145,10 @@ async function fetchMedicines() {
     const params = new URLSearchParams();
     if (currentPurposeFilter) params.append("purpose", currentPurposeFilter);
     if (currentLocationFilter) params.append("location", currentLocationFilter);
+    if (currentMemberFilter) params.append("member", currentMemberFilter);
     if (currentKeyword) params.append("keyword", currentKeyword);
+    if (currentSort) params.append("sort", currentSort);
+    if (showExpiredMode) params.append("only_expired", "1");
 
     const url = params.toString() ? `${API_BASE}?${params}` : API_BASE;
 
@@ -154,11 +185,24 @@ async function fetchFilterOptions() {
     }
 }
 
+async function fetchSettings() {
+    try {
+        const response = await fetch(`${API_BASE}/settings`);
+        const result = await response.json();
+        return result.data;
+    } catch (error) {
+        console.error("获取设置失败:", error);
+        return null;
+    }
+}
+
 function updateFilterOptions(options) {
     if (!options) return;
+    allFilterOptions = options;
 
     const currentPurpose = elements.purposeFilter.value;
     const currentLocation = elements.locationFilter.value;
+    const currentMember = elements.memberFilter.value;
 
     elements.purposeFilter.innerHTML = '<option value="">全部用途</option>';
     options.purposes.forEach(p => {
@@ -176,8 +220,46 @@ function updateFilterOptions(options) {
         elements.locationFilter.appendChild(option);
     });
 
+    const allMembers = options.default_members || [];
+    if (options.members && options.members.length > 0) {
+        const set = new Set([...allMembers, ...options.members]);
+        elements.memberFilter.innerHTML = '<option value="">全部成员</option>';
+        Array.from(set).sort().forEach(m => {
+            const option = document.createElement("option");
+            option.value = m;
+            option.textContent = m;
+            elements.memberFilter.appendChild(option);
+        });
+    } else {
+        elements.memberFilter.innerHTML = '<option value="">全部成员</option>';
+        allMembers.forEach(m => {
+            const option = document.createElement("option");
+            option.value = m;
+            option.textContent = m;
+            elements.memberFilter.appendChild(option);
+        });
+    }
+
     elements.purposeFilter.value = currentPurpose;
     elements.locationFilter.value = currentLocation;
+    elements.memberFilter.value = currentMember;
+
+    renderMemberCheckboxes();
+}
+
+function renderMemberCheckboxes() {
+    const members = allFilterOptions.default_members || ["成人", "儿童", "老人"];
+    elements.memberCheckboxes.innerHTML = members.map(m => `
+        <label class="member-checkbox">
+            <input type="checkbox" name="members" value="${m}">
+            <span>${m}</span>
+        </label>
+    `).join("");
+}
+
+function getSelectedMembers() {
+    const checkboxes = elements.memberCheckboxes.querySelectorAll('input[name="members"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
 }
 
 function getDaysUntilExpiry(expiryDate) {
@@ -190,15 +272,18 @@ function getDaysUntilExpiry(expiryDate) {
 
 function renderMedicineCard(medicine) {
     const daysLeft = getDaysUntilExpiry(medicine.expiry_date);
-    const isQuantityLow = medicine.quantity < 3;
-    const isExpirySoon = daysLeft < 30;
+    const lowThreshold = currentSettings.low_stock_threshold || 3;
+    const expiringDays = currentSettings.expiring_days || 30;
+    const isQuantityLow = medicine.quantity < lowThreshold;
+    const isExpirySoon = daysLeft >= 0 && daysLeft < expiringDays;
+    const isExpired = daysLeft < 0;
 
     let expiryText = medicine.expiry_date;
     let expiryClass = "";
-    if (daysLeft < 0) {
+    if (isExpired) {
         expiryText = `${medicine.expiry_date} (已过期)`;
         expiryClass = "expiry-soon";
-    } else if (daysLeft < 30) {
+    } else if (isExpirySoon) {
         expiryText = `${medicine.expiry_date} (还剩${daysLeft}天)`;
         expiryClass = "expiry-soon";
     }
@@ -211,14 +296,29 @@ function renderMedicineCard(medicine) {
         alertTags = reasons.map(r => `<span class="alert-tag">⚠️ ${r}</span>`).join("");
     }
 
+    const memberTags = (medicine.members || []).length > 0
+        ? `<div class="member-tags">${medicine.members.map(m => `<span class="member-tag">${m}</span>`).join("")}</div>`
+        : "";
+
+    const imageHtml = medicine.image_url
+        ? `<div class="card-image"><img src="${medicine.image_url}" alt="${medicine.name}" onerror="this.parentElement.innerHTML='<span class=\\'card-image-placeholder\\'>💊</span>'"></div>`
+        : `<div class="card-image"><span class="card-image-placeholder">💊</span></div>`;
+
     const cardClass = medicine.needs_check ? "medicine-card needs-check" : "medicine-card";
+    if (isExpired) cardClass += " is-expired";
+
+    const details = [];
+    if (medicine.dosage) details.push(`<span>💊 ${medicine.dosage}</span>`);
+    if (medicine.frequency) details.push(`<span>⏰ ${medicine.frequency}</span>`);
 
     return `
         <div class="${cardClass}" data-id="${medicine.id}">
+            ${imageHtml}
             <div class="card-header">
                 <div class="card-title">${medicine.name}</div>
                 <div>${alertTags}</div>
             </div>
+            ${memberTags}
             <div class="card-info">
                 <div class="info-row">
                     <span class="info-label">用途：</span>
@@ -236,6 +336,7 @@ function renderMedicineCard(medicine) {
                     <span class="info-label">位置：</span>
                     <span class="info-value">${medicine.location}</span>
                 </div>
+                ${details.length > 0 ? `<div class="card-detail-row">${details.join("")}</div>` : ""}
                 ${medicine.remark ? `
                 <div class="info-row">
                     <span class="info-label">备注：</span>
@@ -271,12 +372,15 @@ function renderMedicines() {
     elements.needsCheckCount.textContent = allStats.needs_check || 0;
     elements.lowStockCount.textContent = allStats.low_stock_count || 0;
     elements.expiringCount.textContent = allStats.expiring_count || 0;
+    elements.expiredCount.textContent = allStats.expired_count || 0;
     elements.totalCount.textContent = allStats.total || 0;
 
     if (displayData.length === 0) {
         elements.medicineList.innerHTML = "";
         elements.emptyState.style.display = "block";
-        if (currentOnlyCheck && allMedicines.length > 0) {
+        if (showExpiredMode) {
+            elements.emptyState.querySelector("p").textContent = "没有过期药品，状态良好 🎉";
+        } else if (currentOnlyCheck && allMedicines.length > 0) {
             elements.emptyState.querySelector("p").textContent = "当前没有需要检查的药品 🎉";
         } else {
             elements.emptyState.querySelector("p").textContent = "还没有添加药品，快来添加吧！";
@@ -285,6 +389,13 @@ function renderMedicines() {
     }
 
     elements.emptyState.style.display = "none";
+
+    if (currentView === "list") {
+        elements.medicineList.className = "medicine-grid list-view";
+    } else {
+        elements.medicineList.className = "medicine-grid";
+    }
+
     elements.medicineList.innerHTML = displayData.map(renderMedicineCard).join("");
 }
 
@@ -350,6 +461,11 @@ async function handleAddMedicine(e) {
         expiry_date: document.getElementById("expiry_date").value,
         location: document.getElementById("location").value.trim(),
         remark: document.getElementById("remark").value.trim(),
+        dosage: document.getElementById("dosage").value.trim(),
+        frequency: document.getElementById("frequency").value.trim(),
+        suitable_for: document.getElementById("suitable_for").value.trim(),
+        contraindication: document.getElementById("contraindication").value.trim(),
+        members: getSelectedMembers(),
     };
 
     try {
@@ -362,8 +478,16 @@ async function handleAddMedicine(e) {
         const result = await response.json();
 
         if (response.ok) {
+            const newMedicineId = result.data.id;
+            if (pendingImageFile) {
+                try {
+                    await uploadImage(newMedicineId, pendingImageFile);
+                } catch (e) {
+                    console.warn("图片上传失败:", e);
+                }
+            }
             showToast("药品添加成功！");
-            elements.medicineForm.reset();
+            resetAddForm();
             loadMedicines();
         } else {
             showToast(result.message || "添加失败", "error");
@@ -372,6 +496,29 @@ async function handleAddMedicine(e) {
         console.error("添加药品失败:", error);
         showToast("添加药品失败", "error");
     }
+}
+
+function resetAddForm() {
+    elements.medicineForm.reset();
+    pendingImageFile = null;
+    pendingImageDataUrl = null;
+    elements.imagePreview.style.display = "none";
+}
+
+async function uploadImage(medicineId, file) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch(`${API_BASE}/${medicineId}/upload`, {
+        method: "POST",
+        body: formData,
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.message || "上传失败");
+    }
+    return result.data.image_url;
 }
 
 async function handleUse(id, name, currentQuantity) {
@@ -454,6 +601,16 @@ function handleEdit(id) {
     }
 
     editingMedicineId = id;
+    const members = medicine.members || [];
+    const allMembers = allFilterOptions.default_members || ["成人", "儿童", "老人"];
+
+    const memberOptions = allMembers.map(m => {
+        const checked = members.includes(m) ? "checked" : "";
+        return `<label class="member-checkbox ${checked ? 'checked' : ''}">
+            <input type="checkbox" name="edit_members" value="${m}" ${checked}>
+            <span>${m}</span>
+        </label>`;
+    }).join("");
 
     const formHtml = `
         <div class="edit-form">
@@ -487,6 +644,30 @@ function handleEdit(id) {
                     <input type="text" id="edit_location" value="${medicine.location}" required>
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💊 剂量</label>
+                    <input type="text" id="edit_dosage" value="${medicine.dosage || ''}">
+                </div>
+                <div class="form-group">
+                    <label>⏰ 频次</label>
+                    <input type="text" id="edit_frequency" value="${medicine.frequency || ''}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>👤 适用人群</label>
+                    <input type="text" id="edit_suitable_for" value="${medicine.suitable_for || ''}">
+                </div>
+                <div class="form-group">
+                    <label>⚠️ 禁忌说明</label>
+                    <input type="text" id="edit_contraindication" value="${medicine.contraindication || ''}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>👨‍👩‍👧 适用成员</label>
+                <div class="member-checkboxes">${memberOptions}</div>
+            </div>
             <div class="form-group">
                 <label>备注</label>
                 <textarea id="edit_remark" rows="2">${medicine.remark || ""}</textarea>
@@ -503,6 +684,10 @@ function handleEdit(id) {
             modalClass: "edit-modal overlay-edit-modal",
             confirmText: "保存",
             callback: async () => {
+                const editMembers = Array.from(
+                    document.querySelectorAll('input[name="edit_members"]:checked')
+                ).map(cb => cb.value);
+
                 const formData = {
                     name: document.getElementById("edit_name").value.trim(),
                     purpose: document.getElementById("edit_purpose").value.trim(),
@@ -511,6 +696,11 @@ function handleEdit(id) {
                     expiry_date: document.getElementById("edit_expiry_date").value,
                     location: document.getElementById("edit_location").value.trim(),
                     remark: document.getElementById("edit_remark").value.trim(),
+                    dosage: document.getElementById("edit_dosage").value.trim(),
+                    frequency: document.getElementById("edit_frequency").value.trim(),
+                    suitable_for: document.getElementById("edit_suitable_for").value.trim(),
+                    contraindication: document.getElementById("edit_contraindication").value.trim(),
+                    members: editMembers,
                 };
 
                 if (!formData.name || !formData.purpose || !formData.unit || !formData.expiry_date || !formData.location) {
@@ -602,6 +792,7 @@ function handleImport(e) {
                     if (response.ok) {
                         showToast(result.message || "导入成功");
                         loadMedicines();
+                        loadSettings();
                     } else {
                         showToast(result.message || "导入失败", "error");
                     }
@@ -613,6 +804,149 @@ function handleImport(e) {
             }
         }
     );
+}
+
+function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        showToast("请选择图片文件", "error");
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        showToast("图片大小不能超过 5MB", "error");
+        return;
+    }
+
+    pendingImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        pendingImageDataUrl = e.target.result;
+        elements.previewImg.src = pendingImageDataUrl;
+        elements.imagePreview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleRemoveImage() {
+    pendingImageFile = null;
+    pendingImageDataUrl = null;
+    elements.imagePreview.style.display = "none";
+    elements.imageInput.value = "";
+}
+
+function toggleExpiredMode() {
+    showExpiredMode = !showExpiredMode;
+    if (showExpiredMode) {
+        elements.medicineSectionTitle.textContent = "💀 过期药品";
+        elements.expiredActions.style.display = "flex";
+    } else {
+        elements.medicineSectionTitle.textContent = "📋 药品清单";
+        elements.expiredActions.style.display = "none";
+    }
+    loadMedicines();
+}
+
+function handleCleanupExpired() {
+    const expiredCount = allStats.total || 0;
+    if (expiredCount === 0) {
+        showToast("没有过期药品");
+        return;
+    }
+
+    showModal(
+        "批量清理过期药",
+        `确定要清理所有 ${expiredCount} 种过期药品吗？此操作不可恢复。`,
+        {
+            callback: async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/expired`, {
+                        method: "DELETE",
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        showToast(`已清理 ${result.data.deleted} 种过期药品`);
+                        loadMedicines();
+                    } else {
+                        showToast(result.message || "清理失败", "error");
+                    }
+                } catch (error) {
+                    console.error("清理过期药失败:", error);
+                    showToast("清理失败", "error");
+                }
+            }
+        }
+    );
+}
+
+function toggleSettings() {
+    if (elements.settingsSection.style.display === "none") {
+        elements.settingsSection.style.display = "block";
+        elements.lowStockThreshold.value = currentSettings.low_stock_threshold || 3;
+        elements.expiringDays.value = currentSettings.expiring_days || 30;
+    } else {
+        elements.settingsSection.style.display = "none";
+    }
+}
+
+async function handleSaveSettings() {
+    const lowStock = parseInt(elements.lowStockThreshold.value) || 3;
+    const expDays = parseInt(elements.expiringDays.value) || 30;
+
+    if (lowStock < 1 || lowStock > 100) {
+        showToast("低库存阈值需在 1-100 之间", "error");
+        return;
+    }
+    if (expDays < 1 || expDays > 365) {
+        showToast("临期天数需在 1-365 之间", "error");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/settings`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                low_stock_threshold: lowStock,
+                expiring_days: expDays,
+            }),
+        });
+        const result = await response.json();
+        if (response.ok) {
+            currentSettings = result.data;
+            showToast("设置已保存");
+            loadMedicines();
+        } else {
+            showToast(result.message || "保存失败", "error");
+        }
+    } catch (error) {
+        console.error("保存设置失败:", error);
+        showToast("保存失败", "error");
+    }
+}
+
+async function loadSettings() {
+    const settings = await fetchSettings();
+    if (settings) {
+        currentSettings = settings;
+        elements.lowStockThreshold.value = settings.low_stock_threshold || 3;
+        elements.expiringDays.value = settings.expiring_days || 30;
+    }
+}
+
+function switchView(view) {
+    currentView = view;
+    if (view === "card") {
+        elements.cardViewBtn.classList.add("active");
+        elements.listViewBtn.classList.remove("active");
+    } else {
+        elements.cardViewBtn.classList.remove("active");
+        elements.listViewBtn.classList.add("active");
+    }
+    renderMedicines();
 }
 
 elements.medicineForm.addEventListener("submit", handleAddMedicine);
@@ -627,15 +961,32 @@ elements.locationFilter.addEventListener("change", (e) => {
     loadMedicines();
 });
 
+elements.memberFilter.addEventListener("change", (e) => {
+    currentMemberFilter = e.target.value;
+    loadMedicines();
+});
+
+elements.sortSelect.addEventListener("change", (e) => {
+    currentSort = e.target.value;
+    loadMedicines();
+});
+
 elements.resetFilterBtn.addEventListener("click", () => {
     currentPurposeFilter = "";
     currentLocationFilter = "";
+    currentMemberFilter = "";
     currentKeyword = "";
     currentOnlyCheck = false;
+    currentSort = "created_desc";
+    showExpiredMode = false;
     elements.purposeFilter.value = "";
     elements.locationFilter.value = "";
+    elements.memberFilter.value = "";
     elements.searchInput.value = "";
     elements.onlyCheckFilter.checked = false;
+    elements.sortSelect.value = "created_desc";
+    elements.medicineSectionTitle.textContent = "📋 药品清单";
+    elements.expiredActions.style.display = "none";
     loadMedicines();
 });
 
@@ -651,6 +1002,19 @@ elements.onlyCheckFilter.addEventListener("change", (e) => {
     currentOnlyCheck = e.target.checked;
     renderMedicines();
 });
+
+elements.expiredViewBtn.addEventListener("click", toggleExpiredMode);
+elements.exitExpiredBtn.addEventListener("click", toggleExpiredMode);
+elements.cleanupExpiredBtn.addEventListener("click", handleCleanupExpired);
+
+elements.cardViewBtn.addEventListener("click", () => switchView("card"));
+elements.listViewBtn.addEventListener("click", () => switchView("list"));
+
+elements.settingsBtn.addEventListener("click", toggleSettings);
+elements.saveSettingsBtn.addEventListener("click", handleSaveSettings);
+
+elements.imageInput.addEventListener("change", handleImageSelect);
+elements.removeImageBtn.addEventListener("click", handleRemoveImage);
 
 elements.exportBtn.addEventListener("click", handleExport);
 elements.importInput.addEventListener("change", handleImport);
@@ -670,4 +1034,5 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+loadSettings();
 loadMedicines();

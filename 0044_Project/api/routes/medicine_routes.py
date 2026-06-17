@@ -22,8 +22,18 @@ def get_medicines():
     purpose = request.args.get("purpose", "").strip() or None
     location = request.args.get("location", "").strip() or None
     keyword = request.args.get("keyword", "").strip() or None
+    member = request.args.get("member", "").strip() or None
+    sort = request.args.get("sort", "").strip() or None
+    only_expired = request.args.get("only_expired", "").lower() in ("1", "true", "yes")
 
-    data, stats = medicine_service.get_medicines(purpose, location, keyword)
+    data, stats = medicine_service.get_medicines(
+        purpose=purpose,
+        location=location,
+        keyword=keyword,
+        member=member,
+        sort=sort,
+        only_expired=only_expired,
+    )
     return success_response(data, stats=stats)
 
 
@@ -41,6 +51,22 @@ def get_operation_logs():
         limit = 50
     logs = medicine_service.get_operation_logs(limit)
     return success_response(logs)
+
+
+@medicine_bp.route("/settings", methods=["GET"])
+def get_settings():
+    settings = medicine_service.get_settings()
+    return success_response(settings)
+
+
+@medicine_bp.route("/settings", methods=["PUT"])
+def update_settings():
+    try:
+        data = request.get_json() or {}
+        updated = medicine_service.update_settings(data)
+        return success_response(updated, "设置已更新")
+    except ValueError as e:
+        return error_response(str(e), 400)
 
 
 @medicine_bp.route("/export", methods=["GET"])
@@ -77,6 +103,12 @@ def import_data():
         return error_response(str(e), 400)
     except Exception as e:
         return error_response(f"导入失败：{str(e)}", 500)
+
+
+@medicine_bp.route("/expired", methods=["DELETE"])
+def delete_expired_medicines():
+    result = medicine_service.delete_expired_medicines()
+    return success_response(result, f"已清理 {result['deleted']} 种过期药品")
 
 
 @medicine_bp.route("/<medicine_id>", methods=["GET"])
@@ -141,3 +173,17 @@ def replenish_medicine(medicine_id):
         return success_response(updated, "库存补充成功")
     except ValueError as e:
         return error_response(str(e), 400)
+
+
+@medicine_bp.route("/<medicine_id>/upload", methods=["POST"])
+def upload_image(medicine_id):
+    try:
+        if "image" not in request.files:
+            return error_response("未找到上传文件", 400)
+        file = request.files["image"]
+        image_url = medicine_service.upload_image(medicine_id, file)
+        return success_response({"image_url": image_url}, "图片上传成功")
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        return error_response(f"上传失败：{str(e)}", 500)

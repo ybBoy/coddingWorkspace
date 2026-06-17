@@ -13,6 +13,7 @@ from flask_cors import CORS
 from api.routes.medicine_routes import medicine_bp
 
 app = Flask(__name__, static_folder="../client", static_url_path="")
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 CORS(app)
 
 app.register_blueprint(medicine_bp)
@@ -21,6 +22,11 @@ app.register_blueprint(medicine_bp)
 @app.route("/")
 def index():
     return send_from_directory("../client", "medicine.html")
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    return send_from_directory("uploads", filename)
 
 
 @app.route("/health")

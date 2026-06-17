@@ -22,6 +22,10 @@
                     <span class="stats-label">⏰ 即将过期</span>
                     <span id="expiringCount" class="stats-number">0</span>
                 </div>
+                <div class="stats-badge stats-expired">
+                    <span class="stats-label">💀 已过期</span>
+                    <span id="expiredCount" class="stats-number">0</span>
+                </div>
                 <div class="stats-badge stats-check">
                     <span class="stats-label">⚠️ 需检查</span>
                     <span id="needsCheckCount" class="stats-number">0</span>
@@ -41,6 +45,16 @@
                 <input type="text" id="searchInput" class="filter-input" placeholder="搜索药名或备注...">
             </div>
             <div class="filter-group">
+                <label for="sortSelect">📶 排序：</label>
+                <select id="sortSelect" class="filter-select">
+                    <option value="created_desc">最近新增</option>
+                    <option value="expiry_asc">最快过期</option>
+                    <option value="quantity_asc">库存最少</option>
+                    <option value="quantity_desc">库存最多</option>
+                    <option value="name_asc">药名 A-Z</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label for="purposeFilter">用途：</label>
                 <select id="purposeFilter" class="filter-select">
                     <option value="">全部用途</option>
@@ -52,14 +66,26 @@
                     <option value="">全部位置</option>
                 </select>
             </div>
+            <div class="filter-group">
+                <label for="memberFilter">👨‍👩‍👧 成员：</label>
+                <select id="memberFilter" class="filter-select">
+                    <option value="">全部成员</option>
+                </select>
+            </div>
             <div class="filter-group filter-checkbox">
                 <label class="checkbox-label">
                     <input type="checkbox" id="onlyCheckFilter">
                     <span>只看需检查</span>
                 </label>
             </div>
+            <button id="expiredViewBtn" class="btn btn-danger btn-small">💀 查看过期药</button>
             <button id="resetFilterBtn" class="btn btn-secondary">重置筛选</button>
             <div class="filter-spacer"></div>
+            <div class="view-toggle">
+                <button id="cardViewBtn" class="view-btn active" title="卡片视图">▦</button>
+                <button id="listViewBtn" class="view-btn" title="列表视图">≡</button>
+            </div>
+            <button id="settingsBtn" class="btn btn-secondary">⚙️ 设置</button>
             <button id="exportBtn" class="btn btn-secondary">📤 导出数据</button>
             <label class="btn btn-secondary file-upload-btn">
                 📥 导入数据
@@ -101,9 +127,48 @@
                             <input type="text" id="location" name="location" placeholder="如：客厅药箱、卧室抽屉" required>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dosage">💊 剂量</label>
+                            <input type="text" id="dosage" name="dosage" placeholder="如：每次1片">
+                        </div>
+                        <div class="form-group">
+                            <label for="frequency">⏰ 频次</label>
+                            <input type="text" id="frequency" name="frequency" placeholder="如：每日3次">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="suitable_for">👤 适用人群</label>
+                            <input type="text" id="suitable_for" name="suitable_for" placeholder="如：成人、儿童">
+                        </div>
+                        <div class="form-group">
+                            <label for="contraindication">⚠️ 禁忌说明</label>
+                            <input type="text" id="contraindication" name="contraindication" placeholder="如：孕妇禁用">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>👨‍👩‍👧 适用成员</label>
+                        <div id="memberCheckboxes" class="member-checkboxes">
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="remark">备注</label>
                         <textarea id="remark" name="remark" rows="2" placeholder="如：饭后服用、儿童禁用"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>🖼️ 药品包装照片</label>
+                        <div class="image-upload-area">
+                            <div id="imagePreview" class="image-preview" style="display: none;">
+                                <img id="previewImg" src="" alt="预览">
+                                <button type="button" id="removeImageBtn" class="remove-image-btn">×</button>
+                            </div>
+                            <label class="image-upload-label">
+                                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                                <span class="image-upload-icon">📷</span>
+                                <span class="image-upload-text">点击上传包装照片</span>
+                            </label>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary btn-submit">✅ 添加药品</button>
                 </form>
@@ -111,7 +176,11 @@
         </section>
 
         <section class="medicine-section">
-            <h2>📋 药品清单</h2>
+            <h2 id="medicineSectionTitle">📋 药品清单</h2>
+            <div id="expiredActions" class="expired-actions" style="display: none;">
+                <button id="cleanupExpiredBtn" class="btn btn-danger">🗑️ 批量清理过期药</button>
+                <button id="exitExpiredBtn" class="btn btn-secondary">返回全部</button>
+            </div>
             <div id="medicineList" class="medicine-grid">
                 <div class="loading">加载中...</div>
             </div>
@@ -125,6 +194,25 @@
             <h2>📜 操作记录</h2>
             <div id="logsList" class="logs-list">
                 <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+        <section class="settings-section" id="settingsSection" style="display: none;">
+            <div class="form-card">
+                <h2>⚙️ 提醒设置</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lowStockThreshold">📦 低库存阈值（件）</label>
+                        <input type="number" id="lowStockThreshold" min="1" max="100" value="3">
+                        <p class="form-hint">库存数量低于此值时提醒</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiringDays">⏰ 临期天数（天）</label>
+                        <input type="number" id="expiringDays" min="1" max="365" value="30">
+                        <p class="form-hint">距离有效期少于此天数时提醒</p>
+                    </div>
+                </div>
+                <button id="saveSettingsBtn" class="btn btn-primary">💾 保存设置</button>
             </div>
         </section>
     </main>

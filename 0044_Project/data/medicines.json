@@ -8,6 +8,12 @@
       "expiry_date": "2027-12-31",
       "location": "客厅药箱",
       "remark": "通过API编辑测试",
+      "dosage": "",
+      "frequency": "",
+      "suitable_for": "",
+      "contraindication": "",
+      "members": [],
+      "image_url": "",
       "id": "4a52eb12-db7a-4be7-a358-803c4e3b0bcc",
       "created_at": "2026-06-17T11:09:16.143722"
     },
@@ -19,6 +25,12 @@
       "expiry_date": "2026-07-15",
       "location": "卧室抽屉",
       "remark": "头痛时用",
+      "dosage": "",
+      "frequency": "",
+      "suitable_for": "",
+      "contraindication": "",
+      "members": [],
+      "image_url": "",
       "id": "cd76ca50-16f7-4c9b-beaa-5c602f3b97f8",
       "created_at": "2026-06-17T11:11:13.110210"
     },
@@ -30,8 +42,33 @@
       "expiry_date": "2028-01-01",
       "location": "测试位置",
       "remark": "用于测试删除弹窗关闭",
+      "dosage": "",
+      "frequency": "",
+      "suitable_for": "",
+      "contraindication": "",
+      "members": [],
+      "image_url": "",
       "id": "e192a89e-3cb3-4c7f-9063-06e2b5e411ff",
       "created_at": "2026-06-17T16:38:38.673694"
+    },
+    {
+      "name": "儿童退烧药",
+      "purpose": "退烧",
+      "quantity": 2,
+      "unit": "瓶",
+      "expiry_date": "2027-06-01",
+      "location": "卧室抽屉",
+      "remark": "发烧时用",
+      "dosage": "每次5ml",
+      "frequency": "每日3次",
+      "suitable_for": "3-12岁儿童",
+      "contraindication": "过敏禁用",
+      "members": [
+        "儿童"
+      ],
+      "image_url": "",
+      "id": "4ffee107-2661-42f6-97ed-a2020607f4ae",
+      "created_at": "2026-06-17T21:06:24.778237"
     }
   ]
 }

@@ -19,6 +19,14 @@ from src.model.snack import Snack, OperationLog
 from src.storage.snack_file_store import SnackFileStore
 
 
+def _safe_int(value, default: int = 0) -> int:
+    """安全解析整数，解析失败返回默认值"""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class SnackService:
     """零食业务服务，管理内存中的零食库存和操作记录并负责持久化"""
 
@@ -95,17 +103,18 @@ class SnackService:
         return sum(1 for s in self._snacks if s.needs_attention())
 
     def get_statistics(self) -> Dict:
-        """获取详细统计：总数、低库存、临期、已过期"""
+        """获取详细统计：总数、低库存、临期、已过期、需要处理（去重统计）"""
         total = len(self._snacks)
         low_stock = sum(1 for s in self._snacks if s.is_low_stock())
         expiring_soon = sum(1 for s in self._snacks if s.is_expiring_soon())
         expired = sum(1 for s in self._snacks if s.is_expired())
+        attention = sum(1 for s in self._snacks if s.needs_attention())
         return {
             "total": total,
             "low_stock": low_stock,
             "expiring_soon": expiring_soon,
             "expired": expired,
-            "attention": low_stock + expiring_soon + expired,
+            "attention": attention,
         }
 
     # ===== 操作记录 =====
@@ -237,6 +246,7 @@ class SnackService:
     def import_json(self, json_str: str) -> int:
         """
         从 JSON 字符串导入零食数据（合并，ID 已存在则更新）
+        非数组格式、格式异常的数据会被安全跳过，不会抛 500
         :return: 导入的零食数量
         """
         try:
@@ -244,30 +254,46 @@ class SnackService:
         except (json.JSONDecodeError, TypeError):
             return 0
 
+        if not isinstance(data, list):
+            return 0
+
         count = 0
         for item in data:
-            existing = self.get_by_id(item.get("id", "")) if item.get("id") else None
+            if not isinstance(item, dict):
+                continue
+
+            item_id = item.get("id", "") if isinstance(item.get("id", ""), str) else ""
+            existing = self.get_by_id(item_id) if item_id else None
+
+            qty = _safe_int(item.get("quantity"), 0)
+            name = str(item.get("name", "")) if item.get("name") is not None else ""
+            flavor = str(item.get("flavor", "")) if item.get("flavor") is not None else ""
+            location = str(item.get("location", "")) if item.get("location") is not None else ""
+            expiry_date = str(item.get("expiry_date", "")) if item.get("expiry_date") is not None else ""
+            category = str(item.get("category", "")) if item.get("category") is not None else ""
+            disabled = bool(item.get("disabled", False))
+
             if existing:
                 existing.update(
-                    name=item.get("name"),
-                    flavor=item.get("flavor"),
-                    quantity=int(item.get("quantity", 0)),
-                    location=item.get("location"),
-                    expiry_date=item.get("expiry_date"),
-                    category=item.get("category"),
-                    disabled=bool(item.get("disabled", False)),
+                    name=name,
+                    flavor=flavor,
+                    quantity=qty,
+                    location=location,
+                    expiry_date=expiry_date,
+                    category=category,
+                    disabled=disabled,
                 )
                 note = "导入更新"
             else:
                 snack = Snack.create(
-                    name=item.get("name", ""),
-                    flavor=item.get("flavor", ""),
-                    quantity=int(item.get("quantity", 0)),
-                    location=item.get("location", ""),
-                    expiry_date=item.get("expiry_date", ""),
-                    category=item.get("category", ""),
+                    name=name,
+                    flavor=flavor,
+                    quantity=qty,
+                    location=location,
+                    expiry_date=expiry_date,
+                    category=category,
                 )
-                if item.get("disabled"):
+                if disabled:
                     snack.disabled = True
                 self._snacks.append(snack)
                 note = "导入新增"

@@ -1,0 +1,74 @@
+[
+  {
+    "name": "帐篷",
+    "category": "住宿",
+    "weight": 3.2,
+    "packed": false,
+    "essential": true,
+    "notes": "双人帐篷",
+    "id": "9503f7ef-2abe-4b5f-a815-b5eb2e6b29f3"
+  },
+  {
+    "name": "睡袋",
+    "category": "住宿",
+    "weight": 1.5,
+    "packed": false,
+    "essential": true,
+    "notes": "零下10度款",
+    "id": "a5166d08-8bfd-4d7c-affb-6175c8851568"
+  },
+  {
+    "name": "头灯",
+    "category": "照明",
+    "weight": 0.1,
+    "packed": false,
+    "essential": true,
+    "notes": "",
+    "id": "8e70f69b-3920-4ab9-b30c-ac57e4b78c2a"
+  },
+  {
+    "name": "登山杖",
+    "category": "工具",
+    "weight": 0.6,
+    "packed": false,
+    "essential": false,
+    "notes": "碳纤维",
+    "id": "b75c65ec-a755-4b63-a1f1-3dd2f57d65f7"
+  },
+  {
+    "name": "炉具",
+    "category": "炊具",
+    "weight": 0.8,
+    "packed": false,
+    "essential": true,
+    "notes": "气炉",
+    "id": "1f821715-c084-45f2-8f1f-f4e0cc9dd789"
+  },
+  {
+    "name": "急救包",
+    "category": "安全",
+    "weight": 0.4,
+    "packed": false,
+    "essential": true,
+    "notes": "",
+    "id": "673174a8-bd1f-470b-8ce8-bbc19c8760d9"
+  },
+  {
+    "name": "水壶",
+    "category": "炊具",
+    "weight": 0.3,
+    "packed": false,
+    "essential": false,
+    "notes": "1L保温壶",
+    "id": "5876323d-6996-4ca5-9ace-63bcd0f45de8"
+  },
+  {
+    "name": "防潮垫",
+    "category": "住宿",
+    "weight": 0.9,
+    "packed": false,
+    "essential": false,
+    "notes": "充气款",
+    "id": "4ef76f20-8136-4c6f-9515-f3693e587221"
+  }
+]

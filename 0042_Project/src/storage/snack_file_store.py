@@ -20,11 +20,13 @@ from src.model.snack import Snack, OperationLog
 class SnackFileStore:
     """零食文件存储器，基于本地 JSON 文件实现持久化"""
 
-    def __init__(self, snack_file_path: str = None, log_file_path: str = None):
+    def __init__(self, snack_file_path: str = None, log_file_path: str = None,
+                 settings_file_path: str = None):
         """
         初始化文件存储器
         :param snack_file_path: 零食数据 JSON 文件路径
         :param log_file_path: 操作记录 JSON 文件路径
+        :param settings_file_path: 用户设置 JSON 文件路径
         """
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         data_dir = os.path.join(project_root, "data")
@@ -33,9 +35,12 @@ class SnackFileStore:
             snack_file_path = os.path.join(data_dir, "snacks.json")
         if log_file_path is None:
             log_file_path = os.path.join(data_dir, "operation_logs.json")
+        if settings_file_path is None:
+            settings_file_path = os.path.join(data_dir, "settings.json")
 
         self.snack_file_path = snack_file_path
         self.log_file_path = log_file_path
+        self.settings_file_path = settings_file_path
         self._ensure_file_exists(self.snack_file_path)
         self._ensure_file_exists(self.log_file_path)
 
@@ -94,6 +99,33 @@ class SnackFileStore:
         data = [log.to_dict() for log in logs]
         with open(self.log_file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # ===== 用户设置 =====
+
+    def load_settings(self) -> dict:
+        """
+        从 JSON 文件读取用户设置
+        :return: 设置字典
+        """
+        try:
+            with open(self.settings_file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+            return {}
+        except (json.JSONDecodeError, FileNotFoundError, IOError):
+            return {}
+
+    def save_settings(self, settings: dict) -> None:
+        """
+        将用户设置写入 JSON 文件
+        :param settings: 设置字典
+        """
+        directory = os.path.dirname(self.settings_file_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        with open(self.settings_file_path, "w", encoding="utf-8") as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
 
     # ===== 兼容旧方法名 =====
 

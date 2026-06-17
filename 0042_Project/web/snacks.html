@@ -1,8 +1,8 @@
 <!--
   文件职责：
     零食库存小柜子的前端 HTML 页面结构。
-    包含顶部（标题+统计+筛选+导入导出）、新增/编辑表单、零食卡片列表、
-    以及操作记录流水区域。
+    包含顶部（标题+统计+筛选+搜索+排序+导入导出+设置）、新增/编辑表单、
+    设置弹窗、零食卡片列表（支持批量勾选）、批量操作栏、以及操作记录流水区域。
 
   数据流中的位置：
     浏览器加载 snacks.html → 加载 snacks.css 和 snacks.js
@@ -27,11 +27,15 @@
           <span class="stat low" id="stat-low">📦 低库存 0</span>
           <span class="stat soon" id="stat-soon">⏰ 临期 0</span>
           <span class="stat expired" id="stat-expired">❌ 已过期 0</span>
+          <span class="stat target" id="stat-target">🎯 低于目标 0</span>
         </div>
       </div>
 
       <div class="header-bar">
         <div class="filters">
+          <div class="filter search-filter">
+            <input type="text" id="search-input" placeholder="🔍 搜索名称 / 口味 / 分类...">
+          </div>
           <div class="filter">
             <label for="location-filter">位置：</label>
             <select id="location-filter">
@@ -44,9 +48,22 @@
               <option value="all">全部分类</option>
             </select>
           </div>
+          <div class="filter">
+            <label for="sort-select">排序：</label>
+            <select id="sort-select">
+              <option value="">默认顺序</option>
+              <option value="name_asc">名称 ↑</option>
+              <option value="name_desc">名称 ↓</option>
+              <option value="quantity_asc">数量 ↑</option>
+              <option value="quantity_desc">数量 ↓</option>
+              <option value="expiry_date_asc">保质期 ↑（近→远）</option>
+              <option value="expiry_date_desc">保质期 ↓（远→近）</option>
+            </select>
+          </div>
           <button class="btn btn-warn" id="btn-only-attention">只看需要处理</button>
         </div>
         <div class="header-actions">
+          <button class="btn btn-default" id="btn-settings">⚙️ 设置</button>
           <button class="btn btn-default" id="btn-export-json">导出 JSON</button>
           <button class="btn btn-default" id="btn-export-csv">导出 CSV</button>
           <label class="btn btn-default import-btn">
@@ -54,6 +71,17 @@
             <input type="file" id="input-import" accept=".json" hidden>
           </label>
           <button class="btn btn-primary" id="btn-add">+ 新增零食</button>
+        </div>
+      </div>
+
+      <!-- 批量操作栏 -->
+      <div class="batch-bar hidden" id="batch-bar">
+        <span class="batch-info">已选择 <strong id="batch-count">0</strong> 项</span>
+        <div class="batch-actions">
+          <button class="btn btn-primary btn-sm" id="btn-batch-restock">批量补货</button>
+          <button class="btn btn-warn btn-sm" id="btn-batch-disable">批量停用</button>
+          <button class="btn btn-danger btn-sm" id="btn-batch-delete">批量删除</button>
+          <button class="btn btn-default btn-sm" id="btn-batch-clear">取消选择</button>
         </div>
       </div>
     </header>
@@ -76,9 +104,15 @@
           <label>分类</label>
           <input type="text" id="input-category" placeholder="比如：饮料、饼干、糖果">
         </div>
-        <div class="form-row">
-          <label>数量</label>
-          <input type="number" id="input-quantity" value="1" min="0" step="1">
+        <div class="form-row two-col">
+          <div>
+            <label>当前数量</label>
+            <input type="number" id="input-quantity" value="1" min="0" step="1">
+          </div>
+          <div>
+            <label>目标库存</label>
+            <input type="number" id="input-target" value="0" min="0" step="1" placeholder="0=不设置">
+          </div>
         </div>
         <div class="form-row">
           <label>存放位置</label>
@@ -93,6 +127,28 @@
           <button type="button" class="btn btn-default" id="btn-cancel">取消</button>
         </div>
       </form>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div class="modal-mask hidden" id="settings-mask"></div>
+    <div class="modal modal-sm hidden" id="settings-modal">
+      <div class="modal-title">⚙️ 设置</div>
+      <div class="modal-form">
+        <div class="form-row">
+          <label>临期天数阈值</label>
+          <select id="setting-expiring-days">
+            <option value="3">3 天</option>
+            <option value="7">7 天（默认）</option>
+            <option value="14">14 天</option>
+            <option value="30">30 天</option>
+          </select>
+          <div class="form-hint">零食保质期少于这个天数时会被标记为「临期」</div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btn-save-settings">保存设置</button>
+          <button class="btn btn-default" id="btn-close-settings">关闭</button>
+        </div>
+      </div>
     </div>
 
     <!-- 主体区域：左侧卡片 + 右侧操作记录 -->

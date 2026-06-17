@@ -36,13 +36,24 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
     @bp.route("/api/snacks", methods=["GET"])
     def get_snacks():
         """
-        获取零食列表，支持按存放位置、分类筛选，或只看需要处理的
-        Query 参数: location, category, only_attention
+        获取零食列表，支持筛选、搜索、排序
+        Query 参数: location, category, only_attention, keyword, sort_by, sort_order
         """
         location = request.args.get("location", "all")
         category = request.args.get("category", "all")
         only_attention = request.args.get("only_attention", "0") == "1"
-        snacks = service.get_all(location, category, only_attention)
+        keyword = request.args.get("keyword", "") or ""
+        sort_by = request.args.get("sort_by", "") or ""
+        sort_order = request.args.get("sort_order", "asc") or "asc"
+
+        snacks = service.get_all(
+            location=location,
+            category=category,
+            only_attention=only_attention,
+            keyword=keyword,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
         stats = service.get_statistics()
         return jsonify({
             "success": True,
@@ -88,6 +99,37 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
             "data": snack.to_dict(),
         })
 
+    # ===== 设置接口 =====
+
+    @bp.route("/api/settings", methods=["GET"])
+    def get_settings():
+        """获取用户设置"""
+        settings = service.get_settings()
+        return jsonify({
+            "success": True,
+            "data": settings,
+        })
+
+    @bp.route("/api/settings", methods=["PUT"])
+    def update_settings():
+        """
+        更新用户设置
+        Body JSON: { expiring_days }
+        """
+        body = request.get_json(silent=True) or {}
+        updates = {}
+
+        if "expiring_days" in body:
+            updates["expiring_days"] = _safe_int(body.get("expiring_days"), 7)
+
+        settings = service.update_settings(**updates)
+        stats = service.get_statistics()
+        return jsonify({
+            "success": True,
+            "data": settings,
+            "statistics": stats,
+        })
+
     # ===== 操作记录接口 =====
 
     @bp.route("/api/logs", methods=["GET"])
@@ -107,20 +149,22 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
     def add_snack():
         """
         新增零食
-        Body JSON: { name, flavor, quantity, location, expiry_date, category }
+        Body JSON: { name, flavor, quantity, location, expiry_date, category, target_quantity }
         """
         body = request.get_json(silent=True) or {}
-        name = body.get("name", "").strip()
-        flavor = body.get("flavor", "").strip()
+        name = body.get("name", "").strip() if isinstance(body.get("name"), str) else ""
+        flavor = body.get("flavor", "").strip() if isinstance(body.get("flavor"), str) else ""
         quantity = _safe_int(body.get("quantity"), 1)
-        location = body.get("location", "").strip()
-        expiry_date = body.get("expiry_date", "").strip()
-        category = body.get("category", "").strip()
+        location = body.get("location", "").strip() if isinstance(body.get("location"), str) else ""
+        expiry_date = body.get("expiry_date", "").strip() if isinstance(body.get("expiry_date"), str) else ""
+        category = body.get("category", "").strip() if isinstance(body.get("category"), str) else ""
+        target_quantity = _safe_int(body.get("target_quantity"), 0)
 
         if not name:
             return jsonify({"success": False, "message": "名称不能为空"}), 400
 
-        snack = service.add_snack(name, flavor, quantity, location, expiry_date, category)
+        snack = service.add_snack(name, flavor, quantity, location, expiry_date,
+                                  category, target_quantity)
         stats = service.get_statistics()
         return jsonify({
             "success": True,
@@ -134,7 +178,8 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
     def update_snack(snack_id: str):
         """
         更新零食信息
-        Body JSON: { name?, flavor?, quantity?, location?, expiry_date?, category?, disabled? }
+        Body JSON: { name?, flavor?, quantity?, location?, expiry_date?,
+                     category?, target_quantity?, disabled? }
         """
         body = request.get_json(silent=True) or {}
         updates = {}
@@ -153,6 +198,8 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
             updates["expiry_date"] = str(body.get("expiry_date", "")).strip()
         if "category" in body:
             updates["category"] = str(body.get("category", "")).strip()
+        if "target_quantity" in body:
+            updates["target_quantity"] = _safe_int(body.get("target_quantity"), 0)
         if "disabled" in body:
             updates["disabled"] = bool(body.get("disabled", False))
 
@@ -208,6 +255,64 @@ def create_snack_blueprint(service: SnackService) -> Blueprint:
         return jsonify({
             "success": True,
             "data": snack.to_dict(),
+            "statistics": stats,
+        })
+
+    # ===== 批量操作接口 =====
+
+    @bp.route("/api/snacks/batch-delete", methods=["POST"])
+    def batch_delete():
+        """
+        批量删除零食
+        Body JSON: { ids: ["id1", "id2"] }
+        """
+        body = request.get_json(silent=True) or {}
+        ids = body.get("ids", [])
+        if not isinstance(ids, list):
+            return jsonify({"success": False, "message": "ids 必须是数组"}), 400
+        count = service.batch_delete(ids)
+        stats = service.get_statistics()
+        return jsonify({
+            "success": True,
+            "deleted": count,
+            "statistics": stats,
+        })
+
+    @bp.route("/api/snacks/batch-disable", methods=["POST"])
+    def batch_disable():
+        """
+        批量停用零食
+        Body JSON: { ids: [...], disabled: true }
+        """
+        body = request.get_json(silent=True) or {}
+        ids = body.get("ids", [])
+        disabled = bool(body.get("disabled", True))
+        if not isinstance(ids, list):
+            return jsonify({"success": False, "message": "ids 必须是数组"}), 400
+        count = service.batch_disable(ids, disabled)
+        stats = service.get_statistics()
+        return jsonify({
+            "success": True,
+            "updated": count,
+            "statistics": stats,
+        })
+
+    @bp.route("/api/snacks/batch-restock", methods=["POST"])
+    def batch_restock():
+        """
+        批量补货
+        Body JSON: { ids: [...], amount: 1 }
+        """
+        body = request.get_json(silent=True) or {}
+        ids = body.get("ids", [])
+        amount = _safe_int(body.get("amount"), 1)
+        if not isinstance(ids, list):
+            return jsonify({"success": False, "message": "ids 必须是数组"}), 400
+        count = service.batch_restock(ids, amount)
+        stats = service.get_statistics()
+        return jsonify({
+            "success": True,
+            "restocked": count,
             "statistics": stats,
         })
 

@@ -1,8 +1,8 @@
 """
 文件职责：
     业务服务层，包含零食库存的核心业务逻辑。
-    维护内存中的零食列表和操作记录，负责新增、查询、修改、删除、操作记录、
-    导入导出等操作，每次变更后通过 snack_file_store 持久化到磁盘。
+    维护内存中的零食列表、操作记录和用户设置，负责新增、查询、修改、删除、
+    操作记录、导入导出、搜索排序、批量操作等，每次变更后通过 snack_file_store 持久化到磁盘。
 
 数据流：
     snack_api（HTTP请求） → snack_service（操作内存列表） → snack_file_store（保存到JSON）
@@ -28,9 +28,13 @@ def _safe_int(value, default: int = 0) -> int:
 
 
 class SnackService:
-    """零食业务服务，管理内存中的零食库存和操作记录并负责持久化"""
+    """零食业务服务，管理内存中的零食库存、操作记录和用户设置并负责持久化"""
 
     MAX_LOGS = 100
+    DEFAULT_SETTINGS = {
+        "expiring_days": 7,
+    }
+    SORT_FIELDS = {"name", "quantity", "expiry_date"}
 
     def __init__(self, store: SnackFileStore = None):
         """
@@ -40,6 +44,41 @@ class SnackService:
         self.store = store or SnackFileStore()
         self._snacks: List[Snack] = self.store.load_snacks()
         self._logs: List[OperationLog] = self.store.load_logs()
+        self._settings: Dict = self._load_settings()
+
+    # ===== 设置管理 =====
+
+    def _load_settings(self) -> Dict:
+        """加载用户设置，与默认设置合并"""
+        raw = self.store.load_settings()
+        merged = dict(self.DEFAULT_SETTINGS)
+        if isinstance(raw, dict):
+            merged.update(raw)
+        merged["expiring_days"] = max(1, _safe_int(merged.get("expiring_days"), 7))
+        return merged
+
+    def get_settings(self) -> Dict:
+        """获取当前设置"""
+        return dict(self._settings)
+
+    def update_settings(self, **kwargs) -> Dict:
+        """
+        更新用户设置
+        :param kwargs: 要更新的设置字段，如 expiring_days=3
+        :return: 更新后的设置
+        """
+        if "expiring_days" in kwargs:
+            days = max(1, _safe_int(kwargs["expiring_days"], 7))
+            self._settings["expiring_days"] = days
+
+        self._persist_settings()
+        return self.get_settings()
+
+    def _persist_settings(self) -> None:
+        """持久化设置到文件"""
+        self.store.save_settings(self._settings)
+
+    # ===== 持久化辅助 =====
 
     def _persist_snacks(self) -> None:
         """将当前零食数据持久化到文件"""
@@ -68,18 +107,41 @@ class SnackService:
 
     def get_all(self, location: Optional[str] = None,
                 category: Optional[str] = None,
-                only_attention: bool = False) -> List[Snack]:
+                only_attention: bool = False,
+                keyword: Optional[str] = None,
+                sort_by: Optional[str] = None,
+                sort_order: str = "asc") -> List[Snack]:
         """
-        获取零食列表，支持按位置、分类筛选，或只看需要处理的
+        获取零食列表，支持筛选、搜索、排序
+        :param location: 按位置筛选
+        :param category: 按分类筛选
+        :param only_attention: 只看需要处理的
+        :param keyword: 搜索关键词（名称/口味/分类模糊匹配）
+        :param sort_by: 排序字段：name/quantity/expiry_date
+        :param sort_order: 排序方向：asc/desc
         """
-        result = self._snacks
+        result = list(self._snacks)
+
         if location and location != "all":
             result = [s for s in result if s.location == location]
         if category and category != "all":
             result = [s for s in result if s.category == category]
         if only_attention:
-            result = [s for s in result if s.needs_attention()]
-        return list(result)
+            exp_days = self._settings.get("expiring_days", 7)
+            result = [s for s in result if s.needs_attention(exp_days)]
+        if keyword:
+            result = [s for s in result if s.matches_keyword(keyword)]
+
+        if sort_by and sort_by in self.SORT_FIELDS:
+            reverse = sort_order.lower() == "desc"
+            if sort_by == "name":
+                result.sort(key=lambda s: s.name.lower(), reverse=reverse)
+            elif sort_by == "quantity":
+                result.sort(key=lambda s: s.quantity, reverse=reverse)
+            elif sort_by == "expiry_date":
+                result.sort(key=lambda s: s.expiry_date or "9999-12-31", reverse=reverse)
+
+        return result
 
     def get_by_id(self, snack_id: str) -> Optional[Snack]:
         """根据 ID 查找零食"""
@@ -100,21 +162,26 @@ class SnackService:
 
     def count_needs_attention(self) -> int:
         """统计需要处理的零食数量"""
-        return sum(1 for s in self._snacks if s.needs_attention())
+        exp_days = self._settings.get("expiring_days", 7)
+        return sum(1 for s in self._snacks if s.needs_attention(exp_days))
 
     def get_statistics(self) -> Dict:
-        """获取详细统计：总数、低库存、临期、已过期、需要处理（去重统计）"""
+        """获取详细统计：总数、低库存、临期、已过期、需要处理（去重统计）、低于目标"""
+        exp_days = self._settings.get("expiring_days", 7)
         total = len(self._snacks)
         low_stock = sum(1 for s in self._snacks if s.is_low_stock())
-        expiring_soon = sum(1 for s in self._snacks if s.is_expiring_soon())
+        expiring_soon = sum(1 for s in self._snacks if s.is_expiring_soon(exp_days))
         expired = sum(1 for s in self._snacks if s.is_expired())
-        attention = sum(1 for s in self._snacks if s.needs_attention())
+        attention = sum(1 for s in self._snacks if s.needs_attention(exp_days))
+        below_target = sum(1 for s in self._snacks if s.is_below_target())
         return {
             "total": total,
             "low_stock": low_stock,
             "expiring_soon": expiring_soon,
             "expired": expired,
             "attention": attention,
+            "below_target": below_target,
+            "expiring_days": exp_days,
         }
 
     # ===== 操作记录 =====
@@ -126,15 +193,19 @@ class SnackService:
     # ===== 新增 =====
 
     def add_snack(self, name: str, flavor: str, quantity: int,
-                  location: str, expiry_date: str, category: str = "") -> Snack:
+                  location: str, expiry_date: str, category: str = "",
+                  target_quantity: int = 0) -> Snack:
         """
         新增一个零食
         """
-        snack = Snack.create(name, flavor, quantity, location, expiry_date, category)
+        snack = Snack.create(name, flavor, quantity, location, expiry_date,
+                             category, target_quantity)
         self._snacks.append(snack)
         self._persist_snacks()
-        self._add_log("新增", snack, quantity_change=quantity,
-                      note=f"初始库存 {quantity} 份")
+        note = f"初始库存 {quantity} 份"
+        if target_quantity > 0:
+            note += f"，目标库存 {target_quantity} 份"
+        self._add_log("新增", snack, quantity_change=quantity, note=note)
         return snack
 
     # ===== 更新 =====
@@ -142,7 +213,8 @@ class SnackService:
     def update_snack(self, snack_id: str, **kwargs) -> Optional[Snack]:
         """
         更新零食信息，传入要修改的字段
-        支持字段：name, flavor, quantity, location, expiry_date, category, disabled
+        支持字段：name, flavor, quantity, location, expiry_date,
+                 category, target_quantity, disabled
         """
         snack = self.get_by_id(snack_id)
         if snack is None:
@@ -156,6 +228,7 @@ class SnackService:
             location=kwargs.get("location"),
             expiry_date=kwargs.get("expiry_date"),
             category=kwargs.get("category"),
+            target_quantity=kwargs.get("target_quantity"),
             disabled=kwargs.get("disabled"),
         )
         self._persist_snacks()
@@ -208,6 +281,72 @@ class SnackService:
         self._add_log("状态变更", snack, note=note)
         return snack
 
+    # ===== 批量操作 =====
+
+    def batch_delete(self, snack_ids: List[str]) -> int:
+        """
+        批量删除零食
+        :param snack_ids: 要删除的零食 ID 列表
+        :return: 成功删除的数量
+        """
+        if not isinstance(snack_ids, list):
+            return 0
+        id_set = set(snack_ids)
+        to_delete = [s for s in self._snacks if s.id in id_set]
+        count = 0
+        for snack in to_delete:
+            self._snacks = [s for s in self._snacks if s.id != snack.id]
+            self._add_log("删除", snack, note="批量删除")
+            count += 1
+        if count > 0:
+            self._persist_snacks()
+        return count
+
+    def batch_disable(self, snack_ids: List[str], disabled: bool = True) -> int:
+        """
+        批量停用/启用零食
+        :param snack_ids: 要操作的零食 ID 列表
+        :param disabled: True 停用，False 启用
+        :return: 成功操作的数量
+        """
+        if not isinstance(snack_ids, list):
+            return 0
+        id_set = set(snack_ids)
+        count = 0
+        for snack in self._snacks:
+            if snack.id in id_set and snack.disabled != disabled:
+                snack.disabled = disabled
+                note = "批量停用" if disabled else "批量恢复"
+                self._add_log("状态变更", snack, note=note)
+                count += 1
+        if count > 0:
+            self._persist_snacks()
+        return count
+
+    def batch_restock(self, snack_ids: List[str], amount: int = 1) -> int:
+        """
+        批量补货
+        :param snack_ids: 要补货的零食 ID 列表
+        :param amount: 每个补多少份
+        :return: 成功补货的数量
+        """
+        if not isinstance(snack_ids, list):
+            return 0
+        add = max(0, _safe_int(amount, 0))
+        if add <= 0:
+            return 0
+        id_set = set(snack_ids)
+        count = 0
+        for snack in self._snacks:
+            if snack.id in id_set:
+                snack.quantity += add
+                self._add_log("补货", snack, quantity_change=add,
+                              note=f"批量补货 {add} 份")
+                count += 1
+        if count > 0:
+            self._persist_snacks()
+        return count
+
     # ===== 删除 =====
 
     def delete_snack(self, snack_id: str) -> bool:
@@ -234,11 +373,13 @@ class SnackService:
         """导出所有零食数据为 CSV 字符串"""
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["ID", "名称", "口味", "分类", "数量", "存放位置", "保质期", "是否停用"])
+        writer.writerow(["ID", "名称", "口味", "分类", "数量", "目标库存",
+                         "存放位置", "保质期", "是否停用"])
         for s in self._snacks:
             writer.writerow([
                 s.id, s.name, s.flavor, s.category,
-                s.quantity, s.location, s.expiry_date,
+                s.quantity, s.target_quantity,
+                s.location, s.expiry_date,
                 "是" if s.disabled else "否"
             ])
         return output.getvalue()
@@ -266,6 +407,7 @@ class SnackService:
             existing = self.get_by_id(item_id) if item_id else None
 
             qty = _safe_int(item.get("quantity"), 0)
+            target_qty = _safe_int(item.get("target_quantity"), 0)
             name = str(item.get("name", "")) if item.get("name") is not None else ""
             flavor = str(item.get("flavor", "")) if item.get("flavor") is not None else ""
             location = str(item.get("location", "")) if item.get("location") is not None else ""
@@ -281,6 +423,7 @@ class SnackService:
                     location=location,
                     expiry_date=expiry_date,
                     category=category,
+                    target_quantity=target_qty,
                     disabled=disabled,
                 )
                 note = "导入更新"
@@ -292,6 +435,7 @@ class SnackService:
                     location=location,
                     expiry_date=expiry_date,
                     category=category,
+                    target_quantity=target_qty,
                 )
                 if disabled:
                     snack.disabled = True

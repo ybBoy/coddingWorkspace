@@ -46,6 +46,16 @@ body {
     margin-bottom: 32px;
     padding-bottom: 24px;
     border-bottom: 2px dashed var(--border-color);
+    position: relative;
+}
+
+.header-actions {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
 }
 
 .title {
@@ -166,6 +176,42 @@ body {
     padding: 16px 0;
 }
 
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.chart-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.chart-container {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 .filter-section {
     background: var(--card-bg);
     border-radius: 12px;
@@ -209,6 +255,97 @@ body {
     border-color: var(--primary-mist);
 }
 
+.recommend-section {
+    background: linear-gradient(135deg, #f0f5fa 0%, #faf5f0 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--primary-mist-light);
+}
+
+.recommend-tip {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    text-align: center;
+    font-style: italic;
+}
+
+.recommend-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.recommend-item {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+}
+
+.recommend-item:hover {
+    transform: translateY(-2px);
+}
+
+.recommend-item-empty {
+    background: var(--bg-color);
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 32px 16px;
+}
+
+.recommend-item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    background: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    overflow: hidden;
+}
+
+.recommend-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.recommend-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 4px;
+}
+
+.recommend-item-type {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.recommend-item-tag {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    background: var(--warning);
+    color: white;
+    font-weight: 500;
+}
+
+.recommend-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
 .form-section {
     background: var(--card-bg);
     border-radius: 12px;
@@ -227,6 +364,12 @@ body {
 .form-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.form-row-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
 }
 
@@ -323,7 +466,7 @@ body {
 }
 
 .btn-sm {
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-size: 12px;
 }
 
@@ -350,11 +493,11 @@ body {
 .clothing-card {
     background: var(--card-bg);
     border-radius: 8px 8px 12px 12px;
-    padding: 16px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
     position: relative;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
 }
 
 .clothing-card::before {
@@ -367,6 +510,7 @@ body {
     height: 8px;
     background: var(--primary-mist-light);
     border-radius: 4px 4px 0 0;
+    z-index: 1;
 }
 
 .clothing-card::after {
@@ -379,6 +523,7 @@ body {
     height: 4px;
     background: var(--accent-warm);
     border-radius: 2px;
+    z-index: 1;
 }
 
 .clothing-card:hover {
@@ -391,12 +536,29 @@ body {
     background: linear-gradient(135deg, #fff 0%, #fff9e6 100%);
 }
 
-.card-header {
+.card-image {
+    width: 100%;
+    height: 160px;
+    background: var(--bg-color);
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    overflow: hidden;
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 16px;
+}
+
+.card-header {
     margin-bottom: 12px;
-    padding-right: 24px;
 }
 
 .card-name {
@@ -494,6 +656,82 @@ body {
 
 .card-actions .btn {
     flex: 1;
+}
+
+.history-section {
+    margin-top: 32px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-item {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.history-date {
+    min-width: 100px;
+    text-align: center;
+    padding-right: 16px;
+    border-right: 1px solid var(--border-color);
+}
+
+.history-date-day {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-mist);
+    line-height: 1;
+}
+
+.history-date-month {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.history-content {
+    flex: 1;
+}
+
+.history-note {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+}
+
+.history-clothes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.history-clothing-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--bg-color);
+    border-radius: 16px;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.history-clothing-tag img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .empty-state {
@@ -697,11 +935,26 @@ body {
         font-size: 28px;
     }
 
+    .header-actions {
+        position: static;
+        transform: none;
+        margin-top: 16px;
+        justify-content: center;
+    }
+
     .stats-section {
         grid-template-columns: 1fr;
     }
 
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+
     .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row-2 {
         grid-template-columns: 1fr;
     }
 
@@ -712,6 +965,10 @@ body {
 
     .filter-group {
         min-width: 100%;
+    }
+
+    .recommend-grid {
+        grid-template-columns: 1fr;
     }
 
     .clothes-grid {
@@ -726,5 +983,22 @@ body {
     .modal {
         width: 95%;
         margin: 16px;
+    }
+
+    .history-item {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .history-date {
+        min-width: auto;
+        text-align: left;
+        padding-right: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 8px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
     }
 }

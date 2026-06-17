@@ -12,12 +12,13 @@ class Clothing:
     color: str
     season: str
     remark: str = ""
+    image_url: str = ""
     wear_count: int = 0
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     last_worn_at: Optional[str] = None
 
     @staticmethod
-    def create(name: str, type: str, color: str, season: str, remark: str = "") -> "Clothing":
+    def create(name: str, type: str, color: str, season: str, remark: str = "", image_url: str = "") -> "Clothing":
         return Clothing(
             id=str(uuid.uuid4()),
             name=name.strip(),
@@ -25,6 +26,7 @@ class Clothing:
             color=color.strip(),
             season=season.strip(),
             remark=remark.strip(),
+            image_url=image_url.strip(),
         )
 
     def to_dict(self) -> dict:
@@ -39,6 +41,7 @@ class Clothing:
             color=data["color"],
             season=data["season"],
             remark=data.get("remark", ""),
+            image_url=data.get("image_url", ""),
             wear_count=data.get("wear_count", 0),
             created_at=data.get("created_at", datetime.now(timezone.utc).isoformat()),
             last_worn_at=data.get("last_worn_at"),

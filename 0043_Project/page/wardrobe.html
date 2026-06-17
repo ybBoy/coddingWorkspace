@@ -11,6 +11,11 @@
         <header class="header">
             <h1 class="title">🧥 我的衣橱</h1>
             <p class="subtitle">记录穿搭，整理生活</p>
+            <div class="header-actions">
+                <button class="btn btn-sm btn-secondary" id="exportBtn">📤 导出数据</button>
+                <label class="btn btn-sm btn-secondary" for="importFile">📥 导入数据</label>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
         </header>
 
         <section class="stats-section">
@@ -26,6 +31,27 @@
                 <div class="stat-label">🏆 最常穿 Top 3</div>
                 <div class="top-worn-list" id="topWornList">
                     <div class="top-worn-empty">暂无记录</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="charts-section">
+            <div class="chart-card">
+                <h3 class="chart-title">📊 衣物类型分布</h3>
+                <div class="chart-container">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">🎨 颜色分布</h3>
+                <div class="chart-container">
+                    <canvas id="colorChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3 class="chart-title">📈 最近7天穿搭</h3>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
                 </div>
             </div>
         </section>
@@ -50,6 +76,18 @@
                 </select>
             </div>
             <button class="btn btn-secondary" id="resetFilterBtn">重置筛选</button>
+            <button class="btn btn-outline" id="recommendBtn">✨ 推荐今日穿搭</button>
+        </section>
+
+        <section class="recommend-section" id="recommendSection" style="display: none;">
+            <h2 class="section-title">✨ 今日推荐穿搭</h2>
+            <div class="recommend-tip" id="recommendTip"></div>
+            <div class="recommend-grid" id="recommendGrid">
+            </div>
+            <div class="recommend-actions">
+                <button class="btn btn-secondary" id="refreshRecommendBtn">🔄 换一组</button>
+                <button class="btn btn-primary" id="wearRecommendBtn">✅ 就穿这套</button>
+            </div>
         </section>
 
         <section class="form-section">
@@ -74,6 +112,10 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label for="imageUrl">图片 URL</label>
+                    <input type="text" id="imageUrl" placeholder="粘贴图片链接，让衣橱更生动">
+                </div>
+                <div class="form-group">
                     <label for="remark">备注</label>
                     <input type="text" id="remark" placeholder="购买日期、材质、搭配建议等">
                 </div>
@@ -91,6 +133,15 @@
                 <div class="empty-state">
                     <p>衣橱空空如也～</p>
                     <p class="empty-sub">添加你的第一件衣物吧！</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="history-section">
+            <h2 class="section-title">📅 穿搭历史</h2>
+            <div class="history-list" id="historyList">
+                <div class="empty-state small">
+                    <p>还没有穿搭记录</p>
                 </div>
             </div>
         </section>
@@ -128,25 +179,43 @@
             <div class="modal-body">
                 <form id="editClothingForm">
                     <input type="hidden" id="editId">
-                    <div class="form-group">
-                        <label for="editName">名称 *</label>
-                        <input type="text" id="editName" required>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="editName">名称 *</label>
+                            <input type="text" id="editName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editType">类型 *</label>
+                            <input type="text" id="editType" required>
+                        </div>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="editColor">颜色 *</label>
+                            <input type="text" id="editColor" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editSeason">季节 *</label>
+                            <input type="text" id="editSeason" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="editType">类型 *</label>
-                        <input type="text" id="editType" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editColor">颜色 *</label>
-                        <input type="text" id="editColor" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editSeason">季节 *</label>
-                        <input type="text" id="editSeason" required>
+                        <label for="editImageUrl">图片 URL</label>
+                        <input type="text" id="editImageUrl">
                     </div>
                     <div class="form-group">
                         <label for="editRemark">备注</label>
                         <input type="text" id="editRemark">
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="editWearCount">穿着次数（补录）</label>
+                            <input type="number" id="editWearCount" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="editLastWorn">最后穿着日期（补录）</label>
+                            <input type="date" id="editLastWorn">
+                        </div>
                     </div>
                 </form>
             </div>

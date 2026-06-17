@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify, request
+import json
+from flask import Blueprint, jsonify, request, send_file
+from io import BytesIO
 
 from server.services.wardrobe_service import get_service
 
@@ -44,10 +46,11 @@ def add_clothing():
     color = body.get("color", "").strip()
     season = body.get("season", "").strip()
     remark = body.get("remark", "").strip()
+    image_url = body.get("image_url", "").strip()
     if not name or not type or not color or not season:
         return _json_error("name, type, color, season are required")
     try:
-        c = service.add_clothing(name, type, color, season, remark)
+        c = service.add_clothing(name, type, color, season, remark, image_url)
         return jsonify(c.to_dict()), 201
     except ValueError as e:
         return _json_error(str(e))
@@ -56,14 +59,20 @@ def add_clothing():
 @wardrobe_bp.route("/clothes/<clothing_id>", methods=["PUT"])
 def update_clothing(clothing_id):
     body = request.get_json(silent=True) or {}
-    c = service.update_clothing(
-        clothing_id,
-        name=body.get("name"),
-        type=body.get("type"),
-        color=body.get("color"),
-        season=body.get("season"),
-        remark=body.get("remark"),
-    )
+    try:
+        c = service.update_clothing(
+            clothing_id,
+            name=body.get("name"),
+            type=body.get("type"),
+            color=body.get("color"),
+            season=body.get("season"),
+            remark=body.get("remark"),
+            image_url=body.get("image_url"),
+            wear_count=body.get("wear_count"),
+            last_worn_at=body.get("last_worn_at"),
+        )
+    except ValueError as e:
+        return _json_error(str(e))
     if not c:
         return _json_error("Clothing not found", 404)
     return jsonify(c.to_dict())
@@ -93,9 +102,9 @@ def record_outfit():
 
 @wardrobe_bp.route("/outfit/logs", methods=["GET"])
 def list_outfit_logs():
-    limit = request.args.get("limit", 100, type=int)
-    logs = service.get_outfit_logs(limit)
-    return jsonify([l.to_dict() for l in logs])
+    limit = request.args.get("limit", 20, type=int)
+    logs = service.get_outfit_logs_with_details(limit)
+    return jsonify(logs)
 
 
 @wardrobe_bp.route("/stats", methods=["GET"])
@@ -106,3 +115,40 @@ def get_stats():
 @wardrobe_bp.route("/filters", methods=["GET"])
 def get_filters():
     return jsonify(service.get_filters())
+
+
+@wardrobe_bp.route("/recommend", methods=["GET"])
+def recommend_outfit():
+    season = request.args.get("season")
+    return jsonify(service.recommend_outfit(season))
+
+
+@wardrobe_bp.route("/export", methods=["GET"])
+def export_data():
+    data = service.export_data()
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    buf = BytesIO(json_str.encode("utf-8"))
+    buf.seek(0)
+    from datetime import datetime
+    filename = f"wardrobe_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    return send_file(
+        buf,
+        mimetype="application/json",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@wardrobe_bp.route("/import", methods=["POST"])
+def import_data():
+    merge = request.args.get("merge", "true").lower() != "false"
+    raw = request.get_data(as_text=True)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return _json_error("Invalid JSON format")
+    try:
+        result = service.import_data(data, merge=merge)
+        return jsonify(result), 200
+    except ValueError as e:
+        return _json_error(str(e))

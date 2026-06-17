@@ -112,6 +112,19 @@ class WardrobeStore:
             self._persist()
             return updated
 
+    def clear_all(self) -> None:
+        with self._lock:
+            self._clothes.clear()
+            self._outfit_logs.clear()
+            self._persist()
+
+    def export_all(self) -> dict:
+        with self._lock:
+            return {
+                "clothes": [c.to_dict() for c in self._clothes.values()],
+                "outfit_logs": [l.to_dict() for l in self._outfit_logs.values()],
+            }
+
 
 _store_instance: Optional[WardrobeStore] = None
 

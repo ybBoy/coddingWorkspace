@@ -1,6 +1,7 @@
 import json
 from flask import Blueprint, jsonify, request, send_file
 from io import BytesIO
+from datetime import datetime
 
 from server.services.wardrobe_service import get_service
 
@@ -26,7 +27,8 @@ def list_clothes():
     type_filter = request.args.get("type")
     color_filter = request.args.get("color")
     season_filter = request.args.get("season")
-    clothes = service.get_clothes(type_filter, color_filter, season_filter)
+    tag_filter = request.args.get("tag")
+    clothes = service.get_clothes(type_filter, color_filter, season_filter, tag_filter)
     return jsonify([_enrich_clothing(c) for c in clothes])
 
 
@@ -47,10 +49,13 @@ def add_clothing():
     season = body.get("season", "").strip()
     remark = body.get("remark", "").strip()
     image_url = body.get("image_url", "").strip()
+    tags = body.get("tags", [])
+    if not isinstance(tags, list):
+        tags = []
     if not name or not type or not color or not season:
         return _json_error("name, type, color, season are required")
     try:
-        c = service.add_clothing(name, type, color, season, remark, image_url)
+        c = service.add_clothing(name, type, color, season, remark, image_url, tags)
         return jsonify(c.to_dict()), 201
     except ValueError as e:
         return _json_error(str(e))
@@ -68,6 +73,7 @@ def update_clothing(clothing_id):
             season=body.get("season"),
             remark=body.get("remark"),
             image_url=body.get("image_url"),
+            tags=body.get("tags"),
             wear_count=body.get("wear_count"),
             last_worn_at=body.get("last_worn_at"),
         )
@@ -107,6 +113,93 @@ def list_outfit_logs():
     return jsonify(logs)
 
 
+@wardrobe_bp.route("/outfit/calendar", methods=["GET"])
+def get_calendar():
+    month_str = request.args.get("month")
+    if not month_str:
+        now = datetime.now()
+        year = now.year
+        month = now.month
+    else:
+        try:
+            year, month = month_str.split("-")
+            year = int(year)
+            month = int(month)
+        except (ValueError, TypeError):
+            return _json_error("month must be in format YYYY-MM")
+    try:
+        data = service.get_calendar(year, month)
+        return jsonify(data)
+    except ValueError as e:
+        return _json_error(str(e))
+
+
+@wardrobe_bp.route("/templates", methods=["GET"])
+def list_templates():
+    return jsonify(service.list_templates())
+
+
+@wardrobe_bp.route("/templates/<template_id>", methods=["GET"])
+def get_template(template_id):
+    t = service.get_template(template_id)
+    if not t:
+        return _json_error("Template not found", 404)
+    return jsonify(t)
+
+
+@wardrobe_bp.route("/templates", methods=["POST"])
+def add_template():
+    body = request.get_json(silent=True) or {}
+    name = body.get("name", "").strip()
+    clothing_ids = body.get("clothing_ids", [])
+    note = body.get("note", "").strip()
+    if not name:
+        return _json_error("name is required")
+    if not clothing_ids or not isinstance(clothing_ids, list):
+        return _json_error("clothing_ids is required and must be a non-empty array")
+    try:
+        t = service.add_template(name, clothing_ids, note)
+        return jsonify(t), 201
+    except ValueError as e:
+        return _json_error(str(e))
+
+
+@wardrobe_bp.route("/templates/<template_id>", methods=["PUT"])
+def update_template(template_id):
+    body = request.get_json(silent=True) or {}
+    try:
+        t = service.update_template(
+            template_id,
+            name=body.get("name"),
+            clothing_ids=body.get("clothing_ids"),
+            note=body.get("note"),
+        )
+    except ValueError as e:
+        return _json_error(str(e))
+    if not t:
+        return _json_error("Template not found", 404)
+    return jsonify(t)
+
+
+@wardrobe_bp.route("/templates/<template_id>", methods=["DELETE"])
+def delete_template(template_id):
+    ok = service.delete_template(template_id)
+    if not ok:
+        return _json_error("Template not found", 404)
+    return jsonify({"message": "Deleted successfully"})
+
+
+@wardrobe_bp.route("/templates/<template_id>/apply", methods=["POST"])
+def apply_template(template_id):
+    body = request.get_json(silent=True) or {}
+    note = body.get("note", "").strip()
+    try:
+        result = service.apply_template(template_id, note)
+        return jsonify(result), 201
+    except ValueError as e:
+        return _json_error(str(e))
+
+
 @wardrobe_bp.route("/stats", methods=["GET"])
 def get_stats():
     return jsonify(service.get_stats())
@@ -129,7 +222,6 @@ def export_data():
     json_str = json.dumps(data, ensure_ascii=False, indent=2)
     buf = BytesIO(json_str.encode("utf-8"))
     buf.seek(0)
-    from datetime import datetime
     filename = f"wardrobe_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     return send_file(
         buf,

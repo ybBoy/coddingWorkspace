@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "066622a1-2158-43c7-a1bb-13e3ae13a214",
+    "name": "测试零食",
+    "flavor": "原味",
+    "quantity": 5,
+    "location": "客厅",
+    "expiry_date": "2026-12-31",
+    "category": "饼干",
+    "disabled": false
+  }
+]

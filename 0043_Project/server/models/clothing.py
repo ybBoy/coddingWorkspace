@@ -49,15 +49,19 @@ class Clothing:
         self.last_worn_at = datetime.now(timezone.utc).isoformat()
 
     def days_since_last_worn(self) -> Optional[int]:
-        if not self.last_worn_at:
-            return None
+        ref_date = self.last_worn_at if self.last_worn_at else self.created_at
         try:
-            last_worn = datetime.fromisoformat(self.last_worn_at)
-            delta = datetime.now(timezone.utc) - last_worn
+            ref = datetime.fromisoformat(ref_date)
+            delta = datetime.now(timezone.utc) - ref
             return delta.days
         except (ValueError, TypeError):
             return None
 
     def is_long_time_no_wear(self, threshold_days: int = 60) -> bool:
         days = self.days_since_last_worn()
-        return days is not None and days >= threshold_days
+        if days is None:
+            return False
+        return days >= threshold_days
+
+    def has_been_worn(self) -> bool:
+        return self.last_worn_at is not None

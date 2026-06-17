@@ -147,18 +147,16 @@ function renderClothes(clothes) {
                     <span><span class="wear-count-badge">👕 ${c.wear_count}</span></span>
                 </div>
                 <div class="card-info-row">
-                    <span>上次穿着</span>
-                    <span>${formatDate(c.last_worn_at)}</span>
+                    <span>${c.has_been_worn ? "上次穿着" : "购入时间"}</span>
+                    <span>${c.has_been_worn ? formatDate(c.last_worn_at) : formatDate(c.created_at)}</span>
                 </div>
-                ${c.days_since_last_worn !== null ? `
                 <div class="card-info-row">
-                    <span>距上次</span>
+                    <span>${c.has_been_worn ? "距上次" : "已购入"}</span>
                     <span>${c.days_since_last_worn} 天</span>
                 </div>
-                ` : ""}
             </div>
             ${c.is_long_time_no_wear ? `
-            <div class="warning-badge">⚠️ 很久没穿了</div>
+            <div class="warning-badge">⚠️ ${c.has_been_worn ? "很久没穿了" : "从未穿过"}</div>
             ` : ""}
             ${c.remark ? `<div class="card-remark">${escapeHtml(c.remark)}</div>` : ""}
             <div class="card-actions">

@@ -72,6 +72,14 @@ class WardrobeService:
         if not clothing_ids:
             raise ValueError("clothing_ids cannot be empty")
         unique_ids = list(set(clothing_ids))
+
+        invalid_ids = []
+        for cid in unique_ids:
+            if not self.store.get_clothing(cid):
+                invalid_ids.append(cid)
+        if invalid_ids:
+            raise ValueError(f"Invalid clothing IDs: {', '.join(invalid_ids)}")
+
         updated = self.store.record_wear(unique_ids)
         log = OutfitLog.create(
             clothing_ids=[c.id for c in updated],

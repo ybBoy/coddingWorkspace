@@ -11,19 +11,21 @@ def _json_error(message: str, status_code: int = 400):
     return jsonify({"error": message}), status_code
 
 
+def _enrich_clothing(c):
+    data = c.to_dict()
+    data["days_since_last_worn"] = c.days_since_last_worn()
+    data["is_long_time_no_wear"] = c.is_long_time_no_wear()
+    data["has_been_worn"] = c.has_been_worn()
+    return data
+
+
 @wardrobe_bp.route("/clothes", methods=["GET"])
 def list_clothes():
     type_filter = request.args.get("type")
     color_filter = request.args.get("color")
     season_filter = request.args.get("season")
     clothes = service.get_clothes(type_filter, color_filter, season_filter)
-    result = []
-    for c in clothes:
-        data = c.to_dict()
-        data["days_since_last_worn"] = c.days_since_last_worn()
-        data["is_long_time_no_wear"] = c.is_long_time_no_wear()
-        result.append(data)
-    return jsonify(result)
+    return jsonify([_enrich_clothing(c) for c in clothes])
 
 
 @wardrobe_bp.route("/clothes/<clothing_id>", methods=["GET"])
@@ -31,10 +33,7 @@ def get_clothing(clothing_id):
     c = service.get_clothing(clothing_id)
     if not c:
         return _json_error("Clothing not found", 404)
-    data = c.to_dict()
-    data["days_since_last_worn"] = c.days_since_last_worn()
-    data["is_long_time_no_wear"] = c.is_long_time_no_wear()
-    return jsonify(data)
+    return jsonify(_enrich_clothing(c))
 
 
 @wardrobe_bp.route("/clothes", methods=["POST"])

@@ -19,6 +19,25 @@ def create_app() -> Flask:
 
     app.register_blueprint(wardrobe_bp)
 
+    @app.errorhandler(400)
+    @app.errorhandler(404)
+    @app.errorhandler(500)
+    def _handle_error(e):
+        from flask import jsonify
+        status_code = e.code if hasattr(e, "code") else 500
+        message = str(e) if str(e) else "Internal server error"
+        return jsonify({"error": message}), status_code
+
+    @app.errorhandler(ValueError)
+    def _handle_value_error(e):
+        from flask import jsonify
+        return jsonify({"error": str(e)}), 400
+
+    @app.errorhandler(RuntimeError)
+    def _handle_runtime_error(e):
+        from flask import jsonify
+        return jsonify({"error": str(e)}), 500
+
     @app.route("/")
     def index():
         return send_from_directory(PAGE_DIR, "wardrobe.html")

@@ -53,8 +53,8 @@ class WardrobeStore:
     def _persist(self) -> None:
         try:
             self._save_to_disk()
-        except OSError:
-            pass
+        except OSError as e:
+            raise RuntimeError(f"Failed to save data to disk: {e}") from e
 
     def list_clothes(self) -> list[Clothing]:
         with self._lock:

@@ -29,20 +29,46 @@
         </section>
 
         <section class="filter-section">
-            <div class="filter-group">
-                <label for="dessertTypeFilter">按类型筛选：</label>
-                <select id="dessertTypeFilter">
-                    <option value="全部">全部</option>
-                </select>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="dessertTypeFilter">甜点类型：</label>
+                    <select id="dessertTypeFilter">
+                        <option value="全部">全部</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="successLevelFilter">成功程度：</label>
+                    <select id="successLevelFilter">
+                        <option value="全部">全部</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="searchInput">搜索名称：</label>
+                    <input type="text" id="searchInput" placeholder="输入甜点名称...">
+                </div>
             </div>
-            <div class="filter-group">
-                <label for="searchInput">搜索名称：</label>
-                <input type="text" id="searchInput" placeholder="输入甜点名称...">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="sortBy">排序字段：</label>
+                    <select id="sortBy"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="sortOrder">排序方式：</label>
+                    <select id="sortOrder"></select>
+                </div>
+                <div class="filter-group flex-grow"></div>
+                <div class="filter-group io-group">
+                    <button type="button" class="btn btn-secondary" id="exportJsonBtn">⬇ 导出 JSON</button>
+                    <button type="button" class="btn btn-secondary" id="exportCsvBtn">⬇ 导出 CSV</button>
+                    <button type="button" class="btn btn-secondary" id="importBtn">⬆ 导入数据</button>
+                    <input type="file" id="importFile" accept=".json,application/json" hidden>
+                </div>
             </div>
         </section>
 
         <section class="form-section">
             <h2>📝 新增试验记录</h2>
+            <div id="validateTips" class="validate-tips hidden"></div>
             <form id="trialForm" class="trial-form">
                 <div class="form-row">
                     <div class="form-group">
@@ -61,7 +87,7 @@
                     </div>
                     <div class="form-group">
                         <label for="temperature">烘焙温度 (°C) *</label>
-                        <input type="number" id="temperature" required min="50" max="300" value="180">
+                        <input type="number" id="temperature" required min="50" max="400" value="180">
                     </div>
                     <div class="form-group">
                         <label for="durationMinutes">烘焙时间 (分钟) *</label>
@@ -72,12 +98,47 @@
                         <select id="successLevel"></select>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tasteScore">口感评分 (1-10)</label>
+                        <input type="number" id="tasteScore" min="1" max="10" placeholder="如 8">
+                    </div>
+                    <div class="form-group">
+                        <label for="lookScore">外观评分 (1-10)</label>
+                        <input type="number" id="lookScore" min="1" max="10" placeholder="如 7">
+                    </div>
+                    <div class="form-group">
+                        <label for="textureScore">组织结构 (1-10)</label>
+                        <input type="number" id="textureScore" min="1" max="10" placeholder="如 8">
+                    </div>
+                    <div class="form-group">
+                        <label for="imageInput">成品照片</label>
+                        <input type="file" id="imageInput" accept="image/*">
+                    </div>
+                </div>
+                <div class="image-preview-row">
+                    <div class="image-preview" id="imagePreview">
+                        <span class="image-preview-placeholder">暂无图片预览</span>
+                    </div>
+                    <button type="button" class="btn btn-ghost" id="clearImageBtn" style="display:none;">清除图片</button>
+                </div>
                 <div class="form-group">
                     <label for="notes">改进备注</label>
                     <textarea id="notes" rows="3" placeholder="记录这次的心得和下次要调整的地方..."></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">➕ 添加记录</button>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">➕ 添加记录</button>
+                    <button type="reset" class="btn btn-ghost" id="resetFormBtn">清空表单</button>
+                </div>
             </form>
+        </section>
+
+        <section class="compare-section" id="compareSection">
+            <h2>🔍 配方版本对比</h2>
+            <div id="compareList" class="compare-list"></div>
+            <div id="compareEmpty" class="empty-state hidden">
+                <p>同一甜点名称有多条记录时，这里会显示版本对比</p>
+            </div>
         </section>
 
         <section class="trials-section">
@@ -87,6 +148,108 @@
                 <p>还没有试验记录，开始你的第一次烘焙实验吧！</p>
             </div>
         </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>✏️ 编辑试验记录</h3>
+                <button class="modal-close" id="closeEditBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="editValidateTips" class="validate-tips hidden"></div>
+                <form id="editForm" class="trial-form">
+                    <input type="hidden" id="editTrialId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editDessertName">甜点名称 *</label>
+                            <input type="text" id="editDessertName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDessertType">甜点类型 *</label>
+                            <select id="editDessertType" required></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editRecipeVersion">配方版本</label>
+                            <input type="text" id="editRecipeVersion" value="v1">
+                        </div>
+                        <div class="form-group">
+                            <label for="editTemperature">烘焙温度 (°C) *</label>
+                            <input type="number" id="editTemperature" required min="50" max="400" value="180">
+                        </div>
+                        <div class="form-group">
+                            <label for="editDurationMinutes">烘焙时间 (分钟) *</label>
+                            <input type="number" id="editDurationMinutes" required min="1" max="600" value="30">
+                        </div>
+                        <div class="form-group">
+                            <label for="editSuccessLevel">成功程度</label>
+                            <select id="editSuccessLevel"></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editTasteScore">口感评分 (1-10)</label>
+                            <input type="number" id="editTasteScore" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="editLookScore">外观评分 (1-10)</label>
+                            <input type="number" id="editLookScore" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="editTextureScore">组织结构 (1-10)</label>
+                            <input type="number" id="editTextureScore" min="1" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="editImageInput">成品照片</label>
+                            <input type="file" id="editImageInput" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="image-preview-row">
+                        <div class="image-preview" id="editImagePreview">
+                            <span class="image-preview-placeholder">暂无图片预览</span>
+                        </div>
+                        <button type="button" class="btn btn-ghost" id="editClearImageBtn">清除图片</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="editNotes">改进备注</label>
+                        <textarea id="editNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="cancelEditBtn">取消</button>
+                <button class="btn btn-primary" id="saveEditBtn">💾 保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="importModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>⬆ 导入数据</h3>
+                <button class="modal-close" id="closeImportBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>选择要导入的 JSON 文件</label>
+                    <input type="file" id="importModalFile" accept=".json,application/json">
+                </div>
+                <div class="form-group">
+                    <label>导入方式</label>
+                    <select id="importMode">
+                        <option value="append">追加（不影响现有记录）</option>
+                        <option value="replace">替换（清空后导入）</option>
+                    </select>
+                </div>
+                <div id="importStatus" class="validate-tips hidden"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="cancelImportBtn">取消</button>
+                <button class="btn btn-primary" id="confirmImportBtn">开始导入</button>
+            </div>
+        </div>
     </div>
 
     <script src="baking.js"></script>

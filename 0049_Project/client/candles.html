@@ -1,0 +1,110 @@
+<!--
+  candles.html - 香薰蜡烛库存管理页面
+  文件职责：前端页面结构，包含统计区、筛选区、新增表单、蜡烛卡片列表。
+  整体风格：温暖香氛角，暖米色背景、深棕色标题、玫瑰粉按钮、香氛标签卡片。
+
+  页面交互流程：
+    1. 页面加载 → candles.js 请求蜡烛列表和统计数据 → 渲染页面
+    2. 用户新增蜡烛 → 表单提交 → fetch POST /api/candles → 刷新列表
+    3. 用户点燃蜡烛 → 点击按钮 → fetch PUT /api/candles/:id/light → 刷新列表
+    4. 用户修改剩余比例 → 滑块/输入 → fetch PUT /api/candles/:id/remaining → 刷新列表
+    5. 用户删除蜡烛 → 点击删除 → fetch DELETE /api/candles/:id → 刷新列表
+    6. 用户按香型筛选 → 输入关键词 → fetch GET /api/candles?scent=xxx → 刷新列表
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🕯️ 香氛小角落 - 蜡烛库存管理</title>
+  <link rel="stylesheet" href="candles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 页面标题 -->
+    <header class="page-header">
+      <h1>🕯️ 香氛小角落</h1>
+      <p class="subtitle">记录每一支蜡烛的温暖时光</p>
+    </header>
+
+    <!-- 统计卡片区域 -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <div class="stat-number" id="stat-total">0</div>
+        <div class="stat-label">蜡烛总数</div>
+      </div>
+      <div class="stat-card stat-low">
+        <div class="stat-number" id="stat-low">0</div>
+        <div class="stat-label">快用完了</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="stat-filtered">0</div>
+        <div class="stat-label">当前显示</div>
+      </div>
+    </section>
+
+    <!-- 筛选区域 -->
+    <section class="filter-section">
+      <div class="filter-input-wrapper">
+        <input
+          type="text"
+          id="scent-filter"
+          placeholder="🔍 按香型筛选，比如：玫瑰、薰衣草..."
+          class="filter-input"
+        >
+      </div>
+    </section>
+
+    <!-- 新增蜡烛表单 -->
+    <section class="add-form-section">
+      <h2 class="section-title">✨ 新增一支蜡烛</h2>
+      <form id="add-form" class="add-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="candle-name">名称</label>
+            <input type="text" id="candle-name" placeholder="比如：冬日森林" required>
+          </div>
+          <div class="form-group">
+            <label for="candle-scent">香型</label>
+            <input type="text" id="candle-scent" placeholder="比如：雪松琥珀" required>
+          </div>
+          <div class="form-group">
+            <label for="candle-capacity">容量 (g)</label>
+            <input type="number" id="candle-capacity" min="0" step="1" placeholder="200" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="candle-date">购买日期</label>
+            <input type="date" id="candle-date">
+          </div>
+          <div class="form-group">
+            <label for="candle-remaining">剩余比例 (%)</label>
+            <input type="number" id="candle-remaining" min="0" max="100" value="100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group form-group-full">
+            <label for="candle-note">备注</label>
+            <textarea id="candle-note" rows="2" placeholder="想记录的小心情..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">🌸 添加蜡烛</button>
+      </form>
+    </section>
+
+    <!-- 蜡烛卡片列表 -->
+    <section class="candles-section">
+      <h2 class="section-title">🕯️ 我的蜡烛</h2>
+      <div id="candles-list" class="candles-grid">
+        <!-- 蜡烛卡片由 JavaScript 动态生成 -->
+      </div>
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <p>还没有蜡烛呢，添加第一支吧～</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="candles.js"></script>
+</body>
+</html>

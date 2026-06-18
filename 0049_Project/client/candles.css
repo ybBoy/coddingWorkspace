@@ -1,0 +1,450 @@
+/*
+ * candles.css - 香氛蜡烛管理页面样式
+ * 文件职责：定义页面的视觉风格，打造"温暖香氛角"的感觉。
+ * 主色调：暖米色背景 + 深棕色文字 + 玫瑰粉按钮 + 奶油白卡片
+ * 设计风格：温柔、治愈、信息清晰
+ */
+
+/* ========== 基础重置 ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  background-color: #FAF3E0;  /* 暖米色背景 */
+  color: #5D4037;              /* 深棕色文字 */
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+/* ========== 页面标题 ========== */
+.page-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px 0;
+}
+
+.page-header h1 {
+  font-size: 2.2rem;
+  color: #4E342E;              /* 更深的棕色标题 */
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.page-header .subtitle {
+  color: #8D6E63;
+  font-size: 1rem;
+  font-style: italic;
+}
+
+/* ========== 统计卡片区域 ========== */
+.stats-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: #FFF8E7;         /* 奶油白卡片 */
+  border-radius: 16px;
+  padding: 20px 28px;
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+  max-width: 180px;
+  box-shadow: 0 2px 12px rgba(93, 64, 55, 0.08);
+  border: 1px solid #F0E0C4;
+}
+
+.stat-card.stat-low {
+  background: #FBE9E7;         /* 浅粉背景，突出快用完的 */
+  border-color: #E8B4B8;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #6D4C41;
+  margin-bottom: 4px;
+}
+
+.stat-card.stat-low .stat-number {
+  color: #C62828;              /* 红棕色数字 */
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #8D6E63;
+}
+
+/* ========== 筛选区域 ========== */
+.filter-section {
+  margin-bottom: 28px;
+}
+
+.filter-input-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 12px 20px;
+  border: 1px solid #E0D0B0;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  background: #FFFDF5;
+  color: #5D4037;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.filter-input:focus {
+  border-color: #E8B4B8;
+  box-shadow: 0 0 0 3px rgba(232, 180, 184, 0.2);
+}
+
+.filter-input::placeholder {
+  color: #BCAAA4;
+}
+
+/* ========== 区块标题 ========== */
+.section-title {
+  font-size: 1.25rem;
+  color: #5D4037;
+  margin-bottom: 16px;
+  padding-left: 12px;
+  border-left: 4px solid #E8B4B8;  /* 玫瑰粉左边框 */
+}
+
+/* ========== 新增表单 ========== */
+.add-form-section {
+  background: #FFF8E7;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 12px rgba(93, 64, 55, 0.06);
+  border: 1px solid #F0E0C4;
+}
+
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group-full {
+  flex: 1 1 100%;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: #6D4C41;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 10px 14px;
+  border: 1px solid #E0D0B0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #FFFDF5;
+  color: #5D4037;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #E8B4B8;
+  box-shadow: 0 0 0 3px rgba(232, 180, 184, 0.15);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #BCAAA4;
+}
+
+/* ========== 按钮样式 ========== */
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #E8B4B8, #D4A5A5);  /* 玫瑰粉渐变 */
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(232, 180, 184, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232, 180, 184, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-light {
+  background: #FFF8E7;
+  color: #6D4C41;
+  border: 1px solid #E0D0B0;
+}
+
+.btn-light:hover {
+  background: #F5E6C8;
+}
+
+.btn-danger {
+  background: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #EF9A9A;
+}
+
+.btn-danger:hover {
+  background: #FFCDD2;
+}
+
+.btn-small {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border-radius: 16px;
+}
+
+/* ========== 蜡烛卡片网格 ========== */
+.candles-section {
+  margin-bottom: 40px;
+}
+
+.candles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* ========== 蜡烛卡片 ========== */
+.candle-card {
+  background: #FFF8E7;         /* 奶油白卡片，像香氛标签 */
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(93, 64, 55, 0.08);
+  border: 1px solid #F0E0C4;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.candle-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(93, 64, 55, 0.12);
+}
+
+.candle-card.is-low {
+  border-color: #E57373;
+  background: #FFF0EE;
+}
+
+/* 快用完的标签 */
+.low-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #C62828;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.candle-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #4E342E;
+  margin-bottom: 6px;
+  padding-right: 60px;
+}
+
+.candle-scent {
+  font-size: 0.9rem;
+  color: #8D6E63;
+  margin-bottom: 14px;
+  font-style: italic;
+}
+
+.candle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+}
+
+.info-label {
+  color: #8D6E63;
+}
+
+.info-value {
+  color: #5D4037;
+  font-weight: 500;
+}
+
+/* 剩余比例进度条 */
+.remaining-bar-wrapper {
+  margin-bottom: 14px;
+}
+
+.remaining-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #EFE0C4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.remaining-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #E8B4B8, #D4A5A5);  /* 玫瑰粉渐变条 */
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.candle-card.is-low .remaining-bar-fill {
+  background: linear-gradient(90deg, #EF5350, #E53935);  /* 红棕色渐变条 */
+}
+
+.remaining-text {
+  text-align: right;
+  font-size: 0.82rem;
+  color: #8D6E63;
+  margin-top: 4px;
+}
+
+/* 备注 */
+.candle-note {
+  font-size: 0.85rem;
+  color: #8D6E63;
+  background: #FFFDF5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  border-left: 3px solid #E8B4B8;
+  font-style: italic;
+  word-break: break-word;
+}
+
+/* 卡片操作按钮 */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-actions .btn {
+  flex: 1;
+  min-width: 70px;
+}
+
+/* 剩余比例修改 */
+.remaining-edit {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.remaining-edit input[type="range"] {
+  flex: 1;
+  accent-color: #E8B4B8;
+}
+
+.remaining-edit input[type="number"] {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid #E0D0B0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #FFFDF5;
+  color: #5D4037;
+  text-align: center;
+}
+
+/* ========== 空状态 ========== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #BCAAA4;
+  font-size: 1rem;
+}
+
+/* ========== 响应式适配 ========== */
+@media (max-width: 600px) {
+  .container {
+    padding: 20px 14px;
+  }
+
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .stats-section {
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px 16px;
+    min-width: 100px;
+  }
+
+  .stat-number {
+    font-size: 1.6rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .candles-grid {
+    grid-template-columns: 1fr;
+  }
+}

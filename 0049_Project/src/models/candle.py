@@ -67,6 +67,57 @@ class Candle:
         """判断蜡烛是否快用完了（剩余比例低于阈值）"""
         return self.remaining_ratio < threshold
 
+    def sanitize(self) -> None:
+        """
+        规范化字段类型和范围，防止脏数据导致后续逻辑异常。
+        主要用于导入数据后的清洗，保证：
+        - capacity >= 0 的 float
+        - remaining_ratio 在 0-100 的 int
+        - use_count >= 0 的 int
+        - usage_logs 必须是 list，每条记录规范字段
+        - total_burn_hours >= 0 的 float
+        - burned_hours >= 0 的 float
+        """
+        try:
+            self.capacity = max(0.0, float(self.capacity))
+        except (TypeError, ValueError):
+            self.capacity = 0.0
+
+        try:
+            self.remaining_ratio = max(0, min(100, int(self.remaining_ratio)))
+        except (TypeError, ValueError):
+            self.remaining_ratio = 100
+
+        try:
+            self.use_count = max(0, int(self.use_count))
+        except (TypeError, ValueError):
+            self.use_count = 0
+
+        if not isinstance(self.usage_logs, list):
+            self.usage_logs = []
+        else:
+            sanitized_logs = []
+            for log in self.usage_logs:
+                if not isinstance(log, dict):
+                    continue
+                sanitized_logs.append({
+                    "time": str(log.get("time", "")),
+                    "remaining_ratio": max(0, min(100, int(log.get("remaining_ratio", 100)))),
+                    "note": str(log.get("note", "")),
+                    "burn_hours": max(0.0, float(log.get("burn_hours", 0))),
+                })
+            self.usage_logs = sanitized_logs
+
+        try:
+            self.total_burn_hours = max(0.0, float(self.total_burn_hours))
+        except (TypeError, ValueError):
+            self.total_burn_hours = 0.0
+
+        try:
+            self.burned_hours = max(0.0, float(self.burned_hours))
+        except (TypeError, ValueError):
+            self.burned_hours = 0.0
+
     def calc_remaining_from_burn(self, additional_hours: float) -> int:
         """
         根据燃烧时长自动估算剩余比例

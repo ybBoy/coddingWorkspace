@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": null,
+    "name": "dirty",
+    "scent": "test",
+    "capacity": 0.0,
+    "remaining_ratio": 100,
+    "purchase_date": "",
+    "use_count": 0,
+    "note": "",
+    "created_at": null,
+    "updated_at": null,
+    "usage_logs": [],
+    "total_burn_hours": 0.0,
+    "burned_hours": 0.0
+  }
+]

@@ -9,7 +9,7 @@ candle_routes.py - 蜡烛 API 路由层
 新增接口（v2）：
   - PUT /api/candles/:id/light - 点燃（支持可选 note 和 burn_hours）
   - GET /api/scents - 获取所有不重复香型
-  - GET /api/candles/low - 获取快用完的蜡烛列表
+  - GET /api/low-candles - 获取快用完的蜡烛列表
   - GET /api/export - 导出数据
   - POST /api/import - 导入数据
 """
@@ -86,6 +86,9 @@ def create_candle_blueprint(service: CandleService) -> Blueprint:
             total_burn_hours = float(data.get("total_burn_hours", 0))
         except (TypeError, ValueError):
             return jsonify({"error": "总燃烧小时数必须为数字"}), 400
+
+        if total_burn_hours < 0:
+            return jsonify({"error": "总燃烧小时数不能为负数"}), 400
 
         candle = service.add_candle(
             name=name,

@@ -279,6 +279,7 @@ class CandleService:
                 continue
             try:
                 candle = Candle.from_dict(item)
+                candle.sanitize()
                 if candle.name and candle.scent:
                     valid_items.append(candle)
             except Exception:

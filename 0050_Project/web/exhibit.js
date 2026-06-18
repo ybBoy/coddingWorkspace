@@ -25,7 +25,8 @@
     function renderStars(rating) {
         const full = '★';
         const empty = '☆';
-        return full.repeat(rating) + empty.repeat(5 - rating);
+        const safeRating = Math.max(0, Math.min(5, isNaN(parseInt(rating, 10)) ? 0 : parseInt(rating, 10)));
+        return full.repeat(safeRating) + empty.repeat(5 - safeRating);
     }
 
     function escapeHtml(text) {

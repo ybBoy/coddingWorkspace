@@ -29,6 +29,7 @@ class ExhibitService:
 
     def add_record(self, name: str, location: str, visit_date: str,
                    exhibit_type: str, rating: int, comment: str) -> ExhibitRecord:
+        rating = ExhibitRecord.validate_rating(rating)
         record = ExhibitRecord.create(
             name=name,
             location=location,
@@ -40,8 +41,7 @@ class ExhibitService:
         return self._repository.add(record)
 
     def update_rating(self, record_id: str, rating: int) -> Optional[ExhibitRecord]:
-        if rating < 1 or rating > 5:
-            raise ValueError("评分必须在 1 到 5 之间")
+        rating = ExhibitRecord.validate_rating(rating)
         return self._repository.update_rating(record_id, rating)
 
     def delete_record(self, record_id: str) -> bool:

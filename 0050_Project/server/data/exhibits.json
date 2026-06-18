@@ -1,20 +1,29 @@
 [
   {
-    "id": "fb619a5e-dfc5-4813-a5de-38be509ee54a",
-    "name": "???????",
-    "location": "?????",
-    "visit_date": "2024-06-15",
-    "exhibit_type": "??",
-    "rating": 5,
-    "comment": "?????,??????"
+    "id": "dirty-test-001",
+    "name": "异常评分测试展",
+    "location": "测试博物馆",
+    "visit_date": "2024-01-01",
+    "exhibit_type": "博物馆",
+    "rating": 9,
+    "comment": "这条记录评分是 9，用于测试兜底"
   },
   {
-    "id": "f3ac433e-462a-4660-b637-4987dcfb6ded",
-    "name": "梵高的星空艺术展",
-    "location": "北京798艺术区",
-    "visit_date": "2026-06-18",
+    "id": "dirty-test-002",
+    "name": "零分测试展",
+    "location": "测试画廊",
+    "visit_date": "2024-02-01",
     "exhibit_type": "画展",
-    "rating": 5,
-    "comment": "梵高的笔触太有力量了，站在星空前久久不能平静"
+    "rating": 0,
+    "comment": "这条记录评分是 0，用于测试兜底"
+  },
+  {
+    "id": "dirty-test-003",
+    "name": "负分测试展",
+    "location": "负分美术馆",
+    "visit_date": "2024-03-01",
+    "exhibit_type": "其他",
+    "rating": -3,
+    "comment": "这条记录评分是负数"
   }
 ]

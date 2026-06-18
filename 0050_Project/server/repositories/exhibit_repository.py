@@ -43,6 +43,14 @@ class ExhibitRepository:
     def update_rating(self, record_id: str, rating: int) -> Optional[ExhibitRecord]:
         record = self.get_by_id(record_id)
         if record:
+            try:
+                rating = int(rating)
+            except (ValueError, TypeError):
+                rating = ExhibitRecord.MIN_RATING
+            if rating < ExhibitRecord.MIN_RATING:
+                rating = ExhibitRecord.MIN_RATING
+            if rating > ExhibitRecord.MAX_RATING:
+                rating = ExhibitRecord.MAX_RATING
             record.rating = rating
             self._save_to_file()
             return record

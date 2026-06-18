@@ -35,14 +35,17 @@ def create_exhibit_bp(service: ExhibitService) -> Blueprint:
         except (ValueError, TypeError):
             return jsonify({"error": "评分必须是数字"}), 400
 
-        record = service.add_record(
-            name=data["name"],
-            location=data["location"],
-            visit_date=data["visit_date"],
-            exhibit_type=data["exhibit_type"],
-            rating=rating,
-            comment=data["comment"],
-        )
+        try:
+            record = service.add_record(
+                name=data["name"],
+                location=data["location"],
+                visit_date=data["visit_date"],
+                exhibit_type=data["exhibit_type"],
+                rating=rating,
+                comment=data["comment"],
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
         return jsonify(record.to_dict()), 201
 
     @bp.route("/api/exhibits/<record_id>/rating", methods=["PUT"])

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "fb619a5e-dfc5-4813-a5de-38be509ee54a",
+    "name": "???????",
+    "location": "?????",
+    "visit_date": "2024-06-15",
+    "exhibit_type": "??",
+    "rating": 5,
+    "comment": "?????,??????"
+  },
+  {
+    "id": "f3ac433e-462a-4660-b637-4987dcfb6ded",
+    "name": "梵高的星空艺术展",
+    "location": "北京798艺术区",
+    "visit_date": "2026-06-18",
+    "exhibit_type": "画展",
+    "rating": 5,
+    "comment": "梵高的笔触太有力量了，站在星空前久久不能平静"
+  }
+]

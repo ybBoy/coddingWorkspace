@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>展览打卡记录</title>
+    <link rel="stylesheet" href="exhibit.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">我的展览打卡册</h1>
+            <p class="subtitle">记录每一次与艺术的相遇</p>
+        </header>
+
+        <section class="stats-section">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">总参观次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgRating">0.0</div>
+                <div class="stat-label">平均评分</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="filteredCount">0</div>
+                <div class="stat-label">当前筛选结果</div>
+            </div>
+        </section>
+
+        <section class="filter-section">
+            <div class="filter-group">
+                <label for="typeFilter">展览类型</label>
+                <select id="typeFilter">
+                    <option value="">全部类型</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="locationSearch">地点搜索</label>
+                <input type="text" id="locationSearch" placeholder="输入地点关键词...">
+            </div>
+            <button class="btn btn-secondary" id="resetFilterBtn">重置筛选</button>
+        </section>
+
+        <section class="form-section">
+            <h2 class="section-title">新增打卡记录</h2>
+            <form id="addForm" class="add-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">展览名称 *</label>
+                        <input type="text" id="name" required placeholder="如：莫奈的花园特展">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">地点 *</label>
+                        <input type="text" id="location" required placeholder="如：上海美术馆">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="visitDate">参观日期 *</label>
+                        <input type="date" id="visitDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exhibitType">展览类型 *</label>
+                        <select id="exhibitType" required>
+                            <option value="">请选择</option>
+                            <option value="画展">画展</option>
+                            <option value="博物馆">博物馆</option>
+                            <option value="摄影展">摄影展</option>
+                            <option value="雕塑展">雕塑展</option>
+                            <option value="装置艺术">装置艺术</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="rating">评分 *</label>
+                        <select id="rating" required>
+                            <option value="5">★★★★★ 5</option>
+                            <option value="4">★★★★☆ 4</option>
+                            <option value="3">★★★☆☆ 3</option>
+                            <option value="2">★★☆☆☆ 2</option>
+                            <option value="1">★☆☆☆☆ 1</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="comment">观后感 *</label>
+                    <textarea id="comment" required rows="2" placeholder="一句话记录你的感受..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">添加打卡</button>
+            </form>
+        </section>
+
+        <section class="records-section">
+            <h2 class="section-title">打卡记录</h2>
+            <div class="records-list" id="recordsList">
+            </div>
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <p>还没有打卡记录，快去看展览吧～</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="exhibit.js"></script>
+</body>
+</html>

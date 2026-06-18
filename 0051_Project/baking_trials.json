@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "dessert_name": "黄油可颂",
+    "dessert_type": "面包",
+    "recipe_version": "v1",
+    "temperature": 180,
+    "duration_minutes": 30,
+    "success_level": "良好",
+    "notes": "第一次尝试，层次还不够明显，下次需要延长揉面时间",
+    "created_at": "2026-06-18T13:56:33.171068"
+  }
+]

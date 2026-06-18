@@ -146,7 +146,9 @@ function renderCandles(candles) {
 
     // 数字修改时同步滑块
     numberInput.addEventListener("input", () => {
-      let val = parseInt(numberInput.value) || 0;
+      if (numberInput.value === "") return;
+      let val = parseInt(numberInput.value);
+      if (isNaN(val)) return;
       val = Math.max(0, Math.min(100, val));
       rangeInput.value = val;
     });
@@ -158,7 +160,16 @@ function renderCandles(candles) {
 
     // 数字输入失焦时提交更新
     numberInput.addEventListener("change", () => {
-      handleUpdateRemaining(id, parseInt(numberInput.value));
+      const raw = numberInput.value.trim();
+      if (raw === "" || isNaN(parseInt(raw))) {
+        showToast("剩余比例不能为空，已恢复原值");
+        refreshAll();
+        return;
+      }
+      const val = Math.max(0, Math.min(100, parseInt(raw)));
+      numberInput.value = val;
+      rangeInput.value = val;
+      handleUpdateRemaining(id, val);
     });
   });
 }
@@ -297,10 +308,14 @@ async function handleUpdateRemaining(id, value) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ remaining_ratio: value }),
     });
-    if (!res.ok) throw new Error("更新失败");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "更新失败");
+    }
     refreshAll();
   } catch (err) {
-    console.error("更新剩余比例失败:", err);
+    showToast(err.message);
+    refreshAll();
   }
 }
 
@@ -319,6 +334,28 @@ async function handleDelete(id) {
     alert(err.message);
     console.error("删除蜡烛失败:", err);
   }
+}
+
+/**
+ * 显示 toast 提示消息
+ * @param {string} message - 提示文本
+ * @param {string} type - 类型 "error" 或 "info"
+ */
+function showToast(message, type = "error") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add("toast-fade-out");
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
 }
 
 // ========== 工具函数 ==========

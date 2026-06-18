@@ -417,6 +417,55 @@ body {
   font-size: 1rem;
 }
 
+/* ========== Toast 提示 ========== */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 16px rgba(93, 64, 55, 0.2);
+  animation: toast-in 0.3s ease;
+  max-width: 320px;
+  word-break: break-word;
+}
+
+.toast-error {
+  background: #FFF0EE;
+  color: #C62828;
+  border: 1px solid #EF9A9A;
+}
+
+.toast-info {
+  background: #FFF8E7;
+  color: #5D4037;
+  border: 1px solid #F0E0C4;
+}
+
+.toast-fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ========== 响应式适配 ========== */
 @media (max-width: 600px) {
   .container {

@@ -58,16 +58,28 @@ def create_candle_blueprint(service: CandleService) -> Blueprint:
         data = request.get_json() or {}
         name = data.get("name", "").strip()
         scent = data.get("scent", "").strip()
-        capacity = data.get("capacity", 0)
 
-        if not name or not scent or capacity <= 0:
-            return jsonify({"error": "名称、香型和容量不能为空"}), 400
+        if not name or not scent:
+            return jsonify({"error": "名称和香型不能为空"}), 400
+
+        try:
+            capacity = float(data.get("capacity", 0))
+        except (TypeError, ValueError):
+            return jsonify({"error": "容量必须为数字"}), 400
+
+        if capacity <= 0:
+            return jsonify({"error": "容量必须大于 0"}), 400
+
+        try:
+            remaining_ratio = int(data.get("remaining_ratio", 100))
+        except (TypeError, ValueError):
+            return jsonify({"error": "剩余比例必须为整数"}), 400
 
         candle = service.add_candle(
             name=name,
             scent=scent,
-            capacity=float(capacity),
-            remaining_ratio=data.get("remaining_ratio", 100),
+            capacity=capacity,
+            remaining_ratio=remaining_ratio,
             purchase_date=data.get("purchase_date", ""),
             note=data.get("note", ""),
         )
@@ -99,7 +111,12 @@ def create_candle_blueprint(service: CandleService) -> Blueprint:
         if remaining_ratio is None:
             return jsonify({"error": "缺少 remaining_ratio 参数"}), 400
 
-        candle = service.update_remaining(candle_id, int(remaining_ratio))
+        try:
+            remaining_ratio = int(remaining_ratio)
+        except (TypeError, ValueError):
+            return jsonify({"error": "剩余比例必须为整数"}), 400
+
+        candle = service.update_remaining(candle_id, remaining_ratio)
         if not candle:
             return jsonify({"error": "蜡烛不存在"}), 404
         return jsonify(candle.to_dict()), 200

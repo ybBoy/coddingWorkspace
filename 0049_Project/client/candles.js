@@ -9,27 +9,30 @@
  *     → candle_service 更新内存数据
  *     → candle_json_store 保存到 JSON 文件
  *     → 返回响应
- *     → 前端重新拉取列表和统计
+ *     → 前端重新拉取列表、统计、香型、低库存
  *     → 刷新页面显示
+ *
+ * 新增功能（v2）：
+ *   - 点燃弹窗：输入备注和燃烧时长 → 调用 light 接口
+ *   - 香型标签筛选：点击标签 → 设定筛选条件 → 刷新列表
+ *   - 低库存提醒区：渲染剩余 < 15% 的蜡烛
+ *   - 导入导出：导出下载 JSON、导入上传 JSON
+ *   - 使用历史：卡片显示最近一次使用记录
+ *   - 自动估算：新增时设置总燃烧时长，点燃时输入本次时长自动扣减
  */
 
-// API 基础地址（同域部署，直接用相对路径）
 const API_BASE = "/api";
 
-// 页面状态
 let currentScentFilter = "";
 let filterDebounceTimer = null;
+let pendingLightId = null;
 
 // ========== 页面初始化 ==========
 document.addEventListener("DOMContentLoaded", () => {
-  // 设置购买日期默认值为今天
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("candle-date").value = today;
 
-  // 绑定事件
   bindEvents();
-
-  // 初次加载数据
   refreshAll();
 });
 
@@ -37,43 +40,47 @@ document.addEventListener("DOMContentLoaded", () => {
  * 绑定所有页面事件
  */
 function bindEvents() {
-  // 新增表单提交
   document.getElementById("add-form").addEventListener("submit", handleAddCandle);
 
-  // 香型筛选输入（防抖）
   const filterInput = document.getElementById("scent-filter");
   filterInput.addEventListener("input", (e) => {
     clearTimeout(filterDebounceTimer);
     filterDebounceTimer = setTimeout(() => {
       currentScentFilter = e.target.value.trim();
+      updateScentTagActive();
       refreshAll();
     }, 300);
   });
+
+  document.getElementById("light-confirm").addEventListener("click", handleLightConfirm);
+  document.getElementById("light-cancel").addEventListener("click", closeLightModal);
+
+  document.getElementById("btn-export").addEventListener("click", handleExport);
+
+  document.getElementById("import-file").addEventListener("change", handleImport);
 }
 
 // ========== 数据刷新 ==========
 /**
- * 刷新所有数据：蜡烛列表 + 统计数据
- * 流程：同时请求列表和统计接口 → 更新 DOM
+ * 刷新所有数据：蜡烛列表 + 统计 + 香型标签 + 低库存
  */
 async function refreshAll() {
   try {
-    const [candles, stats] = await Promise.all([
+    const [candles, stats, scents, lowCandles] = await Promise.all([
       fetchCandles(currentScentFilter),
       fetchStats(currentScentFilter),
+      fetchScents(),
+      fetchLowCandles(),
     ]);
     renderCandles(candles);
     renderStats(stats);
+    renderScentTags(scents);
+    renderLowSection(lowCandles);
   } catch (err) {
     console.error("刷新数据失败:", err);
   }
 }
 
-/**
- * 获取蜡烛列表
- * @param {string} scent - 香型筛选关键词
- * @returns {Promise<Array>} 蜡烛数组
- */
 async function fetchCandles(scent = "") {
   const url = scent
     ? `${API_BASE}/candles?scent=${encodeURIComponent(scent)}`
@@ -83,11 +90,6 @@ async function fetchCandles(scent = "") {
   return res.json();
 }
 
-/**
- * 获取统计数据
- * @param {string} scent - 香型筛选关键词
- * @returns {Promise<Object>} 统计对象
- */
 async function fetchStats(scent = "") {
   const url = scent
     ? `${API_BASE}/stats?scent=${encodeURIComponent(scent)}`
@@ -97,11 +99,19 @@ async function fetchStats(scent = "") {
   return res.json();
 }
 
+async function fetchScents() {
+  const res = await fetch(`${API_BASE}/scents`);
+  if (!res.ok) throw new Error("获取香型列表失败");
+  return res.json();
+}
+
+async function fetchLowCandles() {
+  const res = await fetch(`${API_BASE}/low-candles`);
+  if (!res.ok) throw new Error("获取低库存列表失败");
+  return res.json();
+}
+
 // ========== 渲染函数 ==========
-/**
- * 渲染统计数据
- * @param {Object} stats - 统计对象
- */
 function renderStats(stats) {
   document.getElementById("stat-total").textContent = stats.total_count;
   document.getElementById("stat-low").textContent = stats.low_count;
@@ -109,8 +119,64 @@ function renderStats(stats) {
 }
 
 /**
+ * 渲染香型标签
+ */
+function renderScentTags(scents) {
+  const container = document.getElementById("scent-tags");
+  container.innerHTML = scents.map((s) => {
+    const activeClass = currentScentFilter && s === currentScentFilter ? " active" : "";
+    return `<span class="scent-tag${activeClass}" data-scent="${escapeHtml(s)}">${escapeHtml(s)}</span>`;
+  }).join("");
+
+  container.querySelectorAll(".scent-tag").forEach((tag) => {
+    tag.addEventListener("click", () => {
+      const scent = tag.dataset.scent;
+      if (currentScentFilter === scent) {
+        currentScentFilter = "";
+        document.getElementById("scent-filter").value = "";
+      } else {
+        currentScentFilter = scent;
+        document.getElementById("scent-filter").value = scent;
+      }
+      updateScentTagActive();
+      refreshAll();
+    });
+  });
+}
+
+function updateScentTagActive() {
+  document.querySelectorAll(".scent-tag").forEach((tag) => {
+    if (currentScentFilter && tag.dataset.scent === currentScentFilter) {
+      tag.classList.add("active");
+    } else {
+      tag.classList.remove("active");
+    }
+  });
+}
+
+/**
+ * 渲染低库存提醒区
+ */
+function renderLowSection(lowCandles) {
+  const section = document.getElementById("low-section");
+  const listEl = document.getElementById("low-list");
+
+  if (lowCandles.length === 0) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "block";
+  listEl.innerHTML = lowCandles.map((c) => `
+    <div class="low-chip">
+      <span class="low-chip-name">${escapeHtml(c.name)}</span>
+      <span class="low-chip-ratio">${c.remaining_ratio}%</span>
+    </div>
+  `).join("");
+}
+
+/**
  * 渲染蜡烛卡片列表
- * @param {Array} candles - 蜡烛数组
  */
 function renderCandles(candles) {
   const listEl = document.getElementById("candles-list");
@@ -125,26 +191,20 @@ function renderCandles(candles) {
   emptyEl.style.display = "none";
   listEl.innerHTML = candles.map((c) => createCandleCard(c)).join("");
 
-  // 为每张卡片绑定事件
   listEl.querySelectorAll(".candle-card").forEach((card) => {
     const id = card.dataset.id;
 
-    // 点燃按钮
-    card.querySelector(".btn-light").addEventListener("click", () => handleLight(id));
+    card.querySelector(".btn-light").addEventListener("click", () => openLightModal(id));
 
-    // 删除按钮
     card.querySelector(".btn-delete").addEventListener("click", () => handleDelete(id));
 
-    // 剩余比例滑块
     const rangeInput = card.querySelector(".remaining-range");
     const numberInput = card.querySelector(".remaining-number");
 
-    // 滑块拖动时同步数字
     rangeInput.addEventListener("input", () => {
       numberInput.value = rangeInput.value;
     });
 
-    // 数字修改时同步滑块
     numberInput.addEventListener("input", () => {
       if (numberInput.value === "") return;
       let val = parseInt(numberInput.value);
@@ -153,12 +213,10 @@ function renderCandles(candles) {
       rangeInput.value = val;
     });
 
-    // 滑块释放时提交更新
     rangeInput.addEventListener("change", () => {
       handleUpdateRemaining(id, parseInt(rangeInput.value));
     });
 
-    // 数字输入失焦时提交更新
     numberInput.addEventListener("change", () => {
       const raw = numberInput.value.trim();
       if (raw === "" || isNaN(parseInt(raw))) {
@@ -176,8 +234,6 @@ function renderCandles(candles) {
 
 /**
  * 创建单支蜡烛的卡片 HTML
- * @param {Object} candle - 蜡烛对象
- * @returns {string} HTML 字符串
  */
 function createCandleCard(candle) {
   const isLow = candle.remaining_ratio < 15;
@@ -186,6 +242,26 @@ function createCandleCard(candle) {
   const noteHtml = candle.note
     ? `<div class="candle-note">${escapeHtml(candle.note)}</div>`
     : "";
+
+  const burnInfoHtml = candle.total_burn_hours > 0
+    ? `<div class="info-row">
+         <span class="info-label">已燃烧</span>
+         <span class="info-value">${candle.burned_hours} / ${candle.total_burn_hours} h</span>
+       </div>`
+    : "";
+
+  let lastUsageHtml = "";
+  if (candle.usage_logs && candle.usage_logs.length > 0) {
+    const last = candle.usage_logs[candle.usage_logs.length - 1];
+    const detailParts = [];
+    if (last.burn_hours > 0) detailParts.push(`${last.burn_hours}h`);
+    if (last.note) detailParts.push(escapeHtml(last.note));
+    const detailStr = detailParts.length > 0 ? ` · ${detailParts.join(" · ")}` : "";
+    lastUsageHtml = `<div class="usage-last">
+      <span class="usage-last-time">上次使用: ${last.time}</span>
+      <span class="usage-last-detail">${detailStr}</span>
+    </div>`;
+  }
 
   return `
     <div class="${cardClass}" data-id="${candle.id}">
@@ -206,6 +282,7 @@ function createCandleCard(candle) {
           <span class="info-label">使用次数</span>
           <span class="info-value">${candle.use_count} 次</span>
         </div>
+        ${burnInfoHtml}
       </div>
 
       <div class="remaining-bar-wrapper">
@@ -221,6 +298,7 @@ function createCandleCard(candle) {
       </div>
 
       ${noteHtml}
+      ${lastUsageHtml}
 
       <div class="card-actions">
         <button class="btn btn-primary btn-small btn-light">🔥 点燃</button>
@@ -230,11 +308,43 @@ function createCandleCard(candle) {
   `;
 }
 
+// ========== 弹窗 ==========
+function openLightModal(id) {
+  pendingLightId = id;
+  document.getElementById("light-note").value = "";
+  document.getElementById("light-hours").value = 0;
+  document.getElementById("light-modal").style.display = "flex";
+}
+
+function closeLightModal() {
+  pendingLightId = null;
+  document.getElementById("light-modal").style.display = "none";
+}
+
+async function handleLightConfirm() {
+  if (!pendingLightId) return;
+  const note = document.getElementById("light-note").value.trim();
+  const burnHours = parseFloat(document.getElementById("light-hours").value) || 0;
+
+  try {
+    const res = await fetch(`${API_BASE}/candles/${pendingLightId}/light`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note, burn_hours: burnHours }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "点燃失败");
+    }
+    closeLightModal();
+    showToast("已记录点燃~", "info");
+    refreshAll();
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
 // ========== 业务操作 ==========
-/**
- * 处理新增蜡烛
- * 流程：表单数据 → POST /api/candles → 重置表单 → 刷新列表
- */
 async function handleAddCandle(e) {
   e.preventDefault();
 
@@ -244,6 +354,7 @@ async function handleAddCandle(e) {
   const purchaseDate = document.getElementById("candle-date").value;
   const remainingRatio = parseInt(document.getElementById("candle-remaining").value) || 100;
   const note = document.getElementById("candle-note").value.trim();
+  const totalBurnHours = parseFloat(document.getElementById("candle-burn-hours").value) || 0;
 
   if (!name || !scent || !capacity) {
     alert("请填写名称、香型和容量~");
@@ -261,6 +372,7 @@ async function handleAddCandle(e) {
         purchase_date: purchaseDate,
         remaining_ratio: remainingRatio,
         note,
+        total_burn_hours: totalBurnHours,
       }),
     });
 
@@ -269,38 +381,16 @@ async function handleAddCandle(e) {
       throw new Error(data.error || "添加失败");
     }
 
-    // 重置表单（保留日期默认值）
     document.getElementById("add-form").reset();
     document.getElementById("candle-date").value = new Date().toISOString().split("T")[0];
     document.getElementById("candle-remaining").value = 100;
 
-    // 刷新列表
     refreshAll();
   } catch (err) {
     alert(err.message);
-    console.error("添加蜡烛失败:", err);
   }
 }
 
-/**
- * 处理点燃操作（使用次数 +1）
- * 流程：点击按钮 → PUT /api/candles/:id/light → 刷新列表
- */
-async function handleLight(id) {
-  try {
-    const res = await fetch(`${API_BASE}/candles/${id}/light`, { method: "PUT" });
-    if (!res.ok) throw new Error("点燃失败");
-    refreshAll();
-  } catch (err) {
-    alert(err.message);
-    console.error("点燃蜡烛失败:", err);
-  }
-}
-
-/**
- * 处理修改剩余比例
- * 流程：滑块/数字变化 → PUT /api/candles/:id/remaining → 刷新列表
- */
 async function handleUpdateRemaining(id, value) {
   try {
     const res = await fetch(`${API_BASE}/candles/${id}/remaining`, {
@@ -319,10 +409,6 @@ async function handleUpdateRemaining(id, value) {
   }
 }
 
-/**
- * 处理删除蜡烛
- * 流程：确认 → DELETE /api/candles/:id → 刷新列表
- */
 async function handleDelete(id) {
   if (!confirm("确定要删除这支蜡烛吗？删除后无法恢复哦～")) return;
 
@@ -331,16 +417,66 @@ async function handleDelete(id) {
     if (!res.ok) throw new Error("删除失败");
     refreshAll();
   } catch (err) {
-    alert(err.message);
-    console.error("删除蜡烛失败:", err);
+    showToast(err.message);
   }
 }
 
-/**
- * 显示 toast 提示消息
- * @param {string} message - 提示文本
- * @param {string} type - 类型 "error" 或 "info"
- */
+// ========== 导入导出 ==========
+async function handleExport() {
+  try {
+    const res = await fetch(`${API_BASE}/export`);
+    if (!res.ok) throw new Error("导出失败");
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `candles_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("导出成功！", "info");
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!Array.isArray(data)) {
+      throw new Error("JSON 文件格式不正确，应为数组");
+    }
+
+    const res = await fetch(`${API_BASE}/import`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data, merge: true }),
+    });
+
+    if (!res.ok) {
+      const result = await res.json().catch(() => ({}));
+      throw new Error(result.error || "导入失败");
+    }
+
+    const result = await res.json();
+    const msg = result.mode === "merge"
+      ? `导入成功：新增 ${result.added} 条，跳过 ${result.skipped} 条重复`
+      : `导入成功：覆盖为 ${result.count} 条`;
+    showToast(msg, "info");
+    refreshAll();
+  } catch (err) {
+    showToast(err.message);
+  }
+
+  e.target.value = "";
+}
+
+// ========== 工具函数 ==========
 function showToast(message, type = "error") {
   let container = document.getElementById("toast-container");
   if (!container) {
@@ -358,10 +494,6 @@ function showToast(message, type = "error") {
   }, 2500);
 }
 
-// ========== 工具函数 ==========
-/**
- * HTML 转义，防止 XSS
- */
 function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;

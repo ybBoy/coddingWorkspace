@@ -58,5 +58,5 @@ if __name__ == "__main__":
     app = create_app()
     print("[香薰蜡烛库存管理系统] 启动中...")
     print(f"数据文件: {os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'candles.json')}")
-    print("访问地址: http://127.0.0.1:5001/")
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    print("访问地址: http://127.0.0.1:5002/")
+    app.run(host="0.0.0.0", port=5002, debug=True)

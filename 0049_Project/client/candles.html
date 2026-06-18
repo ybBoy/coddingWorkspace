@@ -1,15 +1,17 @@
 <!--
   candles.html - 香薰蜡烛库存管理页面
-  文件职责：前端页面结构，包含统计区、筛选区、新增表单、蜡烛卡片列表。
+  文件职责：前端页面结构，包含统计区、香型标签筛选、低库存提醒区、新增表单、蜡烛卡片列表、导入导出、点燃弹窗。
   整体风格：温暖香氛角，暖米色背景、深棕色标题、玫瑰粉按钮、香氛标签卡片。
 
   页面交互流程：
-    1. 页面加载 → candles.js 请求蜡烛列表和统计数据 → 渲染页面
+    1. 页面加载 → candles.js 请求蜡烛列表、统计数据、香型列表 → 渲染页面
     2. 用户新增蜡烛 → 表单提交 → fetch POST /api/candles → 刷新列表
-    3. 用户点燃蜡烛 → 点击按钮 → fetch PUT /api/candles/:id/light → 刷新列表
+    3. 用户点燃蜡烛 → 弹窗输入备注+时长 → fetch PUT /api/candles/:id/light → 刷新列表
     4. 用户修改剩余比例 → 滑块/输入 → fetch PUT /api/candles/:id/remaining → 刷新列表
     5. 用户删除蜡烛 → 点击删除 → fetch DELETE /api/candles/:id → 刷新列表
-    6. 用户按香型筛选 → 输入关键词 → fetch GET /api/candles?scent=xxx → 刷新列表
+    6. 用户按香型筛选 → 点击标签或输入关键词 → fetch GET /api/candles?scent=xxx → 刷新列表
+    7. 用户导出 → fetch GET /api/export → 下载 JSON 文件
+    8. 用户导入 → 选择文件 → fetch POST /api/import → 刷新列表
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -43,7 +45,7 @@
       </div>
     </section>
 
-    <!-- 筛选区域 -->
+    <!-- 筛选区域：搜索框 + 香型标签 -->
     <section class="filter-section">
       <div class="filter-input-wrapper">
         <input
@@ -52,6 +54,17 @@
           placeholder="🔍 按香型筛选，比如：玫瑰、薰衣草..."
           class="filter-input"
         >
+      </div>
+      <div id="scent-tags" class="scent-tags">
+        <!-- 香型标签由 JS 动态生成 -->
+      </div>
+    </section>
+
+    <!-- 低库存提醒区 -->
+    <section id="low-section" class="low-section" style="display: none;">
+      <h2 class="section-title section-title-low">⚠️ 快用完了，需要关注</h2>
+      <div id="low-list" class="low-list">
+        <!-- 低库存卡片由 JS 动态生成 -->
       </div>
     </section>
 
@@ -82,6 +95,10 @@
             <label for="candle-remaining">剩余比例 (%)</label>
             <input type="number" id="candle-remaining" min="0" max="100" value="100">
           </div>
+          <div class="form-group">
+            <label for="candle-burn-hours">总燃烧时长 (h)</label>
+            <input type="number" id="candle-burn-hours" min="0" step="0.5" placeholder="0 = 不自动估算">
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group form-group-full">
@@ -95,7 +112,14 @@
 
     <!-- 蜡烛卡片列表 -->
     <section class="candles-section">
-      <h2 class="section-title">🕯️ 我的蜡烛</h2>
+      <div class="section-header-row">
+        <h2 class="section-title" style="margin-bottom:0">🕯️ 我的蜡烛</h2>
+        <div class="header-actions">
+          <button type="button" class="btn btn-light btn-small" id="btn-export">📤 导出</button>
+          <label class="btn btn-light btn-small btn-import-label" for="import-file">📥 导入</label>
+          <input type="file" id="import-file" accept=".json" style="display:none;">
+        </div>
+      </div>
       <div id="candles-list" class="candles-grid">
         <!-- 蜡烛卡片由 JavaScript 动态生成 -->
       </div>
@@ -103,6 +127,25 @@
         <p>还没有蜡烛呢，添加第一支吧～</p>
       </div>
     </section>
+  </div>
+
+  <!-- 点燃弹窗 -->
+  <div id="light-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h3 class="modal-title">🔥 记录点燃</h3>
+      <div class="form-group">
+        <label for="light-note">本次备注</label>
+        <input type="text" id="light-note" placeholder="比如：睡前放松时光">
+      </div>
+      <div class="form-group">
+        <label for="light-hours">燃烧时长 (小时)</label>
+        <input type="number" id="light-hours" min="0" step="0.5" value="0" placeholder="0 = 不自动扣减">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="light-confirm">确认点燃</button>
+        <button type="button" class="btn btn-light" id="light-cancel">取消</button>
+      </div>
+    </div>
   </div>
 
   <script src="candles.js"></script>

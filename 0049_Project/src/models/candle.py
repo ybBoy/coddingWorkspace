@@ -2,18 +2,22 @@
 candle.py - 蜡烛数据模型
 文件职责：定义香薰蜡烛的数据结构，包含所有蜡烛相关的属性字段。
 使用 dataclass 简化对象创建和序列化，支持与 JSON 格式互相转换。
+
+新增字段说明（v2）：
+- usage_logs: 使用历史列表，每次点燃记录 {time, remaining_ratio, note, burn_hours}
+- total_burn_hours: 预设总燃烧小时数，用于自动估算剩余比例
+- burned_hours: 已燃烧小时数，每次点燃累加
 """
 
-from dataclasses import dataclass, asdict
-from datetime import date, datetime
-from typing import Optional
+from dataclasses import dataclass, asdict, field
+from typing import Optional, List, Dict
 
 
 @dataclass
 class Candle:
     """
     香薰蜡烛数据模型
-    
+
     属性说明：
     - id: 唯一标识符，自动生成
     - name: 蜡烛名称
@@ -25,6 +29,9 @@ class Candle:
     - note: 备注信息，可选
     - created_at: 创建时间
     - updated_at: 更新时间
+    - usage_logs: 使用历史列表，每条记录含 time/remaining_ratio/note/burn_hours
+    - total_burn_hours: 预设总燃烧小时数（0 表示未设置，不自动估算）
+    - burned_hours: 已燃烧小时数
     """
     id: Optional[str] = None
     name: str = ""
@@ -36,6 +43,9 @@ class Candle:
     note: str = ""
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    usage_logs: List[Dict] = field(default_factory=list)
+    total_burn_hours: float = 0.0
+    burned_hours: float = 0.0
 
     def to_dict(self) -> dict:
         """将 Candle 对象转换为字典，便于 JSON 序列化"""
@@ -43,9 +53,37 @@ class Candle:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Candle":
-        """从字典创建 Candle 对象"""
-        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+        """从字典创建 Candle 对象，忽略未知字段以兼容旧数据"""
+        known = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
+        if "usage_logs" not in known:
+            known["usage_logs"] = []
+        if "total_burn_hours" not in known:
+            known["total_burn_hours"] = 0.0
+        if "burned_hours" not in known:
+            known["burned_hours"] = 0.0
+        return cls(**known)
 
     def is_low(self, threshold: int = 15) -> bool:
         """判断蜡烛是否快用完了（剩余比例低于阈值）"""
         return self.remaining_ratio < threshold
+
+    def calc_remaining_from_burn(self, additional_hours: float) -> int:
+        """
+        根据燃烧时长自动估算剩余比例
+
+        计算公式：
+          new_burned = burned_hours + additional_hours
+          remaining_ratio = round((1 - new_burned / total_burn_hours) * 100)
+          限制在 0-100 范围内
+
+        Args:
+            additional_hours: 本次燃烧时长（小时）
+
+        Returns:
+            估算的剩余比例（0-100），如果 total_burn_hours 为 0 则返回 -1 表示无法估算
+        """
+        if self.total_burn_hours <= 0:
+            return -1
+        new_burned = self.burned_hours + additional_hours
+        ratio = round((1 - new_burned / self.total_burn_hours) * 100)
+        return max(0, min(100, ratio))

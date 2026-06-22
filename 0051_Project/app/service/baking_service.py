@@ -158,7 +158,7 @@ class BakingService:
                     "notes": t.notes,
                     "created_at": t.created_at,
                 })
-            if len(versions) >= 1:
+            if len(versions) >= 2:
                 results.append({
                     "dessert_name": name,
                     "dessert_type": items[0].dessert_type,

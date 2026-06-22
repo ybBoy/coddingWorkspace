@@ -28,5 +28,20 @@
     "look_score": 7,
     "texture_score": 8,
     "image_data": null
+  },
+  {
+    "id": 3,
+    "dessert_name": "奶油苏打饼干",
+    "dessert_type": "饼干",
+    "recipe_version": "v1",
+    "temperature": 170,
+    "duration_minutes": 20,
+    "success_level": "良好",
+    "notes": "初次尝试苏打饼干",
+    "created_at": "2026-06-22T17:01:43.596603",
+    "taste_score": 7,
+    "look_score": 6,
+    "texture_score": 7,
+    "image_data": null
   }
 ]

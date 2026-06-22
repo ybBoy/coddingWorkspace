@@ -155,8 +155,11 @@ def export_csv():
     writer.writeheader()
     for t in trials:
         writer.writerow(t.to_dict())
+    csv_content = buf.getvalue()
+    if not csv_content.startswith("\ufeff"):
+        csv_content = "\ufeff" + csv_content
     return Response(
-        buf.getvalue(),
+        csv_content,
         mimetype="text/csv; charset=utf-8-sig",
         headers={"Content-Disposition": "attachment; filename=baking_trials.csv"},
     )

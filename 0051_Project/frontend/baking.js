@@ -74,10 +74,11 @@ function showTips(el, warnings) {
         el.innerHTML = "";
         return;
     }
+    const hasSuccess = warnings.some(w => w.level === "success");
     const hasWarn = warnings.some(w => w.level === "warn");
     const hasInfo = warnings.some(w => w.level === "info");
     const hasError = warnings.some(w => w.level === "error");
-    const level = hasError ? "error" : hasWarn ? "warn" : "info";
+    const level = hasError ? "error" : hasWarn ? "warn" : hasSuccess ? "success" : "info";
     el.className = `validate-tips ${level}`;
     el.innerHTML = `<ul>${warnings.map(w => `<li>${escapeHtml(w.message)}</li>`).join("")}</ul>`;
 }
